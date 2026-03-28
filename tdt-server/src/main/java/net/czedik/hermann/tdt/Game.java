@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
+import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
@@ -101,7 +102,7 @@ public class Game {
             case Started:
                 log.info("Game {}: Client {} joining as spectator (game in progress)", gameId, client.getId());
                 spectatorClients.add(client);
-                client.send(new SpectatorState());
+                client.send(buildSpectatorState());
                 return true;
             case Finished:
                 log.info("Game {}: Client {} joining as spectator (game finished)", gameId, client.getId());
@@ -111,6 +112,22 @@ public class Game {
             default:
                 throw new IllegalStateException("Unknown state " + gameState.state);
         }
+    }
+
+    public void settings(Client client, SettingsAction settingsAction) {
+        Player player = clientToPlayer.get(client);
+        if (player == null || !player.isCreator()) {
+            log.warn("Game {}: Non-creator or unknown client {} tried to change settings", gameId, client.getId());
+            return;
+        }
+        if (gameState.state != GameState.State.WaitingForPlayers) {
+            log.warn("Game {}: Ignoring settings change in state {}", gameId, gameState.state);
+            return;
+        }
+        gameState.maxPlayers = Math.max(0, settingsAction.maxPlayers());
+        gameState.roundTimerSeconds = Math.max(0, settingsAction.roundTimerSeconds());
+        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}", gameId,
+                gameState.maxPlayers, gameState.roundTimerSeconds);
     }
 
     private void addClientForPlayer(Client client, Player player) {
@@ -155,10 +172,44 @@ public class Game {
         if (spectatorClients.isEmpty()) return;
         PlayerState spectatorState = gameState.state == GameState.State.Finished
                 ? getFinishedState()
-                : new SpectatorState();
+                : buildSpectatorState();
         for (Client client : spectatorClients) {
             client.send(spectatorState);
         }
+    }
+
+    private SpectatorState buildSpectatorState() {
+        FrontendStory[] partialStories = mapPartialStories();
+        List<PlayerInfo> waitingFor = mapPlayersToPlayerInfos(getNotFinishedPlayers());
+        return new SpectatorState(
+                gameState.round + 1,
+                gameState.gameMatrix.length,
+                mapPlayersToPlayerInfos(gameState.players),
+                waitingFor,
+                partialStories
+        );
+    }
+
+    private FrontendStory[] mapPartialStories() {
+        FrontendStory[] result = new FrontendStory[gameState.stories.length];
+        for (int storyIndex = 0; storyIndex < gameState.stories.length; storyIndex++) {
+            StoryElement[] elements = gameState.stories[storyIndex].elements;
+            int count = 0;
+            for (StoryElement e : elements) {
+                if (e != null) count++;
+            }
+            FrontendStoryElement[] fe = new FrontendStoryElement[count];
+            int idx = 0;
+            for (int roundNo = 0; roundNo < elements.length; roundNo++) {
+                if (elements[roundNo] == null) continue;
+                StoryElement e = elements[roundNo];
+                Player player = getPlayerForStoryInRound(storyIndex, roundNo);
+                String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
+                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player));
+            }
+            result[storyIndex] = new FrontendStory(fe);
+        }
+        return result;
     }
 
     private void updateStateForPlayer(Player player) {
@@ -405,6 +456,7 @@ public class Game {
         checkAndHandleRoundFinished();
 
         updateStateForAllPlayers();
+        updateStateForSpectators();
     }
 
     private Story getCurrentStoryForPlayer(Player player) {
@@ -465,6 +517,7 @@ public class Game {
         checkAndHandleRoundFinished();
 
         updateStateForAllPlayers();
+        updateStateForSpectators();
     }
 
     public void vote(Client client, VoteAction voteAction) {

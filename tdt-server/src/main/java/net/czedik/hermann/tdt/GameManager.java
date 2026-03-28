@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import net.czedik.hermann.tdt.GameLoader.GameRef;
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
+import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
@@ -197,6 +198,17 @@ public class GameManager {
 
     private GameRef getGameRefForClient(Client client) {
         return clientToGameRef.get(client);
+    }
+
+    public void handleSettingsAction(Client client, SettingsAction settingsAction) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle settings. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.settings(client, settingsAction);
+        });
     }
 
     public void handleStartAction(Client client, StartAction startAction) {

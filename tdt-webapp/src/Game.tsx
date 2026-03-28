@@ -13,6 +13,7 @@ import {
 } from "./BeforeGameStartScreens";
 import GameFinishedAnimation from "./GameFinishedAnimation";
 import Stories from "./Stories";
+import SpectatorView from "./SpectatorView";
 import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 
@@ -90,7 +91,16 @@ function isStoriesState(playerState: PlayerState): playerState is StoriesState {
   return playerState.state === "stories";
 }
 
-function isSpectatorState(playerState: PlayerState): boolean {
+interface SpectatorState extends PlayerState {
+  state: "spectator";
+  round: number;
+  rounds: number;
+  players: PlayerInfo[];
+  waitingForPlayers: PlayerInfo[];
+  stories: StoryContent[];
+}
+
+function isSpectatorState(playerState: PlayerState): playerState is SpectatorState {
   return playerState.state === "spectator";
 }
 
@@ -187,6 +197,16 @@ const Game = () => {
     send({ action: "vote", content: { storyIndex } });
   }, []);
 
+  const handleSettingsChange = React.useCallback((settings: GameSettings) => {
+    send({
+      action: "settings",
+      content: {
+        maxPlayers: settings.maxPlayers,
+        roundTimerSeconds: settings.roundTimerSeconds,
+      },
+    });
+  }, []);
+
   const getComponentForState = () => {
     if (playerState.state === "loading") {
       return <LoadingGame />;
@@ -220,6 +240,7 @@ const Game = () => {
           gameId={gameIdNotNull}
           players={playerState.players}
           handleStart={handleStartGame}
+          handleSettingsChange={handleSettingsChange}
         />
       );
     } else if (isWaitForGameStartState(playerState)) {
@@ -258,18 +279,16 @@ const Game = () => {
         />
       );
     } else if (isStoriesState(playerState)) {
-      return (
-        <GameFinished
-          stories={playerState.stories}
-          votesByStory={playerState.votesByStory ?? []}
-          onVote={handleVote}
-        />
-      );
+      return <GameFinished stories={playerState.stories} />;
     } else if (isSpectatorState(playerState)) {
       return (
-        <Message>
-          You are spectating. Stories will appear here once the game ends.
-        </Message>
+        <SpectatorView
+          round={playerState.round}
+          rounds={playerState.rounds}
+          players={playerState.players}
+          waitingForPlayers={playerState.waitingForPlayers}
+          stories={playerState.stories}
+        />
       );
     } else if (playerState.state === "alreadyStartedGame") {
       return (
@@ -326,15 +345,7 @@ const WaitForRoundFinished = ({
   );
 };
 
-const GameFinished = ({
-  stories,
-  votesByStory,
-  onVote,
-}: {
-  stories: StoryContent[];
-  votesByStory: number[];
-  onVote: (storyIndex: number) => void;
-}) => {
+const GameFinished = ({ stories }: { stories: StoryContent[] }) => {
   const [showStories, setShowStories] = React.useState(false);
 
   if (!showStories) {
@@ -342,9 +353,7 @@ const GameFinished = ({
       <GameFinishedAnimation handleShowStories={() => setShowStories(true)} />
     );
   } else {
-    return (
-      <Stories stories={stories} votesByStory={votesByStory} onVote={onVote} />
-    );
+    return <Stories stories={stories} />;
   }
 };
 

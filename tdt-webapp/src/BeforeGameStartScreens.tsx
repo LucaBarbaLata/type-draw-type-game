@@ -16,13 +16,19 @@ export const WaitForPlayersScreen = ({
   gameId,
   players,
   handleStart,
+  handleSettingsChange,
 }: {
   gameId: string;
   players: PlayerInfo[];
   handleStart: (settings: GameSettings) => void;
+  handleSettingsChange: (settings: GameSettings) => void;
 }) => {
   const [roundTimerSeconds, setRoundTimerSeconds] = React.useState(0);
   const [maxPlayers, setMaxPlayers] = React.useState(0);
+
+  const notifyChange = (timerSecs: number, maxP: number) => {
+    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP });
+  };
 
   const buttonDisabled = players.length <= 1;
 
@@ -47,7 +53,11 @@ export const WaitForPlayersScreen = ({
           <select
             id="timer-select"
             value={roundTimerSeconds}
-            onChange={(e) => setRoundTimerSeconds(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setRoundTimerSeconds(v);
+              notifyChange(v, maxPlayers);
+            }}
           >
             <option value={0}>No limit</option>
             <option value={30}>30 seconds</option>
@@ -62,7 +72,11 @@ export const WaitForPlayersScreen = ({
           <select
             id="maxplayers-select"
             value={maxPlayers}
-            onChange={(e) => setMaxPlayers(Number(e.target.value))}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setMaxPlayers(v);
+              notifyChange(roundTimerSeconds, v);
+            }}
           >
             <option value={0}>No limit</option>
             {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
