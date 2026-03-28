@@ -9,7 +9,7 @@ export interface NotificationItem {
   action: "drawing" | "typing";
 }
 
-const DISMISS_AFTER_MS = 3000;
+const DISMISS_AFTER_MS = 6000;
 
 const NotificationToast = ({
   item,
