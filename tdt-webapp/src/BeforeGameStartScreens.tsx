@@ -26,24 +26,12 @@ export const WaitForPlayersScreen = ({
 }) => {
   const [roundTimerSeconds, setRoundTimerSeconds] = React.useState(0);
   const [maxPlayers, setMaxPlayers] = React.useState(0);
-  const qrWrapperRef = React.useRef<HTMLDivElement>(null);
-
   const notifyChange = (timerSecs: number, maxP: number) => {
     handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP });
   };
 
   const buttonDisabled = players.length <= 1;
   const link = window.location.toString();
-
-  const handleDownloadQR = () => {
-    const canvas = qrWrapperRef.current?.querySelector("canvas");
-    if (!canvas) return;
-    const url = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tdt-${gameId}.png`;
-    a.click();
-  };
 
   return (
     <BeforeGameStartScreen players={players}>
@@ -62,7 +50,7 @@ export const WaitForPlayersScreen = ({
             </FieldBlock>
           </InviteFields>
 
-          <QRBlock ref={qrWrapperRef} onClick={handleDownloadQR} title="Click to download QR code">
+          <QRBlock as="a" href={link} target="_blank" rel="noopener noreferrer" title="Open link">
             <QRCodeCanvas
               value={link}
               size={130}
@@ -70,7 +58,7 @@ export const WaitForPlayersScreen = ({
               fgColor="#00f5ff"
               level="M"
             />
-            <QRHint>↓ save</QRHint>
+            <QRHint>↗ open</QRHint>
           </QRBlock>
         </InviteSection>
 
