@@ -7,14 +7,17 @@ interface DrawingReplayProps {
   frameIntervalMs?: number;
 }
 
+type PlayState = "idle" | "playing" | "paused" | "done";
+
 const DrawingReplay = ({
   replayUrl,
   staticFallback,
-  frameIntervalMs = 120,
+  frameIntervalMs = 80,
 }: DrawingReplayProps) => {
   const [frames, setFrames] = React.useState<string[] | null>(null);
-  const [currentFrame, setCurrentFrame] = React.useState(0);
-  const [paused, setPaused] = React.useState(false);
+  const [idx, setIdx] = React.useState(0);
+  const [playState, setPlayState] = React.useState<PlayState>("idle");
+  const frameRef = React.useRef(0);
 
   React.useEffect(() => {
     fetch(replayUrl)
@@ -23,43 +26,73 @@ const DrawingReplay = ({
       .catch(() => setFrames([]));
   }, [replayUrl]);
 
-  const pausedRef = React.useRef(paused);
-  pausedRef.current = paused;
-
+  // Animation loop — only active when playing
   React.useEffect(() => {
-    if (frames === null || frames.length === 0) return;
+    if (playState !== "playing" || !frames || frames.length === 0) return;
     let rafId: number;
-    let lastTime = 0;
+    let lastTime = performance.now();
 
     const tick = (time: number) => {
-      rafId = requestAnimationFrame(tick);
-      if (pausedRef.current) return;
-      if (time - lastTime < frameIntervalMs) return;
+      if (time - lastTime < frameIntervalMs) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
       lastTime = time;
-      setCurrentFrame((prev) => {
-        const next = prev + 1;
-        return next >= frames.length ? 0 : next;
-      });
+      frameRef.current++;
+      if (frameRef.current >= frames.length) {
+        setPlayState("done");
+        return;
+      }
+      setIdx(frameRef.current);
+      rafId = requestAnimationFrame(tick);
     };
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [frames, frameIntervalMs]);
+  }, [playState, frames, frameIntervalMs]);
 
-  const src = frames !== null && frames.length > 0 ? frames[currentFrame] : staticFallback;
+  const handleClick = () => {
+    if (!frames || frames.length === 0) return;
+    if (playState === "idle" || playState === "done") {
+      frameRef.current = 0;
+      setIdx(0);
+      setPlayState("playing");
+    } else if (playState === "playing") {
+      setPlayState("paused");
+    } else if (playState === "paused") {
+      setPlayState("playing");
+    }
+  };
+
+  const hasReplay = frames !== null && frames.length > 0;
+  const src = playState !== "idle" && hasReplay ? frames![idx] : staticFallback;
 
   return (
-    <ReplayContainer onClick={() => setPaused((p) => !p)} title={paused ? "Tap to resume" : "Tap to pause"}>
-      <ReplayImage src={src} alt="Drawing timelapse" />
-      <ReplayOverlay>
-        {frames === null ? (
-          <StatusLabel>loading…</StatusLabel>
-        ) : paused ? (
-          <StatusLabel>paused</StatusLabel>
-        ) : frames.length > 0 ? (
-          <PulsingDot />
-        ) : null}
-      </ReplayOverlay>
+    <ReplayContainer
+      onClick={handleClick}
+      style={{ cursor: hasReplay ? "pointer" : "default" }}
+    >
+      <ReplayImage src={src} alt="Drawing" />
+
+      {frames === null && (
+        <CornerOverlay><StatusLabel>loading…</StatusLabel></CornerOverlay>
+      )}
+
+      {hasReplay && playState === "idle" && (
+        <CenteredOverlay><PlayArrow>▶</PlayArrow></CenteredOverlay>
+      )}
+
+      {hasReplay && playState === "playing" && (
+        <CornerOverlay><PulsingDot /></CornerOverlay>
+      )}
+
+      {hasReplay && playState === "paused" && (
+        <CornerOverlay><ResumeLabel>▶</ResumeLabel></CornerOverlay>
+      )}
+
+      {hasReplay && playState === "done" && (
+        <CenteredOverlay><PlayArrow>↩</PlayArrow></CenteredOverlay>
+      )}
     </ReplayContainer>
   );
 };
@@ -74,7 +107,6 @@ const pulse = keyframes`
 const ReplayContainer = styled.div`
   position: relative;
   display: inline-block;
-  cursor: pointer;
   margin-top: 1vmin;
   max-width: 80vw;
 `;
@@ -88,13 +120,38 @@ const ReplayImage = styled.img`
   display: block;
 `;
 
-const ReplayOverlay = styled.div`
+const CenteredOverlay = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(8, 8, 24, 0.65);
+  border: 1.5px solid rgba(0, 245, 255, 0.45);
+  border-radius: 50%;
+  width: 7vmin;
+  height: 7vmin;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
+const PlayArrow = styled.span`
+  font-size: 2.8vmin;
+  min-font-size: 14px;
+  color: rgba(0, 245, 255, 0.9);
+  line-height: 1;
+  padding-left: 0.3vmin;
+`;
+
+const CornerOverlay = styled.div`
   position: absolute;
   bottom: 1.2vmin;
   right: 1.2vmin;
   display: flex;
   align-items: center;
-  gap: 0.8vmin;
 `;
 
 const StatusLabel = styled.span`
@@ -104,6 +161,14 @@ const StatusLabel = styled.span`
   padding: 0.3vmin 0.8vmin;
   border-radius: 0.4vmin;
   letter-spacing: 0.08em;
+`;
+
+const ResumeLabel = styled.span`
+  font-size: 1.8vmin;
+  color: rgba(0, 245, 255, 0.7);
+  background: rgba(8, 8, 24, 0.7);
+  padding: 0.2vmin 0.7vmin;
+  border-radius: 0.4vmin;
 `;
 
 const PulsingDot = styled.div`

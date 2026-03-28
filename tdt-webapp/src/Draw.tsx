@@ -19,8 +19,8 @@ function getBrushes(scale: number): Brush[] {
   }));
 }
 
-const REPLAY_MAX_FRAMES = 40;
-const REPLAY_THROTTLE_MS = 500;
+const REPLAY_MAX_FRAMES = 80;
+const REPLAY_THROTTLE_MS = 150;
 const REPLAY_THUMB_WIDTH = 360;
 const REPLAY_THUMB_HEIGHT = 270;
 const REPLAY_JPEG_QUALITY = 0.35;
@@ -97,8 +97,10 @@ const Draw = ({
     submittedRef.current = true;
     onSubmit?.();
     setSubmitted(true);
-    captureFrame();
-    onSendReplay?.(round, replayFramesRef.current);
+    if (replayFramesRef.current.length > 0) {
+      captureFrame();
+      onSendReplay?.(round, replayFramesRef.current);
+    }
     const imageProvider = imageProviderRef.current!;
     window
       .fetch(imageProvider.getImageDataURL())
