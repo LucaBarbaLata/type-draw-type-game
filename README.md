@@ -29,16 +29,7 @@ git clone https://github.com/LucaBarbaLata/type-draw-type-game.git
 cd type-draw-type-game
 ```
 
-**2. Install Node.js and update the yarn lockfile** (required once to resolve dependencies):
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
-corepack enable
-cd tdt-webapp && yarn && cd ..
-```
-
-**3. Build the app:**
+**2. Build the app:**
 
 ```bash
 ./build.sh
@@ -46,13 +37,13 @@ cd tdt-webapp && yarn && cd ..
 
 This builds the webapp and server inside Docker and extracts the JAR to `./build/server.jar`.
 
-**4. Build the runtime image:**
+**3. Build the runtime image:**
 
 ```bash
 docker build -f Dockerfile_prod -t tdt-game-prod .
 ```
 
-**5. Run:**
+**4. Run:**
 
 ```bash
 docker run -d --restart always --name tdt -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
