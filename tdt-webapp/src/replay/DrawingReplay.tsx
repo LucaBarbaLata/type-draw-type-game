@@ -15,7 +15,6 @@ const DrawingReplay = ({
   const [frames, setFrames] = React.useState<string[] | null>(null);
   const [currentFrame, setCurrentFrame] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
-  const [loopCount, setLoopCount] = React.useState(0);
 
   React.useEffect(() => {
     fetch(replayUrl)
@@ -39,11 +38,7 @@ const DrawingReplay = ({
       lastTime = time;
       setCurrentFrame((prev) => {
         const next = prev + 1;
-        if (next >= frames.length) {
-          setLoopCount((c) => c + 1);
-          return 0;
-        }
-        return next;
+        return next >= frames.length ? 0 : next;
       });
     };
 
@@ -62,10 +57,7 @@ const DrawingReplay = ({
         ) : paused ? (
           <StatusLabel>paused</StatusLabel>
         ) : frames.length > 0 ? (
-          <LoopIndicator>
-            {loopCount > 0 && <LoopBadge>loop {loopCount + 1}</LoopBadge>}
-            <PulsingDot />
-          </LoopIndicator>
+          <PulsingDot />
         ) : null}
       </ReplayOverlay>
     </ReplayContainer>
@@ -112,21 +104,6 @@ const StatusLabel = styled.span`
   padding: 0.3vmin 0.8vmin;
   border-radius: 0.4vmin;
   letter-spacing: 0.08em;
-`;
-
-const LoopIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.6vmin;
-`;
-
-const LoopBadge = styled.span`
-  font-size: 1.4vmin;
-  color: rgba(0, 245, 255, 0.6);
-  background: rgba(8, 8, 24, 0.7);
-  padding: 0.2vmin 0.6vmin;
-  border-radius: 0.4vmin;
-  letter-spacing: 0.06em;
 `;
 
 const PulsingDot = styled.div`

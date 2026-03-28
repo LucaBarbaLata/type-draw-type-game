@@ -245,7 +245,10 @@ const DrawCanvas = ({
   const handlePointerMove = (canvasEl: HTMLCanvasElement, x: number, y: number) => {
     const ctx = getCanvas2DContext(canvasEl);
     if (isShapeTool) shape_move(ctx, x, y);
-    else if (isPenTool) paint_move(ctx, x, y);
+    else if (isPenTool) {
+      paint_move(ctx, x, y);
+      onStrokeEnd?.();
+    }
   };
   const handlePointerUp = (canvasEl: HTMLCanvasElement, x?: number, y?: number) => {
     const ctx = getCanvas2DContext(canvasEl);
