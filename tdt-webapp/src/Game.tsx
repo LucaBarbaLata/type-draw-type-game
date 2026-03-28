@@ -18,6 +18,7 @@ import SpectatorView from "./SpectatorView";
 import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 import { useAudio } from "./audio/useAudio";
+import Notifications, { NotificationItem } from "./Notifications";
 
 interface PlayerState {
   state: string;
@@ -144,6 +145,34 @@ const Game = () => {
     playFanfare,
     playExplosionPop,
   } = useAudio();
+
+  const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
+  const notifIdRef = React.useRef(0);
+  const prevWaitingRef = React.useRef<PlayerInfo[] | null>(null);
+
+  React.useEffect(() => {
+    if (isWaitForRoundFinishState(playerState)) {
+      const prev = prevWaitingRef.current;
+      if (prev !== null) {
+        const nowKeys = new Set(playerState.waitingForPlayers.map((p) => `${p.name}|${p.face}`));
+        const finished = prev.filter((p) => !nowKeys.has(`${p.name}|${p.face}`));
+        if (finished.length > 0) {
+          const action: "drawing" | "typing" = playerState.isTypeRound ? "typing" : "drawing";
+          setNotifications((ns) => [
+            ...ns,
+            ...finished.map((p) => ({ id: ++notifIdRef.current, player: p, action })),
+          ]);
+        }
+      }
+      prevWaitingRef.current = playerState.waitingForPlayers;
+    } else {
+      prevWaitingRef.current = null;
+    }
+  }, [playerState]);
+
+  const dismissNotification = React.useCallback((id: number) => {
+    setNotifications((ns) => ns.filter((n) => n.id !== id));
+  }, []);
 
   const prevStateRef = React.useRef("");
   React.useEffect(() => {
@@ -385,6 +414,7 @@ const Game = () => {
         handleReconnect={handleReconnect}
       />
       {getComponentForState()}
+      <Notifications items={notifications} onDismiss={dismissNotification} />
       {showMuteButton && (
         <MuteButton
           onClick={toggleMute}

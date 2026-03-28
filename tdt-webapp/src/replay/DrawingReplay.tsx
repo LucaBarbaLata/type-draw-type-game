@@ -22,7 +22,11 @@ const DrawingReplay = ({
   React.useEffect(() => {
     fetch(replayUrl)
       .then((r) => r.json())
-      .then((data) => setFrames(data.frames))
+      .then((data) => {
+        const f: string[] = data.frames;
+        setFrames(f);
+        if (f.length > 0) setPlayState("playing");
+      })
       .catch(() => setFrames([]));
   }, [replayUrl]);
 
@@ -78,20 +82,12 @@ const DrawingReplay = ({
         <CornerOverlay><StatusLabel>loading…</StatusLabel></CornerOverlay>
       )}
 
-      {hasReplay && playState === "idle" && (
-        <CenteredOverlay><PlayArrow>▶</PlayArrow></CenteredOverlay>
-      )}
-
       {hasReplay && playState === "playing" && (
         <CornerOverlay><PulsingDot /></CornerOverlay>
       )}
 
       {hasReplay && playState === "paused" && (
         <CornerOverlay><ResumeLabel>▶</ResumeLabel></CornerOverlay>
-      )}
-
-      {hasReplay && playState === "done" && (
-        <CenteredOverlay><PlayArrow>↩</PlayArrow></CenteredOverlay>
       )}
     </ReplayContainer>
   );
@@ -118,32 +114,6 @@ const ReplayImage = styled.img`
   border-radius: 1vmin;
   box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
   display: block;
-`;
-
-const CenteredOverlay = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(8, 8, 24, 0.65);
-  border: 1.5px solid rgba(0, 245, 255, 0.45);
-  border-radius: 50%;
-  width: 7vmin;
-  height: 7vmin;
-  min-width: 36px;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-`;
-
-const PlayArrow = styled.span`
-  font-size: 2.8vmin;
-  min-font-size: 14px;
-  color: rgba(0, 245, 255, 0.9);
-  line-height: 1;
-  padding-left: 0.3vmin;
 `;
 
 const CornerOverlay = styled.div`
