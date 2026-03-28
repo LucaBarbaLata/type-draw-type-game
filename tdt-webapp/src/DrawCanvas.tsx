@@ -294,7 +294,13 @@ const DrawCanvas = ({
   const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
     setCursorPos(null);
-    handlePointerUp(event.currentTarget);
+    const touch = event.changedTouches[0];
+    if (touch) {
+      const { x, y } = getPositionInCanvas(event.currentTarget, touch);
+      handlePointerUp(event.currentTarget, x, y);
+    } else {
+      handlePointerUp(event.currentTarget);
+    }
   };
 
   const showCircleCursor = cursorPos && (tool === "pen" || tool === "eraser");
