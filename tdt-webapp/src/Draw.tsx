@@ -4,7 +4,7 @@ import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { PlayerInfo, Brush } from "./model";
 
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
-import DrawCanvas, { ImageProvider, DrawTool, LayerInfo } from "./DrawCanvas";
+import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
 import WaitingMessage from "./WaitingMessage";
@@ -47,10 +47,6 @@ const Draw = ({
   const handleScaleChange = React.useCallback((scale: number) => {
     setBrushes(getBrushes(scale));
   }, []);
-
-  // Layer state — lifted here so DrawTools can reactively re-render the layers panel
-  const [layers, setLayers] = React.useState<LayerInfo[]>([{ id: 0, name: "Layer 1", visible: true }]);
-  const [activeLayerIndex, setActiveLayerIndex] = React.useState(0);
 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
   const [drawingDataUrl, setDrawingDataUrl] = React.useState<string | undefined>();
@@ -115,18 +111,12 @@ const Draw = ({
         brushes={brushes}
         selectedBrush={selectedBrush}
         activeTool={activeTool}
-        layers={layers}
-        activeLayerIndex={activeLayerIndex}
         triggerHelp={() => setShowHelpDialog(true)}
         onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
         onChangeColor={(c) => setColor(c)}
         onSetTool={setActiveTool}
         onUndo={() => imageProviderRef.current?.undo()}
         onRedo={() => imageProviderRef.current?.redo()}
-        onSetActiveLayer={setActiveLayerIndex}
-        onAddLayer={() => imageProviderRef.current?.addLayer()}
-        onDeleteLayer={(i) => imageProviderRef.current?.deleteLayer(i)}
-        onToggleLayerVisibility={(i) => imageProviderRef.current?.toggleLayerVisibility(i)}
         onDone={handleClickDone}
       />
       {roundTimerSeconds > 0 && (
@@ -138,10 +128,6 @@ const Draw = ({
         tool={activeTool}
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
-        layers={layers}
-        activeLayerIndex={activeLayerIndex}
-        onLayersChange={setLayers}
-        onActiveLayerIndexChange={setActiveLayerIndex}
       />
     </div>
   );
