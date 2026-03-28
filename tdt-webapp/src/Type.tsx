@@ -4,6 +4,7 @@ import { isBlank } from "./helpers";
 import Scrollable from "./Scrollable";
 import { PlayerInfo } from "./model";
 import RoundTimer from "./RoundTimer";
+import WaitingMessage from "./WaitingMessage";
 
 import "./Type.css";
 
@@ -48,11 +49,9 @@ const Type = ({
 
   if (submitted) {
     return (
-      <Scrollable>
-        <div className="Type">
-          <div>Waiting for other players to finish typing...</div>
-        </div>
-      </Scrollable>
+      <div className="Type-waiting">
+        <WaitingMessage context="type" />
+      </div>
     );
   }
 

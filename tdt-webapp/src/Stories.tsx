@@ -55,6 +55,11 @@ const Stories = ({ stories }: { stories: StoryContent[] }) => {
           </SkipButton>
         </RevealControls>
       )}
+      {allRevealed && (
+        <ExportButton onClick={() => exportStory(currentStory, selectedStory)}>
+          ↓ Download story as image
+        </ExportButton>
+      )}
       {navButtons}
       <StartNewButton className="button button-red" onClick={() => navigate("/")}>
         Start a new game
@@ -65,6 +70,156 @@ const Stories = ({ stories }: { stories: StoryContent[] }) => {
 
 export default Stories;
 
+async function exportStory(story: StoryContent, storyIndex: number) {
+  const W = 900;
+  const PAD = 40;
+  const contentW = W - PAD * 2;
+  const HEADER_H = 36;
+  const TEXT_LINE_H = 22;
+  const ELEMENT_GAP = 32;
+
+  // Load all images up front
+  const imageMap = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    story.elements
+      .filter((e) => e.type === "image")
+      .map(
+        (e) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => { imageMap.set(e.content, img); resolve(); };
+            img.onerror = () => resolve();
+            img.src = e.content;
+          })
+      )
+  );
+
+  function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+    const result: string[] = [];
+    for (const paragraph of text.split("\n")) {
+      if (!paragraph) { result.push(""); continue; }
+      const words = paragraph.split(" ");
+      let line = "";
+      for (const word of words) {
+        const test = line ? line + " " + word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          result.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      result.push(line);
+    }
+    return result;
+  }
+
+  // Calculate total canvas height with a temp canvas for text measurement
+  const tmpCanvas = document.createElement("canvas");
+  const tmpCtx = tmpCanvas.getContext("2d")!;
+  tmpCtx.font = "16px monospace";
+
+  let totalH = PAD;
+  for (const e of story.elements) {
+    let h = HEADER_H;
+    if (e.type === "image") {
+      const img = imageMap.get(e.content);
+      h += img ? Math.round((img.height / img.width) * contentW) : 100;
+    } else {
+      h += wrapText(tmpCtx, e.content, contentW).length * TEXT_LINE_H + 12;
+    }
+    totalH += h + ELEMENT_GAP;
+  }
+  totalH += PAD - ELEMENT_GAP;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = totalH;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = "#080818";
+  ctx.fillRect(0, 0, W, totalH);
+
+  let y = PAD;
+  for (let i = 0; i < story.elements.length; i++) {
+    const e = story.elements[i];
+
+    if (i > 0) {
+      ctx.strokeStyle = "rgba(0, 245, 255, 0.2)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PAD, y - ELEMENT_GAP / 2);
+      ctx.lineTo(W - PAD, y - ELEMENT_GAP / 2);
+      ctx.stroke();
+    }
+
+    ctx.font = "bold 14px monospace";
+    ctx.fillStyle = "#00f5ff";
+    ctx.shadowColor = "#00f5ff";
+    ctx.shadowBlur = 6;
+    ctx.fillText(`${e.player.name} ${e.type === "text" ? "typed:" : "painted:"}`, PAD, y + 22);
+    ctx.shadowBlur = 0;
+    y += HEADER_H;
+
+    if (e.type === "image") {
+      const img = imageMap.get(e.content);
+      if (img) {
+        const imgH = Math.round((img.height / img.width) * contentW);
+        const r = 8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(PAD + r, y); ctx.lineTo(PAD + contentW - r, y);
+        ctx.arcTo(PAD + contentW, y, PAD + contentW, y + r, r);
+        ctx.lineTo(PAD + contentW, y + imgH - r);
+        ctx.arcTo(PAD + contentW, y + imgH, PAD + contentW - r, y + imgH, r);
+        ctx.lineTo(PAD + r, y + imgH);
+        ctx.arcTo(PAD, y + imgH, PAD, y + imgH - r, r);
+        ctx.lineTo(PAD, y + r);
+        ctx.arcTo(PAD, y, PAD + r, y, r);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, PAD, y, contentW, imgH);
+        ctx.restore();
+        ctx.strokeStyle = "rgba(0, 245, 255, 0.5)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(PAD + r, y); ctx.lineTo(PAD + contentW - r, y);
+        ctx.arcTo(PAD + contentW, y, PAD + contentW, y + r, r);
+        ctx.lineTo(PAD + contentW, y + imgH - r);
+        ctx.arcTo(PAD + contentW, y + imgH, PAD + contentW - r, y + imgH, r);
+        ctx.lineTo(PAD + r, y + imgH);
+        ctx.arcTo(PAD, y + imgH, PAD, y + imgH - r, r);
+        ctx.lineTo(PAD, y + r);
+        ctx.arcTo(PAD, y, PAD + r, y, r);
+        ctx.closePath();
+        ctx.stroke();
+        y += imgH;
+      }
+    } else {
+      ctx.font = "16px monospace";
+      ctx.fillStyle = "#c8d8f0";
+      const lines = wrapText(ctx, e.content, contentW);
+      for (const line of lines) {
+        ctx.fillText(line, PAD, y + 16);
+        y += TEXT_LINE_H;
+      }
+      y += 12;
+    }
+
+    y += ELEMENT_GAP;
+  }
+
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `story-${storyIndex + 1}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -72,6 +227,25 @@ const fadeIn = keyframes`
 
 const StartNewButton = styled.button`
   margin-bottom: 2vmin;
+`;
+
+const ExportButton = styled.button`
+  background: none;
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border-radius: 0.8vmin;
+  color: rgba(0, 245, 255, 0.7);
+  font-size: 1.8vmin;
+  padding: 1vmin 2.5vmin;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  margin: 2vmin 0;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    color: #00f5ff;
+    border-color: #00f5ff;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+  }
 `;
 
 const RevealControls = styled.div`

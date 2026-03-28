@@ -189,6 +189,25 @@ const Game = () => {
     };
   }, [gameIdNotNull, reconnectCount]);
 
+  // Auto-rejoin if we have saved name/face in localStorage
+  React.useEffect(() => {
+    if (playerState.state !== "join") return;
+    const savedName = (window.localStorage.getItem("name") ?? "").trim();
+    const savedFace = window.localStorage.getItem("face") ?? "A";
+    if (!savedName) return;
+    socketRef.current!.send(
+      JSON.stringify({
+        action: "join",
+        content: {
+          gameId: gameIdNotNull,
+          playerId: getPlayerId(),
+          name: savedName,
+          face: savedFace,
+        },
+      })
+    );
+  }, [playerState.state, gameIdNotNull]);
+
   const handleDrawDone = React.useCallback((image: Blob) => {
     socketRef.current!.send(image);
   }, []);

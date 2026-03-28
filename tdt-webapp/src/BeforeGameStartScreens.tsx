@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { QRCodeSVG } from "qrcode.react";
 
 import { PlayerInfo } from "./model";
 import Player from "./Player";
@@ -46,6 +47,15 @@ export const WaitForPlayersScreen = ({
         <div className="field-label">Link:</div>
         <div className="field">{link}</div>
       </div>
+      <QRWrapper>
+        <QRCodeSVG
+          value={link}
+          size={120}
+          bgColor="#080818"
+          fgColor="#00f5ff"
+          level="M"
+        />
+      </QRWrapper>
       <SettingsSection>
         <SettingsTitle>Game Settings</SettingsTitle>
         <SettingRow>
@@ -197,6 +207,14 @@ const SettingRow = styled.div`
     background: #0c0c20;
     color: #c8d8f0;
   }
+`;
+
+const QRWrapper = styled.div`
+  padding: 8px;
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border-radius: 1vmin;
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.15);
+  background: #080818;
 `;
 
 export default WaitForPlayersScreen;

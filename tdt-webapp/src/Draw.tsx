@@ -4,9 +4,10 @@ import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { PlayerInfo, Brush } from "./model";
 
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
-import DrawCanvas, { ImageProvider } from "./DrawCanvas";
+import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
+import WaitingMessage from "./WaitingMessage";
 
 import "./Draw.css";
 
@@ -37,27 +38,18 @@ const Draw = ({
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
 
   const [color, setColor] = React.useState("#000");
-  const [isEraser, setIsEraser] = React.useState(false);
+  const [activeTool, setActiveTool] = React.useState<DrawTool>("pen");
 
   const [brushes, setBrushes] = React.useState(() => getBrushes(1));
-
   const [selectedBrushIndex, setSelectedBrushIndex] = React.useState(1);
-
   const selectedBrush: Brush = brushes[selectedBrushIndex];
-
-  const handleSelectBrush = (brushIndex: number) => {
-    setSelectedBrushIndex(brushIndex);
-    setIsEraser(false);
-  };
 
   const handleScaleChange = React.useCallback((scale: number) => {
     setBrushes(getBrushes(scale));
   }, []);
 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
-  const [drawingDataUrl, setDrawingDataUrl] = React.useState<
-    string | undefined
-  >();
+  const [drawingDataUrl, setDrawingDataUrl] = React.useState<string | undefined>();
 
   const [submitted, setSubmitted] = React.useState(false);
   const imageProviderRef = React.useRef<ImageProvider>();
@@ -68,42 +60,15 @@ const Draw = ({
     submittedRef.current = true;
     setSubmitted(true);
     const imageProvider = imageProviderRef.current!;
-    const imageDataUrl = imageProvider.getImageDataURL();
     window
-      .fetch(imageDataUrl)
+      .fetch(imageProvider.getImageDataURL())
       .then((res) => res.blob())
       .then((image) => handleDone(image));
   }, [handleDone]);
 
   const handleClickDone = () => {
-    const imageProvider = imageProviderRef.current!;
-    const imageDataUrl = imageProvider.getImageDataURL();
-    setDrawingDataUrl(imageDataUrl);
+    setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
     setShowConfirmDialog(true);
-  };
-
-  const handleConfirmDone = () => {
-    submitDrawing();
-    setShowConfirmDialog(false);
-  };
-
-  const handleContinueDrawing = () => {
-    setShowConfirmDialog(false);
-    setDrawingDataUrl(undefined);
-  };
-
-  const handleCloseHelpDialog = () => {
-    setShowHelpDialog(false);
-    setFirstTimeHelpDialog(false);
-    toggleToFullscreenAndLandscapeOnMobile();
-  };
-
-  const handleUndo = () => {
-    imageProviderRef.current?.undo();
-  };
-
-  const handleToggleEraser = () => {
-    setIsEraser((prev) => !prev);
   };
 
   const handleTimerExpire = React.useCallback(() => {
@@ -114,7 +79,7 @@ const Draw = ({
   if (submitted) {
     return (
       <div className="Draw-waiting">
-        Waiting for other players to finish drawing...
+        <WaitingMessage context="draw" />
       </div>
     );
   }
@@ -125,8 +90,8 @@ const Draw = ({
         text={text}
         show={showConfirmDialog}
         drawingDataUrl={drawingDataUrl}
-        handleDone={handleConfirmDone}
-        handleContinue={handleContinueDrawing}
+        handleDone={() => { submitDrawing(); setShowConfirmDialog(false); }}
+        handleContinue={() => { setShowConfirmDialog(false); setDrawingDataUrl(undefined); }}
       />
       <DrawHelpDialog
         text={text}
@@ -135,21 +100,23 @@ const Draw = ({
         rounds={rounds}
         show={showHelpDialog}
         firstShow={firstTimeHelpDialog}
-        handleClose={handleCloseHelpDialog}
+        handleClose={() => {
+          setShowHelpDialog(false);
+          setFirstTimeHelpDialog(false);
+          toggleToFullscreenAndLandscapeOnMobile();
+        }}
       />
       <DrawTools
         color={color}
         brushes={brushes}
         selectedBrush={selectedBrush}
-        isEraser={isEraser}
+        activeTool={activeTool}
         triggerHelp={() => setShowHelpDialog(true)}
-        onSelectBrush={handleSelectBrush}
-        onChangeColor={(newColor) => {
-          setColor(newColor);
-          setIsEraser(false);
-        }}
-        onToggleEraser={handleToggleEraser}
-        onUndo={handleUndo}
+        onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
+        onChangeColor={(c) => setColor(c)}
+        onSetTool={setActiveTool}
+        onUndo={() => imageProviderRef.current?.undo()}
+        onRedo={() => imageProviderRef.current?.redo()}
         onDone={handleClickDone}
       />
       {roundTimerSeconds > 0 && (
@@ -158,7 +125,7 @@ const Draw = ({
       <DrawCanvas
         color={color}
         brushPixelSize={selectedBrush.pixelSize}
-        isEraser={isEraser}
+        tool={activeTool}
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
       />
