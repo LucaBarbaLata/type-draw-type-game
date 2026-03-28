@@ -180,7 +180,7 @@ const DrawCanvas = ({
   };
 
   // --- Pen / Eraser painting ---
-  function paint_start(ctx: CanvasRenderingContext2D, x: number, y: number, canvasEl: HTMLCanvasElement) {
+  function paint_start(_ctx: CanvasRenderingContext2D, x: number, y: number, canvasEl: HTMLCanvasElement) {
     saveSnapshot(canvasEl);
     posRef.current = { x, y };
   }
