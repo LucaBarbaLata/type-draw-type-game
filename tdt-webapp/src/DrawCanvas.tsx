@@ -4,6 +4,7 @@ import { useWindowSize, getCanvasSize } from "./helpers";
 export type DrawTool = "pen" | "eraser" | "fill" | "line" | "rect" | "circle";
 
 export interface ImageProvider {
+  getCanvas: () => HTMLCanvasElement;
   getImageDataURL: () => string;
   undo: () => void;
   redo: () => void;
@@ -104,12 +105,14 @@ const DrawCanvas = ({
   tool,
   imageProviderRef,
   handleScaleChange,
+  onStrokeEnd,
 }: {
   color: string;
   brushPixelSize: number;
   tool: DrawTool;
   imageProviderRef: React.MutableRefObject<ImageProvider | undefined>;
   handleScaleChange: (scale: number) => void;
+  onStrokeEnd?: () => void;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
@@ -127,6 +130,7 @@ const DrawCanvas = ({
       if (canvasElement !== null) {
         setCanvas(canvasElement);
         imageProviderRef.current = {
+          getCanvas: () => canvasElement,
           getImageDataURL: () => canvasElement.toDataURL("image/png"),
           undo: () => {
             const history = historyRef.current;
@@ -231,6 +235,7 @@ const DrawCanvas = ({
     if (tool === "fill") {
       saveSnapshot(canvasEl);
       floodFill(ctx, x, y, color);
+      onStrokeEnd?.();
     } else if (isShapeTool) {
       shape_start(ctx, x, y, canvasEl);
     } else {
@@ -246,6 +251,7 @@ const DrawCanvas = ({
     const ctx = getCanvas2DContext(canvasEl);
     if (isShapeTool) shape_end(ctx, x, y);
     else if (isPenTool) paint_end(ctx, x, y);
+    onStrokeEnd?.();
   };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {

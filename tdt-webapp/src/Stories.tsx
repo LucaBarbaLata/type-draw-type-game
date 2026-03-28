@@ -6,8 +6,15 @@ import { StoryContent, StoryElement } from "./model";
 import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
+import DrawingReplay from "./replay/DrawingReplay";
 
-const Stories = ({ stories, onReveal }: { stories: StoryContent[]; onReveal?: () => void }) => {
+const Stories = ({
+  stories,
+  onReveal,
+}: {
+  stories: StoryContent[];
+  onReveal?: () => void;
+}) => {
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
 
@@ -41,7 +48,10 @@ const Stories = ({ stories, onReveal }: { stories: StoryContent[]; onReveal?: ()
       <h1>
         Story {selectedStory + 1} of {stories.length}
       </h1>
-      <Story story={currentStory} revealedCount={revealedCount} />
+      <Story
+        story={currentStory}
+        revealedCount={revealedCount}
+      />
       {!allRevealed && (
         <RevealControls>
           <button
@@ -309,16 +319,23 @@ const StoryElementComponent = ({ element }: { element: StoryElement }) => {
         <div className="field">{NewlineToBreak(element.content)}</div>
       </TextStoryElement>
     );
-  } else {
+  }
+
+  if (element.replayUrl) {
     return (
       <ImageStoryElement>
-        <Player face={element.player.face}>
-          {element.player.name} painted:
-        </Player>
-        <img src={element.content} alt="Drawing" />
+        <Player face={element.player.face}>{element.player.name} painted:</Player>
+        <DrawingReplay replayUrl={element.replayUrl} staticFallback={element.content} />
       </ImageStoryElement>
     );
   }
+
+  return (
+    <ImageStoryElement>
+      <Player face={element.player.face}>{element.player.name} painted:</Player>
+      <img src={element.content} alt="Drawing" />
+    </ImageStoryElement>
+  );
 };
 
 const TextStoryElement = styled.div`

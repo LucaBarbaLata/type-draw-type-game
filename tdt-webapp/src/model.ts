@@ -8,6 +8,7 @@ export interface StoryElement {
   type: "text" | "image";
   content: string;
   player: PlayerInfo;
+  replayUrl?: string;
 }
 
 export interface StoryContent {

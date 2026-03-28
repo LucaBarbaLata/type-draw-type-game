@@ -21,6 +21,7 @@ import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
+import net.czedik.hermann.tdt.actions.DrawingReplayAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.UnknownGameState;
@@ -241,6 +242,21 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.type(client, typeAction);
+        });
+    }
+
+    public void handleDrawingReplayAction(Client client, DrawingReplayAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle drawing replay. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            try {
+                game.drawingReplay(client, action);
+            } catch (IOException e) {
+                log.error("Error handling drawing replay for client {}", client.getId(), e);
+            }
         });
     }
 

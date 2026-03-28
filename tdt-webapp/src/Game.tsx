@@ -237,6 +237,13 @@ const Game = () => {
     socketRef.current!.send(image);
   }, []);
 
+  const handleSendReplay = React.useCallback((round: number, frames: string[]) => {
+    socketRef.current!.send(JSON.stringify({
+      action: "drawingReplay",
+      content: { round, frames },
+    }));
+  }, []);
+
   const handleSettingsChange = React.useCallback((settings: GameSettings) => {
     send({
       action: "settings",
@@ -317,6 +324,7 @@ const Game = () => {
           onUrgentStart={playUrgentStart}
           onTick={playUrgentTick}
           onTimerExpire={playTimerExpire}
+          onSendReplay={handleSendReplay}
         />
       );
     } else if (isWaitForRoundFinishState(playerState)) {
@@ -433,7 +441,12 @@ const GameFinished = ({
       />
     );
   } else {
-    return <Stories stories={stories} onReveal={onReveal} />;
+    return (
+      <Stories
+        stories={stories}
+        onReveal={onReveal}
+      />
+    );
   }
 };
 

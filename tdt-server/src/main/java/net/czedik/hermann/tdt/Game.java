@@ -205,7 +205,8 @@ public class Game {
                 StoryElement e = elements[roundNo];
                 Player player = getPlayerForStoryInRound(storyIndex, roundNo);
                 String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
-                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player));
+                String replayUrl1 = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
+                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1);
             }
             result[storyIndex] = new FrontendStory(fe);
         }
@@ -264,8 +265,9 @@ public class Game {
             StoryElement e = elements[roundNo];
             Player player = getPlayerForStoryInRound(storyIndex, roundNo);
             String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
+            String replayUrl = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
             frontendStory.elements()[roundNo] = new FrontendStoryElement(e.type, content,
-                    mapPlayerToPlayerInfo(player));
+                    mapPlayerToPlayerInfo(player), replayUrl);
         }
         return frontendStory;
     }
@@ -326,6 +328,45 @@ public class Game {
 
     private String getDrawingSrc(String imageFilename) {
         return "/api/image/" + gameId + "/" + imageFilename;
+    }
+
+    private String getReplayUrl(int storyIndex, int roundNo) {
+        if (gameState.replayFiles == null) return null;
+        String replayId = gameState.replayFiles.get(storyIndex + "_" + roundNo);
+        return replayId != null ? "/api/replay/" + gameId + "/" + replayId : null;
+    }
+
+    public void drawingReplay(Client client, net.czedik.hermann.tdt.actions.DrawingReplayAction action) throws IOException {
+        Player player = clientToPlayer.get(client);
+        if (player == null) {
+            log.warn("Game {}: Cannot store replay. Client {} is not a known player", gameId, client.getId());
+            return;
+        }
+        if (gameState.state == GameState.State.WaitingForPlayers) {
+            log.warn("Game {}: Ignoring replay in WaitingForPlayers state", gameId);
+            return;
+        }
+        int roundIndex = action.round() - 1;
+        if (roundIndex < 0 || gameState.gameMatrix == null || roundIndex >= gameState.gameMatrix.length) {
+            log.warn("Game {}: Ignoring replay with invalid round {}", gameId, action.round());
+            return;
+        }
+        if (isTypeRound(roundIndex)) {
+            log.warn("Game {}: Ignoring replay for type round {}", gameId, roundIndex);
+            return;
+        }
+        int playerIndex = gameState.players.indexOf(player);
+        if (playerIndex < 0) return;
+        int storyIndex = gameState.gameMatrix[roundIndex][playerIndex];
+
+        String replayId = UUID.randomUUID().toString();
+        Path replayPath = gameDir.resolve(replayId + ".replay.json");
+        String json = JSONHelper.objectToJsonString(Map.of("frames", action.frames()));
+        Files.writeString(replayPath, json, StandardOpenOption.CREATE_NEW);
+
+        if (gameState.replayFiles == null) gameState.replayFiles = new java.util.HashMap<>();
+        gameState.replayFiles.put(storyIndex + "_" + roundIndex, replayId);
+        storeState();
     }
 
     private Player getPreviousPlayerForStory(int storyIndex) {

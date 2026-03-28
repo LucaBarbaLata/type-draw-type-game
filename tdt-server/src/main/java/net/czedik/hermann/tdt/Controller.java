@@ -45,4 +45,14 @@ public class Controller {
             StreamUtils.copy(in, response.getOutputStream());
         }
     }
+
+    @GetMapping(path = "/replay/{gameId:\\w+}/{replayId:[\\w\\-]+}")
+    public void getReplay(HttpServletResponse response, @PathVariable String gameId, @PathVariable String replayId)
+            throws IOException {
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        Path replayPath = gameManager.getGameDir(gameId).resolve(replayId + ".replay.json");
+        try (InputStream in = Files.newInputStream(replayPath)) {
+            StreamUtils.copy(in, response.getOutputStream());
+        }
+    }
 }

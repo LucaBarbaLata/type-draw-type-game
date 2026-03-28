@@ -12,7 +12,7 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private static final int ONE_MB = 1 * 1024 * 1024;
+    private static final int THREE_MB = 3 * 1024 * 1024;
     private static final int FIVE_MB = 5 * 1024 * 1024;
 
     @Autowired
@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
         ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
-        container.setMaxTextMessageBufferSize(ONE_MB);
+        container.setMaxTextMessageBufferSize(THREE_MB);
         container.setMaxBinaryMessageBufferSize(FIVE_MB);
         return container;
     }

@@ -36,6 +36,11 @@ public class GameState {
      */
     public java.util.Map<String, Integer> votes = new java.util.HashMap<>();
 
+    /**
+     * Replay file IDs: "storyIndex_roundIndex" -> replayId (UUID, stored as replayId.replay.json)
+     */
+    public java.util.Map<String, String> replayFiles = new java.util.HashMap<>();
+
     public enum State {
         WaitingForPlayers,
         Started,

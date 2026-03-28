@@ -19,6 +19,12 @@ function getBrushes(scale: number): Brush[] {
   }));
 }
 
+const REPLAY_MAX_FRAMES = 40;
+const REPLAY_THROTTLE_MS = 500;
+const REPLAY_THUMB_WIDTH = 360;
+const REPLAY_THUMB_HEIGHT = 270;
+const REPLAY_JPEG_QUALITY = 0.35;
+
 const Draw = ({
   text,
   textWriter,
@@ -30,6 +36,7 @@ const Draw = ({
   onUrgentStart,
   onTick,
   onTimerExpire,
+  onSendReplay,
 }: {
   text: string;
   textWriter: PlayerInfo;
@@ -41,6 +48,7 @@ const Draw = ({
   onUrgentStart?: () => void;
   onTick?: () => void;
   onTimerExpire?: () => void;
+  onSendReplay?: (round: number, frames: string[]) => void;
 }) => {
   const [showHelpDialog, setShowHelpDialog] = React.useState(true);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
@@ -63,17 +71,40 @@ const Draw = ({
   const imageProviderRef = React.useRef<ImageProvider>();
   const submittedRef = React.useRef(false);
 
+  const replayFramesRef = React.useRef<string[]>([]);
+  const lastSnapshotTimeRef = React.useRef<number>(0);
+
+  const captureFrame = React.useCallback(() => {
+    const imageProvider = imageProviderRef.current;
+    if (!imageProvider) return;
+    const offscreen = document.createElement("canvas");
+    offscreen.width = REPLAY_THUMB_WIDTH;
+    offscreen.height = REPLAY_THUMB_HEIGHT;
+    offscreen.getContext("2d")!.drawImage(imageProvider.getCanvas(), 0, 0, REPLAY_THUMB_WIDTH, REPLAY_THUMB_HEIGHT);
+    replayFramesRef.current.push(offscreen.toDataURL("image/jpeg", REPLAY_JPEG_QUALITY));
+  }, []);
+
+  const handleStrokeEnd = React.useCallback(() => {
+    const now = Date.now();
+    if (now - lastSnapshotTimeRef.current < REPLAY_THROTTLE_MS) return;
+    if (replayFramesRef.current.length >= REPLAY_MAX_FRAMES) return;
+    captureFrame();
+    lastSnapshotTimeRef.current = Date.now();
+  }, [captureFrame]);
+
   const submitDrawing = React.useCallback(() => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     onSubmit?.();
     setSubmitted(true);
+    captureFrame();
+    onSendReplay?.(round, replayFramesRef.current);
     const imageProvider = imageProviderRef.current!;
     window
       .fetch(imageProvider.getImageDataURL())
       .then((res) => res.blob())
       .then((image) => handleDone(image));
-  }, [handleDone, onSubmit]);
+  }, [handleDone, onSubmit, onSendReplay, round, captureFrame]);
 
   const handleClickDone = () => {
     setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
@@ -138,6 +169,7 @@ const Draw = ({
         tool={activeTool}
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
+        onStrokeEnd={handleStrokeEnd}
       />
     </div>
   );
