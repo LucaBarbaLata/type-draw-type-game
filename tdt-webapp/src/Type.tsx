@@ -20,6 +20,7 @@ const Type = ({
   onSubmit,
   onUrgentStart,
   onTick,
+  onTimerExpire,
 }: {
   round: number;
   rounds: number;

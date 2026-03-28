@@ -29,6 +29,7 @@ const Draw = ({
   onSubmit,
   onUrgentStart,
   onTick,
+  onTimerExpire,
 }: {
   text: string;
   textWriter: PlayerInfo;
