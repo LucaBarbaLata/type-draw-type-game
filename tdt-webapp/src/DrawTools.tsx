@@ -2,7 +2,7 @@ import React from "react";
 
 import { useWindowSize } from "./helpers";
 import { Brush } from "./model";
-import { DrawTool, LayerInfo, ImageProvider, MAX_LAYERS } from "./DrawCanvas";
+import { DrawTool, LayerInfo, MAX_LAYERS } from "./DrawCanvas";
 
 import Dialog from "./Dialog";
 import ColorPicker from "./ColorPicker";
