@@ -19,8 +19,14 @@ const BigLogoScreen = ({ children }: { children: React.ReactNode }) => {
       </BigLogoScreenContent>
       <Footer>
         <div>
+          <a href="https://github.com/LucaBarbaLata/type-draw-type-game">
+            Heavily modified fork
+          </a>{" "}
+          by{" "}
+          <a href="https://github.com/LucaBarbaLata">lucariki</a>
+          {" · "}
           <a href="https://github.com/Bronkoknorb/type-draw-type-game">
-            Open Source
+            original
           </a>{" "}
           by Hermann Czedik-Eysenberg
         </div>
