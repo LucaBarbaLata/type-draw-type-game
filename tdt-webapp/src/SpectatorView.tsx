@@ -36,7 +36,7 @@ const SpectatorView = ({
   return (
     <Scrollable ref={scrollableRef}>
       <Header>
-        <StatusBadge>👀 Spectating</StatusBadge>
+        <StatusBadge>👀 SPECTATING</StatusBadge>
         <RoundInfo>
           Round {round} of {rounds} —{" "}
           {stillDrawing
@@ -131,7 +131,8 @@ const Header = styled.div`
   align-items: center;
   gap: 2vmin;
   padding: 3vmin;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(0, 245, 255, 0.03);
+  border-bottom: 1.5px solid rgba(0, 245, 255, 0.2);
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 2vmin;
@@ -140,12 +141,15 @@ const Header = styled.div`
 const StatusBadge = styled.div`
   font-size: 3vmin;
   font-weight: bold;
-  color: #444;
+  color: #00f5ff;
+  text-shadow: 0 0 10px #00f5ff, 0 0 25px rgba(0, 245, 255, 0.4);
+  letter-spacing: 0.2em;
 `;
 
 const RoundInfo = styled.div`
   font-size: 2.2vmin;
-  color: #555;
+  color: #6688aa;
+  letter-spacing: 0.06em;
 `;
 
 const PlayerRow = styled.div`
@@ -189,15 +193,16 @@ const ImageStoryElement = styled.div`
     margin-top: 1vmin;
     max-height: 100vh;
     max-width: 80vw;
-    border: 0.7vmin solid black;
-    border-radius: 2vmin;
-    box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border-radius: 1vmin;
+    box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
   }
 `;
 
 const EmptyNote = styled.div`
-  color: #888;
+  color: #3d5570;
   font-size: 2.5vmin;
   text-align: center;
   margin: 6vmin;
+  letter-spacing: 0.06em;
 `;

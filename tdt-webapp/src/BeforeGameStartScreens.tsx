@@ -149,15 +149,21 @@ const BeforeGameStartScreen = ({
 const SettingsSection = styled.div`
   margin: 2vmin 0;
   padding: 2vmin;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 2vmin;
+  background: rgba(0, 245, 255, 0.03);
+  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border-radius: 1vmin;
   min-width: 30vmin;
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.08);
 `;
 
 const SettingsTitle = styled.div`
   font-weight: bold;
   margin-bottom: 1.5vmin;
   font-size: 1.8vmin;
+  color: #00f5ff;
+  text-shadow: 0 0 8px #00f5ff;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 `;
 
 const SettingRow = styled.div`
@@ -170,15 +176,26 @@ const SettingRow = styled.div`
   label {
     font-size: 1.6vmin;
     white-space: nowrap;
+    color: #6688aa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   select {
     font-size: 1.6vmin;
     padding: 0.5vmin 1vmin;
-    border-radius: 1vmin;
-    border: 1px solid #ccc;
-    background: white;
+    border-radius: 0.5vmin;
+    border: 1.5px solid rgba(0, 245, 255, 0.4);
+    background: rgba(0, 245, 255, 0.06);
+    color: #00f5ff;
     cursor: pointer;
+    outline: none;
+    box-shadow: 0 0 6px rgba(0, 245, 255, 0.15);
+  }
+
+  select option {
+    background: #0c0c20;
+    color: #c8d8f0;
   }
 `;
 

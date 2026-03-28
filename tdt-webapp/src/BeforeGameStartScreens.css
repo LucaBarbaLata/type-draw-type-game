@@ -39,22 +39,27 @@
 
 .Players-title {
   padding-left: 2vmin;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }
 
 .Players {
   flex: auto;
   min-height: 10vmin;
-  border: 0.7vmin solid black;
+  border: 1.5px solid rgba(0, 245, 255, 0.5);
   border-left-width: 0;
   border-bottom-width: 0;
-  border-radius: 2vmin;
+  border-radius: 1vmin;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   padding: 2vmin;
   margin-right: 5vmin;
-  background-color: white;
-  box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 245, 255, 0.03);
+  box-shadow: var(--cyber-glow), inset 0 0 20px rgba(0, 245, 255, 0.02);
   overflow: auto;
 }
 

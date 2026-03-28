@@ -4,6 +4,7 @@
   justify-content: center;
   width: 100%;
   height: 100%;
+  background-color: var(--cyber-bg);
 }
 
 .Draw-tools {
@@ -37,7 +38,10 @@
   width: 100%;
   height: 100%;
   font-size: 4vmin;
-  color: #555;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  background-color: var(--cyber-bg);
+  letter-spacing: 0.08em;
 }
 
 .Draw-canvas canvas {
@@ -45,34 +49,58 @@
   display: block;
   max-width: 100%;
   max-height: 100vh;
-  border-radius: 2vmin;
+  border-radius: 0.5vmin;
+  border: 1.5px solid rgba(0, 245, 255, 0.25);
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.08);
 }
 
 .tool-button {
-  background-color: rgb(40, 27, 219);
-  border: none;
-  color: white;
+  background-color: rgba(0, 0, 20, 0.85);
+  border: 1.5px solid var(--cyber-cyan);
+  color: var(--cyber-cyan);
   text-align: center;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
   border-radius: 50%;
   font-size: 0.7em;
-  box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+  box-shadow: var(--cyber-glow);
   cursor: pointer;
   outline: none;
   width: 15vmin;
   height: 15vmin;
-  display: flex;
   align-items: center;
   justify-content: center;
+  text-shadow: var(--cyber-glow);
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.tool-button:hover {
+  background-color: rgba(0, 245, 255, 0.12);
+  box-shadow: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.3);
 }
 
 .tool-button-help {
-  background-color: #b00;
+  border-color: var(--cyber-magenta);
+  color: var(--cyber-magenta);
+  box-shadow: var(--cyber-glow-magenta);
+  text-shadow: var(--cyber-glow-magenta);
+}
+
+.tool-button-help:hover {
+  background-color: rgba(255, 32, 121, 0.12);
+  box-shadow: 0 0 16px #ff2079, 0 0 40px rgba(255, 32, 121, 0.3);
 }
 
 .tool-button-done {
-  background-color: #4caf50;
+  border-color: var(--cyber-green);
+  color: var(--cyber-green);
+  box-shadow: var(--cyber-glow-green);
+  text-shadow: var(--cyber-glow-green);
+}
+
+.tool-button-done:hover {
+  background-color: rgba(57, 255, 20, 0.12);
+  box-shadow: 0 0 16px #39ff14, 0 0 40px rgba(57, 255, 20, 0.3);
 }
 
 .tool-button-row {
@@ -88,27 +116,39 @@
   height: 10vmin;
   margin: 0;
   font-size: 3vmin;
-  background-color: #555;
 }
 
 .tool-button-eraser {
-  background-color: #888;
+  border-color: var(--cyber-magenta);
+  color: var(--cyber-magenta);
+  box-shadow: var(--cyber-glow-magenta);
+  text-shadow: var(--cyber-glow-magenta);
 }
 
 .tool-button-active {
-  outline: 0.5vmin solid #fff;
-  outline-offset: 0.3vmin;
+  background-color: rgba(255, 32, 121, 0.15);
+  box-shadow: 0 0 16px #ff2079, 0 0 40px rgba(255, 32, 121, 0.4) !important;
 }
 
 .tool-button img {
   width: 7vmin;
   height: 7vmin;
-  filter: invert();
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(150deg) drop-shadow(0 0 3px #00f5ff);
+}
+
+.tool-button-help img {
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(290deg) drop-shadow(0 0 3px #ff2079);
+}
+
+.tool-button-done img {
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(65deg) drop-shadow(0 0 3px #39ff14);
 }
 
 .tool-button-brush {
   cursor: pointer;
   margin: 1vmin;
+  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  box-shadow: 0 0 6px rgba(0, 245, 255, 0.15);
 }
 
 .tool-button-brush > div {
@@ -120,9 +160,11 @@
   position: absolute;
   margin-left: 2vmin;
   padding: 1vmin;
-  border-radius: 4vmin;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
+  border-radius: 2vmin;
+  background-color: rgba(6, 6, 20, 0.95);
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  box-shadow: var(--cyber-glow);
+  backdrop-filter: blur(12px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -134,7 +176,8 @@
   height: 15vmin;
   position: relative;
   border-radius: 50%;
-  box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+  border: 1.5px solid var(--cyber-cyan);
+  box-shadow: var(--cyber-glow);
   cursor: pointer;
 }
 
@@ -151,6 +194,7 @@
 .tool-color img {
   width: 15vmin;
   height: 15vmin;
+  filter: invert(1) sepia(1) saturate(3) hue-rotate(150deg);
 }
 
 .ColorPicker {
@@ -176,9 +220,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
+  background-color: var(--cyber-bg);
 }
 
 .DrawHelp h1 img {
   height: 14vmin;
   margin-top: 2.3vmin;
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(150deg) drop-shadow(0 0 8px #00f5ff);
 }

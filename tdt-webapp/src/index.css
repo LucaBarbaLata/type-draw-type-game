@@ -1,3 +1,17 @@
+:root {
+  --cyber-bg: #080818;
+  --cyber-bg-panel: #0c0c20;
+  --cyber-cyan: #00f5ff;
+  --cyber-magenta: #ff2079;
+  --cyber-green: #39ff14;
+  --cyber-yellow: #f7c800;
+  --cyber-text: #c8d8f0;
+  --cyber-text-muted: #3d5570;
+  --cyber-glow: 0 0 8px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.2);
+  --cyber-glow-magenta: 0 0 8px #ff2079, 0 0 20px rgba(255, 32, 121, 0.2);
+  --cyber-glow-green: 0 0 8px #39ff14, 0 0 20px rgba(57, 255, 20, 0.2);
+}
+
 html,
 body,
 #root {
@@ -25,7 +39,11 @@ body,
 }
 
 body {
-  background-color: #ffffbe;
+  background-color: var(--cyber-bg);
+  background-image:
+    linear-gradient(rgba(0, 245, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 body,
@@ -36,38 +54,48 @@ textarea {
   font-size: calc(14px + 3vmin);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: black;
+  color: var(--cyber-text);
 }
 
 a {
-  color: black;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
 }
 
 h1 {
   font-size: calc(16px + 4vmin);
   font-weight: bold;
   margin: 1vmin 0;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
 }
 
 input,
 textarea,
 .field {
   outline: none;
-  border: 0.7vmin solid black;
-  border-radius: 2vmin;
+  border: 1.5px solid var(--cyber-cyan);
+  border-radius: 1vmin;
   padding: 1vmin 2vmin;
-  background-color: white;
-  box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 245, 255, 0.05);
+  box-shadow: var(--cyber-glow), inset 0 0 12px rgba(0, 245, 255, 0.05);
   text-align: center;
+  color: var(--cyber-text);
+  caret-color: var(--cyber-cyan);
 }
 
 .field {
   word-break: break-word;
   overflow-wrap: anywhere;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
 }
 
 .field-label {
   font-size: 0.7em;
+  color: var(--cyber-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
 
 .hidden {
@@ -76,4 +104,5 @@ textarea,
 
 .small {
   font-size: 0.7em;
+  color: var(--cyber-text-muted);
 }

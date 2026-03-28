@@ -2,10 +2,10 @@
   font-family: "KidsDrawings";
   font-size: calc(25px + 15vmin);
   flex-grow: 1;
-  color: black;
+  color: var(--cyber-magenta);
   margin-left: 3vmin;
   margin-right: 3vmin;
-  text-shadow: 0.5vmin 0.7vmin 1vmin rgba(61, 37, 37, 0.2);
+  text-shadow: 0 0 12px #ff2079, 0 0 35px rgba(255, 32, 121, 0.4), 0 0 60px rgba(255, 32, 121, 0.15);
   cursor: pointer;
   user-select: none;
 }

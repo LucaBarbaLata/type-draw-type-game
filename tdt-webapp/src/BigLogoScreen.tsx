@@ -64,6 +64,8 @@ const Footer = styled.div`
   text-align: right;
   padding-right: 1vw;
   padding-bottom: 1vw;
+  color: #3d5570;
+  letter-spacing: 0.05em;
 `;
 
 const Decoration = ({ chars }: { chars: string }) => {

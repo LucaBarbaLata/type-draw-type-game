@@ -10,11 +10,15 @@
   width: 80vw;
   height: 20vh;
   margin: 2vmin 0;
+  text-align: left;
+  resize: none;
+  line-height: 1.5;
 }
 
 .Type h1 img {
   width: 25vmin;
   margin-top: 2.3vmin;
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(150deg) drop-shadow(0 0 8px #00f5ff);
 }
 
 .Type button {

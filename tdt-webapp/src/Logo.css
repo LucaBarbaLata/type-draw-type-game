@@ -6,4 +6,5 @@
   display: block;
   width: 100%;
   max-height: 45vh;
+  filter: invert(1) drop-shadow(0 0 10px #00f5ff) drop-shadow(0 0 20px rgba(0, 245, 255, 0.4));
 }

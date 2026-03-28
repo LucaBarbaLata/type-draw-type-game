@@ -41,18 +41,18 @@ const GameFinishedAnimation = ({
     }
 
     const colors: Color[] = [
-      { r: 255, g: 10, b: 10 },
-      { r: 53, g: 84, b: 255 },
-      { r: 0, g: 233, b: 0 },
-      { r: 255, g: 170, b: 85 },
-      { r: 255, g: 0, b: 255 },
-      { r: 255, g: 255, b: 0 },
+      { r: 0, g: 245, b: 255 },
+      { r: 255, g: 32, b: 121 },
+      { r: 57, g: 255, b: 20 },
+      { r: 247, g: 200, b: 0 },
+      { r: 180, g: 0, b: 255 },
+      { r: 0, g: 180, b: 255 },
     ];
 
     let particles: Particle[] = [];
 
     const drawBackground = () => {
-      ctx.fillStyle = "#ffffbe";
+      ctx.fillStyle = "#080818";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
@@ -181,10 +181,12 @@ export default GameFinishedAnimation;
 const StyledGameFinishedAnimation = styled.div`
   width: 100%;
   height: 100%;
-
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
+  color: #00f5ff;
+  text-shadow: 0 0 12px #00f5ff, 0 0 30px rgba(0, 245, 255, 0.4);
+  letter-spacing: 0.1em;
 
   canvas {
     position: absolute;

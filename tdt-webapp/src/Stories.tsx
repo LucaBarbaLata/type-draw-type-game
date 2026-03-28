@@ -85,10 +85,16 @@ const RevealControls = styled.div`
 const SkipButton = styled.button`
   background: none;
   border: none;
-  color: #888;
+  color: #3d5570;
   font-size: 1.8vmin;
   cursor: pointer;
   text-decoration: underline;
+  letter-spacing: 0.06em;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #6688aa;
+  }
 `;
 
 const StyledStory = styled.div`
@@ -158,9 +164,9 @@ const ImageStoryElement = styled.div`
     margin-top: 1vmin;
     max-height: 100vh;
     max-width: 80vw;
-    border: 0.7vmin solid black;
-    border-radius: 2vmin;
-    box-shadow: 0.5vmin 0.7vmin 1vmin rgba(0, 0, 0, 0.2);
+    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border-radius: 1vmin;
+    box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
   }
 `;
 
