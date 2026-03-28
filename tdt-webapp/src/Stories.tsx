@@ -7,7 +7,7 @@ import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 
-const Stories = ({ stories }: { stories: StoryContent[] }) => {
+const Stories = ({ stories, onReveal }: { stories: StoryContent[]; onReveal?: () => void }) => {
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
 
@@ -46,7 +46,7 @@ const Stories = ({ stories }: { stories: StoryContent[] }) => {
         <RevealControls>
           <button
             className="button"
-            onClick={() => setRevealedCount((c) => Math.min(c + 1, totalElements))}
+            onClick={() => { onReveal?.(); setRevealedCount((c) => Math.min(c + 1, totalElements)); }}
           >
             Reveal next ▼
           </button>

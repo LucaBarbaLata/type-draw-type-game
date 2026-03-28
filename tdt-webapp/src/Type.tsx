@@ -17,6 +17,9 @@ const Type = ({
   artist,
   roundTimerSeconds,
   handleDone,
+  onSubmit,
+  onUrgentStart,
+  onTick,
 }: {
   round: number;
   rounds: number;
@@ -24,6 +27,10 @@ const Type = ({
   artist: PlayerInfo | null;
   roundTimerSeconds: number;
   handleDone: (text: string) => void;
+  onSubmit?: () => void;
+  onUrgentStart?: () => void;
+  onTick?: () => void;
+  onTimerExpire?: () => void;
 }) => {
   const [text, setText] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
@@ -37,15 +44,17 @@ const Type = ({
     (value: string) => {
       if (submittedRef.current) return;
       submittedRef.current = true;
+      onSubmit?.();
       setSubmitted(true);
       handleDone(value.trim() || "(no response)");
     },
-    [handleDone]
+    [handleDone, onSubmit]
   );
 
   const handleTimerExpire = React.useCallback(() => {
+    onTimerExpire?.();
     submitText(text);
-  }, [submitText, text]);
+  }, [submitText, text, onTimerExpire]);
 
   if (submitted) {
     return (
@@ -58,7 +67,7 @@ const Type = ({
   return (
     <Scrollable>
       {roundTimerSeconds > 0 && (
-        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} />
+        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
       )}
       <div className="Type">
         <div>

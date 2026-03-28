@@ -4,16 +4,26 @@ import { useWindowSize } from "./helpers";
 
 const GameFinishedAnimation = ({
   handleShowStories,
+  onFanfare,
+  onExplosion,
 }: {
   handleShowStories: () => void;
+  onFanfare?: () => void;
+  onExplosion?: () => void;
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const animationClickRef =
     React.useRef<
       (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
     >();
+  const onExplosionRef = React.useRef(onExplosion);
+  onExplosionRef.current = onExplosion;
 
   const windowSize = useWindowSize();
+
+  React.useEffect(() => {
+    onFanfare?.();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     // inspired by https://codepen.io/deanwagman/pen/EjLBdQ
@@ -134,6 +144,7 @@ const GameFinishedAnimation = ({
           Math.round(Math.random() * canvas.width),
           Math.round(Math.random() * canvas.height)
         );
+        onExplosionRef.current?.();
         nextExplosion =
           time + Math.random() * config.maxTimeBetweenExplosionsMillis;
       }
@@ -150,6 +161,7 @@ const GameFinishedAnimation = ({
     animationClickRef.current = (event) => {
       removeParticlesOutsideCanvas();
       addParticles(config.particleNumber, event.clientX, event.clientY);
+      onExplosionRef.current?.();
     };
 
     return () => {

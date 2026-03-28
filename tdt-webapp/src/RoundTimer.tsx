@@ -4,22 +4,40 @@ import styled from "styled-components";
 const RoundTimer = ({
   seconds,
   onExpire,
+  onUrgentStart,
+  onTick,
 }: {
   seconds: number;
   onExpire: () => void;
+  onUrgentStart?: () => void;
+  onTick?: () => void;
 }) => {
   const [remaining, setRemaining] = React.useState(seconds);
   const onExpireRef = React.useRef(onExpire);
   onExpireRef.current = onExpire;
+  const onUrgentStartRef = React.useRef(onUrgentStart);
+  onUrgentStartRef.current = onUrgentStart;
+  const onTickRef = React.useRef(onTick);
+  onTickRef.current = onTick;
+  const prevUrgentRef = React.useRef(false);
 
   React.useEffect(() => {
     setRemaining(seconds);
+    prevUrgentRef.current = false;
   }, [seconds]);
 
   React.useEffect(() => {
     if (remaining <= 0) {
       onExpireRef.current();
       return;
+    }
+    const urgent = remaining <= 10;
+    if (urgent && !prevUrgentRef.current) {
+      onUrgentStartRef.current?.();
+    }
+    prevUrgentRef.current = urgent;
+    if (urgent) {
+      onTickRef.current?.();
     }
     const id = setTimeout(() => setRemaining((r) => r - 1), 1000);
     return () => clearTimeout(id);

@@ -1,5 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
+import styled from "styled-components";
 
 import { PlayerInfo, StoryContent } from "./model";
 import { getPlayerId } from "./helpers";
@@ -16,6 +17,7 @@ import Stories from "./Stories";
 import SpectatorView from "./SpectatorView";
 import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
+import { useAudio } from "./audio/useAudio";
 
 interface PlayerState {
   state: string;
@@ -129,6 +131,29 @@ const Game = () => {
   const [connectionError, setConnectionError] = React.useState(false);
 
   const [reconnectCount, setReconnectCount] = React.useState(0);
+
+  const {
+    muted,
+    toggleMute,
+    playRoundStart,
+    playUrgentTick,
+    playUrgentStart,
+    playTimerExpire,
+    playSubmitSuccess,
+    playRevealPop,
+    playFanfare,
+    playExplosionPop,
+  } = useAudio();
+
+  const prevStateRef = React.useRef("");
+  React.useEffect(() => {
+    const cur = playerState.state;
+    const prev = prevStateRef.current;
+    if ((cur === "type" || cur === "draw") && cur !== prev) {
+      playRoundStart();
+    }
+    prevStateRef.current = cur;
+  }, [playerState.state, playRoundStart]);
 
   const socketRef = React.useRef<WebSocket>();
 
@@ -273,6 +298,10 @@ const Game = () => {
           artist={playerState.artist}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           handleDone={handleTypeDone}
+          onSubmit={playSubmitSuccess}
+          onUrgentStart={playUrgentStart}
+          onTick={playUrgentTick}
+          onTimerExpire={playTimerExpire}
         />
       );
     } else if (isDrawState(playerState)) {
@@ -284,6 +313,10 @@ const Game = () => {
           rounds={playerState.rounds}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           handleDone={handleDrawDone}
+          onSubmit={playSubmitSuccess}
+          onUrgentStart={playUrgentStart}
+          onTick={playUrgentTick}
+          onTimerExpire={playTimerExpire}
         />
       );
     } else if (isWaitForRoundFinishState(playerState)) {
@@ -294,7 +327,14 @@ const Game = () => {
         />
       );
     } else if (isStoriesState(playerState)) {
-      return <GameFinished stories={playerState.stories} />;
+      return (
+        <GameFinished
+          stories={playerState.stories}
+          onReveal={playRevealPop}
+          onFanfare={playFanfare}
+          onExplosion={playExplosionPop}
+        />
+      );
     } else if (isSpectatorState(playerState)) {
       return (
         <SpectatorView
@@ -327,6 +367,9 @@ const Game = () => {
     setReconnectCount(reconnectCount + 1);
   };
 
+  const showMuteButton =
+    playerState.state !== "loading" && playerState.state !== "join";
+
   return (
     <>
       <ConnectionLostErrorDialog
@@ -334,6 +377,14 @@ const Game = () => {
         handleReconnect={handleReconnect}
       />
       {getComponentForState()}
+      {showMuteButton && (
+        <MuteButton
+          onClick={toggleMute}
+          title={muted ? "Unmute sounds" : "Mute sounds"}
+        >
+          {muted ? "🔇" : "🔊"}
+        </MuteButton>
+      )}
     </>
   );
 };
@@ -360,17 +411,58 @@ const WaitForRoundFinished = ({
   );
 };
 
-const GameFinished = ({ stories }: { stories: StoryContent[] }) => {
+const GameFinished = ({
+  stories,
+  onReveal,
+  onFanfare,
+  onExplosion,
+}: {
+  stories: StoryContent[];
+  onReveal?: () => void;
+  onFanfare?: () => void;
+  onExplosion?: () => void;
+}) => {
   const [showStories, setShowStories] = React.useState(false);
 
   if (!showStories) {
     return (
-      <GameFinishedAnimation handleShowStories={() => setShowStories(true)} />
+      <GameFinishedAnimation
+        handleShowStories={() => setShowStories(true)}
+        onFanfare={onFanfare}
+        onExplosion={onExplosion}
+      />
     );
   } else {
-    return <Stories stories={stories} />;
+    return <Stories stories={stories} onReveal={onReveal} />;
   }
 };
+
+const MuteButton = styled.button`
+  position: fixed;
+  bottom: 2vmin;
+  right: 2vmin;
+  z-index: 100;
+  background: rgba(8, 8, 24, 0.85);
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  color: #00f5ff;
+  border-radius: 50%;
+  width: 6vmin;
+  height: 6vmin;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 3vmin;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: #00f5ff;
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.4);
+  }
+`;
 
 const Message = ({ children }: { children: React.ReactNode }) => {
   return <BigLogoScreen>{children}</BigLogoScreen>;

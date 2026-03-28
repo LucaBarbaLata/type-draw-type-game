@@ -26,6 +26,9 @@ const Draw = ({
   rounds,
   roundTimerSeconds,
   handleDone,
+  onSubmit,
+  onUrgentStart,
+  onTick,
 }: {
   text: string;
   textWriter: PlayerInfo;
@@ -33,6 +36,10 @@ const Draw = ({
   rounds: number;
   roundTimerSeconds: number;
   handleDone: (image: Blob) => void;
+  onSubmit?: () => void;
+  onUrgentStart?: () => void;
+  onTick?: () => void;
+  onTimerExpire?: () => void;
 }) => {
   const [showHelpDialog, setShowHelpDialog] = React.useState(true);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
@@ -58,13 +65,14 @@ const Draw = ({
   const submitDrawing = React.useCallback(() => {
     if (submittedRef.current) return;
     submittedRef.current = true;
+    onSubmit?.();
     setSubmitted(true);
     const imageProvider = imageProviderRef.current!;
     window
       .fetch(imageProvider.getImageDataURL())
       .then((res) => res.blob())
       .then((image) => handleDone(image));
-  }, [handleDone]);
+  }, [handleDone, onSubmit]);
 
   const handleClickDone = () => {
     setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
@@ -72,9 +80,10 @@ const Draw = ({
   };
 
   const handleTimerExpire = React.useCallback(() => {
+    onTimerExpire?.();
     setShowConfirmDialog(false);
     submitDrawing();
-  }, [submitDrawing]);
+  }, [submitDrawing, onTimerExpire]);
 
   if (submitted) {
     return (
@@ -120,7 +129,7 @@ const Draw = ({
         onDone={handleClickDone}
       />
       {roundTimerSeconds > 0 && (
-        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} />
+        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
       )}
       <DrawCanvas
         color={color}
