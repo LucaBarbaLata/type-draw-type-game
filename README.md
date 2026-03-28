@@ -46,7 +46,7 @@ docker build -f Dockerfile_prod -t tdt-game-prod .
 **4. Run:**
 
 ```bash
-docker run -d --restart always --name tdt -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
+docker run --rm -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
 ```
 
 The game is now available at `http://<your-server-ip>:8080/`
