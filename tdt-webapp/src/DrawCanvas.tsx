@@ -97,35 +97,35 @@ const DrawCanvas = ({
     history.push(snapshot);
   };
 
-  let pos: { x: number; y: number } | null = null;
+  const posRef = React.useRef<{ x: number; y: number } | null>(null);
 
   function paint_start(_: CanvasRenderingContext2D, x: number, y: number) {
     saveSnapshot();
-    pos = { x, y };
+    posRef.current = { x, y };
   }
   function paint_move(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    if (pos === null) {
+    if (posRef.current === null) {
       paint_start(ctx, x, y);
     }
     ctx.lineCap = "round";
     ctx.lineWidth = brushPixelSize;
     ctx.strokeStyle = isEraser ? "#ffffff" : color;
     ctx.beginPath();
-    ctx.moveTo(pos!.x, pos!.y);
+    ctx.moveTo(posRef.current!.x, posRef.current!.y);
     ctx.lineTo(x, y);
     ctx.stroke();
-    pos = { x, y };
+    posRef.current = { x, y };
   }
   function paint_end(
     ctx: CanvasRenderingContext2D,
     x: number | null = null,
     y: number | null = null
   ) {
-    if (pos === null) {
+    if (posRef.current === null) {
       return;
     }
-    paint_move(ctx, x === null ? pos.x : x, y === null ? pos.y : y);
-    pos = null;
+    paint_move(ctx, x === null ? posRef.current.x : x, y === null ? posRef.current.y : y);
+    posRef.current = null;
   }
 
   const handleMouseDown = (
