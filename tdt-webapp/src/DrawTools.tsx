@@ -2,7 +2,7 @@ import React from "react";
 
 import { useWindowSize } from "./helpers";
 import { Brush } from "./model";
-import { DrawTool } from "./DrawCanvas";
+import { DrawTool, LayerInfo, ImageProvider, MAX_LAYERS } from "./DrawCanvas";
 
 import Dialog from "./Dialog";
 import ColorPicker from "./ColorPicker";
@@ -16,24 +16,36 @@ const DrawTools = ({
   brushes,
   selectedBrush,
   activeTool,
+  layers,
+  activeLayerIndex,
   triggerHelp,
   onSelectBrush,
   onChangeColor,
   onSetTool,
   onUndo,
   onRedo,
+  onSetActiveLayer,
+  onAddLayer,
+  onDeleteLayer,
+  onToggleLayerVisibility,
   onDone,
 }: {
   color: string;
   brushes: Brush[];
   selectedBrush: Brush;
   activeTool: DrawTool;
+  layers: LayerInfo[];
+  activeLayerIndex: number;
   triggerHelp: () => void;
   onSelectBrush: (brushIndex: number) => void;
   onChangeColor: (color: string) => void;
   onSetTool: (tool: DrawTool) => void;
   onUndo: () => void;
   onRedo: () => void;
+  onSetActiveLayer: (index: number) => void;
+  onAddLayer: () => void;
+  onDeleteLayer: (index: number) => void;
+  onToggleLayerVisibility: (index: number) => void;
   onDone: () => void;
 }) => {
   const brushButton = React.useRef<HTMLDivElement>(null);
@@ -124,6 +136,45 @@ const DrawTools = ({
       <Dialog show={showColorPicker}>
         <ColorPicker handlePickColor={(c) => { onChangeColor(c); setShowColorPicker(false); }} />
       </Dialog>
+
+      {/* Layers panel */}
+      <div className="layers-panel">
+        <div className="layers-panel-header">
+          <span className="layers-panel-title">Layers</span>
+          <div
+            className={`layers-panel-addbtn${layers.length >= MAX_LAYERS ? " disabled" : ""}`}
+            onClick={() => layers.length < MAX_LAYERS && onAddLayer()}
+            title="Add layer"
+          >+</div>
+        </div>
+        <div className="layers-panel-list">
+          {[...layers].reverse().map((layer, reversedIndex) => {
+            const index = layers.length - 1 - reversedIndex;
+            const isActiveLayer = index === activeLayerIndex;
+            return (
+              <div
+                key={layer.id}
+                className={`layer-item${isActiveLayer ? " layer-item-active" : ""}`}
+                onClick={() => onSetActiveLayer(index)}
+              >
+                <div
+                  className="layer-item-vis"
+                  onClick={(e) => { e.stopPropagation(); onToggleLayerVisibility(index); }}
+                  title={layer.visible ? "Hide layer" : "Show layer"}
+                >
+                  {layer.visible ? "◉" : "○"}
+                </div>
+                <span className="layer-item-name">{layer.name}</span>
+                <div
+                  className={`layer-item-del${layers.length <= 1 ? " disabled" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); if (layers.length > 1) onDeleteLayer(index); }}
+                  title="Delete layer"
+                >×</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="tool-button tool-button-done" onClick={onDone}>
         <img src={checkImg} alt="Done" title="Done" />
