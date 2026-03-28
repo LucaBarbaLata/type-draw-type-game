@@ -193,10 +193,6 @@ const Game = () => {
     socketRef.current!.send(image);
   }, []);
 
-  const handleVote = React.useCallback((storyIndex: number) => {
-    send({ action: "vote", content: { storyIndex } });
-  }, []);
-
   const handleSettingsChange = React.useCallback((settings: GameSettings) => {
     send({
       action: "settings",
