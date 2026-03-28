@@ -25,6 +25,7 @@ const Type = ({
   handleDone: (text: string) => void;
 }) => {
   const [text, setText] = React.useState("");
+  const [submitted, setSubmitted] = React.useState(false);
   const submittedRef = React.useRef(false);
 
   const buttonDisabled = isBlank(text);
@@ -35,6 +36,7 @@ const Type = ({
     (value: string) => {
       if (submittedRef.current) return;
       submittedRef.current = true;
+      setSubmitted(true);
       handleDone(value.trim() || "(no response)");
     },
     [handleDone]
@@ -43,6 +45,16 @@ const Type = ({
   const handleTimerExpire = React.useCallback(() => {
     submitText(text);
   }, [submitText, text]);
+
+  if (submitted) {
+    return (
+      <Scrollable>
+        <div className="Type">
+          <div>Waiting for other players to finish typing...</div>
+        </div>
+      </Scrollable>
+    );
+  }
 
   return (
     <Scrollable>

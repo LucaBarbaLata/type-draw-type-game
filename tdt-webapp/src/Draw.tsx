@@ -59,12 +59,14 @@ const Draw = ({
     string | undefined
   >();
 
+  const [submitted, setSubmitted] = React.useState(false);
   const imageProviderRef = React.useRef<ImageProvider>();
   const submittedRef = React.useRef(false);
 
   const submitDrawing = React.useCallback(() => {
     if (submittedRef.current) return;
     submittedRef.current = true;
+    setSubmitted(true);
     const imageProvider = imageProviderRef.current!;
     const imageDataUrl = imageProvider.getImageDataURL();
     window
@@ -108,6 +110,14 @@ const Draw = ({
     setShowConfirmDialog(false);
     submitDrawing();
   }, [submitDrawing]);
+
+  if (submitted) {
+    return (
+      <div className="Draw-waiting">
+        Waiting for other players to finish drawing...
+      </div>
+    );
+  }
 
   return (
     <div className="Draw">

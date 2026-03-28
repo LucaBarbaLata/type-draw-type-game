@@ -78,19 +78,21 @@ const DrawTools = ({
       <div className="tool-button tool-button-help" onClick={triggerHelp}>
         <img src={helpImg} alt="Help" title="Help (Show text to draw)" />
       </div>
-      <div
-        className="tool-button tool-button-undo"
-        onClick={onUndo}
-        title="Undo"
-      >
-        ↩
-      </div>
-      <div
-        className={`tool-button tool-button-eraser${isEraser ? " tool-button-active" : ""}`}
-        onClick={onToggleEraser}
-        title={isEraser ? "Eraser (active)" : "Eraser"}
-      >
-        ✕
+      <div className="tool-button-row">
+        <div
+          className="tool-button tool-button-undo"
+          onClick={onUndo}
+          title="Undo"
+        >
+          ↩
+        </div>
+        <div
+          className={`tool-button tool-button-eraser${isEraser ? " tool-button-active" : ""}`}
+          onClick={onToggleEraser}
+          title={isEraser ? "Eraser (active)" : "Eraser"}
+        >
+          ✕
+        </div>
       </div>
       <BrushButton
         size={selectedBrush.displaySize}
