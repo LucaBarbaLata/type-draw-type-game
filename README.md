@@ -1,7 +1,5 @@
 # Type Draw Type Game
 
-![Build & Publish Docker images](https://github.com/Bronkoknorb/type-draw-type-game/workflows/Build%20&%20Publish%20Docker%20images/badge.svg)
-
 ![Type Draw Type Logo](/tdt-webapp/src/img/logo.svg?raw=true&sanitize=true)
 
 _Type Draw Type_ is a simple and fun game for you and your friends.
@@ -12,103 +10,126 @@ In the next round you get one of the drawings and have to describe it with anoth
 This goes on, by alternately typing and drawing, until all players have participated in every chain (story).
 In the end everybody sees all the stories and can wonder about how the initial sentences have transformed in unexpected ways!
 
-Play online at: https://draw.czedik.at
-
 This is an open-source Web/mobile version of the pen-and-paper game Telephone Pictionary (also known as Paper Telephone and "Eat Poop You Cat"). It can be installed on mobile phones (Android and iPhone) by using the "Add to Home Screen" functionality.
 
 Alternative versions of the game are: [Drawception](https://drawception.com/), [Interference](https://www.playinterference.com/), [Doodle Or Die](http://doodleordie.com/), [Broken Picturephone](https://www.brokenpicturephone.com/), [Drawphone](https://github.com/tannerkrewson/drawphone), [Gartic Phone](https://garticphone.com/), Telestrations, Cranium Scribblish, Stille Post extrem, Scrawl (offline Board games).
 
-## Installation on own server
+## Installation on your own server
 
-Prerequisites:
+### Prerequisites
 
-- Install [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) installed and running
 
-Pull the newest image from [Docker Hub](https://hub.docker.com/r/bronkoknorb/type-draw-type-game) and tag it with a simpler name:
+### Steps
 
-    docker pull bronkoknorb/type-draw-type-game && \
-    docker tag bronkoknorb/type-draw-type-game tdt-game
+**1. Clone the repository:**
 
-To run the Docker image (forwarding the internal port 8080 to the external port 8081):
+```bash
+git clone https://github.com/LucaBarbaLata/type-draw-type-game.git
+cd type-draw-type-game
+```
 
-    docker run -p 8081:8080 --volume ~/tdt-data:/tdt-data tdt-game
+**2. Install Node.js and update the yarn lockfile** (required once to resolve dependencies):
 
-Note that `~/tdt-data` is a directory on the host where game data will be stored.
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+corepack enable
+cd tdt-webapp && yarn && cd ..
+```
 
-You can then open the game on http://localhost:8081/
+**3. Build the app:**
 
-To run the Docker image (in the background) and do automatic restarts (e.g. when the machine gets rebooted or the application crashed):
+```bash
+./build.sh
+```
 
-    docker stop tdt
-    docker rm tdt
-    docker run -d --restart always --name tdt -p 8081:8080 --volume ~/tdt-data:/tdt-data tdt-game
+This builds the webapp and server inside Docker and extracts the JAR to `./build/server.jar`.
 
-To check the logs of the running Docker container:
+**4. Build the runtime image:**
 
-    docker logs tdt
+```bash
+docker build -f Dockerfile_prod -t tdt-game-prod .
+```
+
+**5. Run:**
+
+```bash
+docker run -d --restart always --name tdt -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
+```
+
+The game is now available at `http://<your-server-ip>:8080/`
+
+> `tdt-data` is a named Docker volume where game data is persisted.
+
+**To check logs:**
+
+```bash
+docker logs tdt
+```
+
+**To stop/update:**
+
+```bash
+docker stop tdt && docker rm tdt
+# pull latest changes, rebuild, then run again
+```
 
 ## Development
 
 ### Backend Server
 
-The Backend is developed using Spring Boot in Java and built with Gradle.
+The backend is built with Spring Boot (Java) and Gradle.
 
-Prerequisites:
+Prerequisites: Java 21+
 
-- Install Java (tested with JDK version 21)
+```bash
+cd tdt-server
+./gradlew bootRun
+```
 
-Run the server in development mode:
+For live-reloads, run in a second terminal:
 
-    cd tdt-server
-    ./gradlew bootRun
-
-To get live-reloads on changes, run in a second terminal:
-
-    ./gradlew build --continuous
+```bash
+./gradlew build --continuous
+```
 
 See also [tdt-server/HELP.md](tdt-server/HELP.md).
 
 ### Frontend Web App
 
-The Frontend is a React App written in Typescript and built with yarn.
+The frontend is a React + TypeScript app built with Vite and yarn.
 
-Prerequisites:
+Prerequisites: Node.js 20+, yarn (via `corepack enable`)
 
-- Install [yarn](https://yarnpkg.com/)
+```bash
+cd tdt-webapp
+yarn
+yarn run dev
+```
 
-Run the frontend in development mode:
+This starts a dev server with hot reload and proxies API requests to the backend on port 8080.
 
-    cd tdt-webapp
-    yarn
-    yarn run dev
-
-This will also automatically start a proxy server which forwards API requests to the backend (running on port 8080).
-
-See also [README-webapp.md](tdt-webapp/README-webapp.md).
+See also [tdt-webapp/README-webapp.md](tdt-webapp/README-webapp.md).
 
 ## Build
 
-To build the app using Docker:
+To build everything (webapp + server) inside Docker:
 
-    ./build-prod.sh
+```bash
+./build.sh
+```
 
-### Multi-Architecture Build
+Then build the production runtime image:
 
-I want to build ARM Docker images to run on my Raspberry Pi:
+```bash
+docker build -f Dockerfile_prod -t tdt-game-prod .
+```
 
-This repository contains a Github Action Workflow which builds the multi-arch images and pushes them to a Docker registry, see [docker-image.yml](.github/workflows/docker-image.yml).
+## Credits
 
-To achieve the same locally follow the instructions at: https://docs.docker.com/build/building/multi-platform/
+Original game by **Hermann Czedik-Eysenberg** — git-dev@hermann.czedik.net
 
-Then run this to build and push multi-architecture images:
-
-    ./build-prod-multi-arch-push.sh
-
-Note: This will also try to push the built images to Docker Hub. You need to login first (docker login).
-
-## Author
-
-Copyright by Hermann Czedik-Eysenberg  
-git-dev@hermann.czedik.net
+Forked and improved by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI overhaul, new drawing tools (flood fill, shapes, redo), animated waiting messages, QR code lobby, auto-reconnect, and story image export.
 
 License: [GNU AFFERO GENERAL PUBLIC LICENSE](LICENSE)
