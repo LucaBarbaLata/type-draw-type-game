@@ -42,6 +42,9 @@ const DrawCanvas = ({
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
   const historyRef = React.useRef<ImageData[]>([]);
+  const scaleRef = React.useRef(1);
+
+  const [cursorPos, setCursorPos] = React.useState<{ x: number; y: number } | null>(null);
 
   const canvasRefCallback = React.useCallback(
     (canvasElement: HTMLCanvasElement | null) => {
@@ -68,6 +71,7 @@ const DrawCanvas = ({
     if (canvas !== null) {
       const canvasSize = getCanvasSize(canvas);
       const scale = canvasSize.width / canvas.width;
+      scaleRef.current = scale;
       handleScaleChange(scale);
     }
   }, [canvas, windowSize, handleScaleChange]);
@@ -138,6 +142,7 @@ const DrawCanvas = ({
   const handleMouseMove = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
+    setCursorPos({ x: event.clientX, y: event.clientY });
     const canvasTarget = event.currentTarget;
     const { x, y } = getPositionInCanvas(canvasTarget, event);
     const ctx = getCanvas2DContext(canvasTarget);
@@ -157,6 +162,7 @@ const DrawCanvas = ({
   const handleMouseOut = (
     event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
   ) => {
+    setCursorPos(null);
     const canvasTarget = event.currentTarget;
     const ctx = getCanvas2DContext(canvasTarget);
     const { x, y } = getPositionInCanvas(canvasTarget, event);
@@ -167,8 +173,10 @@ const DrawCanvas = ({
     if (event.touches.length !== 1) {
       return;
     }
+    const touch = event.touches[0];
+    setCursorPos({ x: touch.clientX, y: touch.clientY });
     const canvasTarget = event.currentTarget;
-    const { x, y } = getPositionInCanvas(canvasTarget, event.touches[0]);
+    const { x, y } = getPositionInCanvas(canvasTarget, touch);
     const ctx = getCanvas2DContext(canvasTarget);
     paint_start(ctx, x, y);
   };
@@ -177,21 +185,46 @@ const DrawCanvas = ({
     const canvasTarget = event.currentTarget;
     const ctx = getCanvas2DContext(canvasTarget);
     if (event.touches.length !== 1) {
+      setCursorPos(null);
       paint_end(ctx);
       return;
     }
-    const { x, y } = getPositionInCanvas(canvasTarget, event.touches[0]);
+    const touch = event.touches[0];
+    setCursorPos({ x: touch.clientX, y: touch.clientY });
+    const { x, y } = getPositionInCanvas(canvasTarget, touch);
     paint_move(ctx, x, y);
   };
   const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
+    setCursorPos(null);
     const canvasTarget = event.currentTarget;
     const ctx = getCanvas2DContext(canvasTarget);
     paint_end(ctx);
   };
 
+  const previewSize = Math.max(4, brushPixelSize * scaleRef.current);
+
   return (
     <div className="Draw-canvas">
+      {cursorPos && (
+        <div
+          style={{
+            position: "fixed",
+            left: cursorPos.x,
+            top: cursorPos.y,
+            width: previewSize,
+            height: previewSize,
+            transform: "translate(-50%, -50%)",
+            borderRadius: "50%",
+            border: `1.5px solid ${isEraser ? "#555" : color}`,
+            backgroundColor: isEraser ? "rgba(255,255,255,0.6)" : "transparent",
+            boxShadow: `0 0 0 1px ${isEraser ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.6)"}`,
+            pointerEvents: "none",
+            zIndex: 100,
+            boxSizing: "border-box",
+          }}
+        />
+      )}
       <canvas
         width="1440"
         height="1080"
@@ -203,7 +236,7 @@ const DrawCanvas = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         ref={canvasRefCallback}
-        style={{ cursor: isEraser ? "cell" : "crosshair" }}
+        style={{ cursor: cursorPos ? "none" : "crosshair" }}
       ></canvas>
     </div>
   );
