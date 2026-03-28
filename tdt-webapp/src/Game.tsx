@@ -149,6 +149,7 @@ const Game = () => {
   const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
   const notifIdRef = React.useRef(0);
   const prevWaitingRef = React.useRef<PlayerInfo[] | null>(null);
+  const prevIsTypeRoundRef = React.useRef(false);
 
   React.useEffect(() => {
     if (isWaitForRoundFinishState(playerState)) {
@@ -165,7 +166,17 @@ const Game = () => {
         }
       }
       prevWaitingRef.current = playerState.waitingForPlayers;
+      prevIsTypeRoundRef.current = playerState.isTypeRound;
     } else {
+      // Leaving waitForRoundFinish: any players still in prev finished last
+      const prev = prevWaitingRef.current;
+      if (prev !== null && prev.length > 0) {
+        const action: "drawing" | "typing" = prevIsTypeRoundRef.current ? "typing" : "drawing";
+        setNotifications((ns) => [
+          ...ns,
+          ...prev.map((p) => ({ id: ++notifIdRef.current, player: p, action })),
+        ]);
+      }
       prevWaitingRef.current = null;
     }
   }, [playerState]);

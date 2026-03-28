@@ -22,7 +22,10 @@ const HowToButtonAndDialog = () => {
       <Dialog show={show}>
         <Scrollable>
           <GuideWrapper>
-            <StepCounter>{step + 1} / {STEPS.length}</StepCounter>
+            <TopRow>
+              <StepCounter>{step + 1} / {STEPS.length}</StepCounter>
+              <CloseButton onClick={close} title="Close">✕</CloseButton>
+            </TopRow>
 
             <VisualBox>{currentStep.visual}</VisualBox>
 
@@ -180,12 +183,35 @@ const GuideWrapper = styled.div`
   box-sizing: border-box;
 `;
 
+const TopRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+`;
+
 const StepCounter = styled.div`
   font-size: 1.4vmin;
   color: rgba(0, 245, 255, 0.4);
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  align-self: flex-end;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: rgba(0, 245, 255, 0.4);
+  font-size: 2.2vmin;
+  min-font-size: 14px;
+  cursor: pointer;
+  padding: 0.4vmin 0.6vmin;
+  line-height: 1;
+  border-radius: 0.4vmin;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #00f5ff;
+  }
 `;
 
 const VisualBox = styled.div`
