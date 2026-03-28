@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
+import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.VoteAction;
 
 public class WebSocketHandler extends AbstractWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(WebSocketHandler.class);
@@ -81,7 +83,13 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
             JoinAction joinAction = JSONHelper.objectMapper.treeToValue(content, JoinAction.class);
             gameManager.handleJoinAction(client, joinAction);
         } else if ("start".equals(action)) {
-            gameManager.handleStartAction(client);
+            StartAction startAction = content != null
+                    ? JSONHelper.objectMapper.treeToValue(content, StartAction.class)
+                    : new StartAction(0, 0);
+            gameManager.handleStartAction(client, startAction);
+        } else if ("vote".equals(action)) {
+            VoteAction voteAction = JSONHelper.objectMapper.treeToValue(content, VoteAction.class);
+            gameManager.handleVoteAction(client, voteAction);
         } else if ("type".equals(action)) {
             TypeAction typeAction = JSONHelper.objectMapper.treeToValue(content, TypeAction.class);
             gameManager.handleTypeAction(client, typeAction);

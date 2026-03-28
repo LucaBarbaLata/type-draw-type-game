@@ -3,6 +3,7 @@ import React from "react";
 import { isBlank } from "./helpers";
 import Scrollable from "./Scrollable";
 import { PlayerInfo } from "./model";
+import RoundTimer from "./RoundTimer";
 
 import "./Type.css";
 
@@ -13,22 +14,41 @@ const Type = ({
   rounds,
   drawingSrc,
   artist,
+  roundTimerSeconds,
   handleDone,
 }: {
   round: number;
   rounds: number;
   drawingSrc: string | null;
   artist: PlayerInfo | null;
+  roundTimerSeconds: number;
   handleDone: (text: string) => void;
 }) => {
   const [text, setText] = React.useState("");
+  const submittedRef = React.useRef(false);
 
   const buttonDisabled = isBlank(text);
 
   const first = drawingSrc === null;
 
+  const submitText = React.useCallback(
+    (value: string) => {
+      if (submittedRef.current) return;
+      submittedRef.current = true;
+      handleDone(value.trim() || "(no response)");
+    },
+    [handleDone]
+  );
+
+  const handleTimerExpire = React.useCallback(() => {
+    submitText(text);
+  }, [submitText, text]);
+
   return (
     <Scrollable>
+      {roundTimerSeconds > 0 && (
+        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} />
+      )}
       <div className="Type">
         <div>
           <div className="small">
@@ -62,7 +82,7 @@ const Type = ({
         <button
           className="button"
           disabled={buttonDisabled}
-          onClick={() => handleDone(text.trim())}
+          onClick={() => submitText(text)}
         >
           Done
         </button>

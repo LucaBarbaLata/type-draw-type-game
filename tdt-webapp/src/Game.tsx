@@ -9,6 +9,7 @@ import BigLogoScreen from "./BigLogoScreen";
 import {
   WaitForPlayersScreen,
   WaitForGameStartScreen,
+  GameSettings,
 } from "./BeforeGameStartScreens";
 import GameFinishedAnimation from "./GameFinishedAnimation";
 import Stories from "./Stories";
@@ -47,6 +48,7 @@ interface TypeState extends PlayerState {
   rounds: number;
   drawingSrc: string | null;
   artist: PlayerInfo | null;
+  roundTimerSeconds: number;
 }
 
 function isTypeState(playerState: PlayerState): playerState is TypeState {
@@ -59,6 +61,7 @@ interface DrawState extends PlayerState {
   textWriter: PlayerInfo;
   round: number;
   rounds: number;
+  roundTimerSeconds: number;
 }
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
@@ -80,10 +83,15 @@ function isWaitForRoundFinishState(
 interface StoriesState extends PlayerState {
   state: "stories";
   stories: StoryContent[];
+  votesByStory: number[];
 }
 
 function isStoriesState(playerState: PlayerState): playerState is StoriesState {
   return playerState.state === "stories";
+}
+
+function isSpectatorState(playerState: PlayerState): boolean {
+  return playerState.state === "spectator";
 }
 
 function isFinalState(newPlayerState: PlayerState) {
@@ -91,13 +99,14 @@ function isFinalState(newPlayerState: PlayerState) {
     newPlayerState.state === "unknownGame" ||
     newPlayerState.state === "alreadyStartedGame" ||
     isStoriesState(newPlayerState)
+    // note: "spectator" is NOT final — keep socket open to receive StoriesState when game ends
   );
 }
 
 interface Action {
   action: string;
   content?: {
-    [key: string]: string;
+    [key: string]: string | number;
   };
 }
 
@@ -105,7 +114,7 @@ const Game = () => {
   const { gameId } = useParams();
   const gameIdNotNull = gameId!;
 
-  const [playerState, setPlayerState] = React.useState({ state: "loading" });
+  const [playerState, setPlayerState] = React.useState<PlayerState>({ state: "loading" });
 
   const [connectionError, setConnectionError] = React.useState(false);
 
@@ -174,6 +183,10 @@ const Game = () => {
     socketRef.current!.send(image);
   }, []);
 
+  const handleVote = React.useCallback((storyIndex: number) => {
+    send({ action: "vote", content: { storyIndex } });
+  }, []);
+
   const getComponentForState = () => {
     if (playerState.state === "loading") {
       return <LoadingGame />;
@@ -192,8 +205,14 @@ const Game = () => {
 
       return <Join handleDone={handleJoinDone} />;
     } else if (isWaitForPlayersState(playerState)) {
-      const handleStartGame = () => {
-        send({ action: "start" });
+      const handleStartGame = (settings: GameSettings) => {
+        send({
+          action: "start",
+          content: {
+            roundTimerSeconds: settings.roundTimerSeconds,
+            maxPlayers: settings.maxPlayers,
+          },
+        });
       };
 
       return (
@@ -216,6 +235,7 @@ const Game = () => {
           rounds={playerState.rounds}
           drawingSrc={playerState.drawingSrc}
           artist={playerState.artist}
+          roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           handleDone={handleTypeDone}
         />
       );
@@ -226,6 +246,7 @@ const Game = () => {
           textWriter={playerState.textWriter}
           round={playerState.round}
           rounds={playerState.rounds}
+          roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           handleDone={handleDrawDone}
         />
       );
@@ -237,12 +258,24 @@ const Game = () => {
         />
       );
     } else if (isStoriesState(playerState)) {
-      return <GameFinished stories={playerState.stories} />;
+      return (
+        <GameFinished
+          stories={playerState.stories}
+          votesByStory={playerState.votesByStory ?? []}
+          onVote={handleVote}
+        />
+      );
+    } else if (isSpectatorState(playerState)) {
+      return (
+        <Message>
+          You are spectating. Stories will appear here once the game ends.
+        </Message>
+      );
     } else if (playerState.state === "alreadyStartedGame") {
       return (
         <Message>
-          Sorry, the game has already started. You will see the created stories,
-          once that game is finished.
+          Sorry, the game is full or has already started. You will see the
+          created stories once that game is finished.
         </Message>
       );
     } else {
@@ -293,7 +326,15 @@ const WaitForRoundFinished = ({
   );
 };
 
-const GameFinished = ({ stories }: { stories: StoryContent[] }) => {
+const GameFinished = ({
+  stories,
+  votesByStory,
+  onVote,
+}: {
+  stories: StoryContent[];
+  votesByStory: number[];
+  onVote: (storyIndex: number) => void;
+}) => {
   const [showStories, setShowStories] = React.useState(false);
 
   if (!showStories) {
@@ -301,7 +342,9 @@ const GameFinished = ({ stories }: { stories: StoryContent[] }) => {
       <GameFinishedAnimation handleShowStories={() => setShowStories(true)} />
     );
   } else {
-    return <Stories stories={stories} />;
+    return (
+      <Stories stories={stories} votesByStory={votesByStory} onVote={onVote} />
+    );
   }
 };
 

@@ -6,17 +6,19 @@ import net.czedik.hermann.tdt.PlayerInfo;
 
 /**
  * DrawState
- * 
- * @param round      Current round number (1-based)
- * @param rounds     Total number of rounds
- * @param text       Text that should be drawn
- * @param textWriter author of the text
+ *
+ * @param round            Current round number (1-based)
+ * @param rounds           Total number of rounds
+ * @param text             Text that should be drawn
+ * @param textWriter       author of the text
+ * @param roundTimerSeconds seconds allowed per round, 0 means no timer
  */
 public record DrawState(
         int round,
         int rounds,
         String text,
-        PlayerInfo textWriter) implements PlayerState {
+        PlayerInfo textWriter,
+        int roundTimerSeconds) implements PlayerState {
 
     public DrawState {
         if (round < 1)

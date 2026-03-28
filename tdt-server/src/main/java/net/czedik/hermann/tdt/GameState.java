@@ -21,6 +21,21 @@ public class GameState {
 
     public Story[] stories = null;
 
+    /**
+     * Timer per round in seconds. 0 means no timer.
+     */
+    public int roundTimerSeconds = 0;
+
+    /**
+     * Maximum number of players. 0 means unlimited.
+     */
+    public int maxPlayers = 0;
+
+    /**
+     * Votes cast by players: playerId -> storyIndex
+     */
+    public java.util.Map<String, Integer> votes = new java.util.HashMap<>();
+
     public enum State {
         WaitingForPlayers,
         Started,

@@ -28,13 +28,16 @@ import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
+import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.AlreadyStartedGameState;
 import net.czedik.hermann.tdt.playerstate.DrawState;
 import net.czedik.hermann.tdt.playerstate.FrontendStory;
 import net.czedik.hermann.tdt.playerstate.FrontendStoryElement;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
+import net.czedik.hermann.tdt.playerstate.SpectatorState;
 import net.czedik.hermann.tdt.playerstate.StoriesState;
 import net.czedik.hermann.tdt.playerstate.TypeState;
 import net.czedik.hermann.tdt.playerstate.WaitForGameStartState;
@@ -57,6 +60,8 @@ public class Game {
 
     private final Map<Player, Set<Client>> playerToClients = new HashMap<>();
 
+    private final Set<Client> spectatorClients = new HashSet<>();
+
     public Game(String gameId, Path gameDir, Player creator) {
         this(gameId, gameDir, new GameState());
 
@@ -69,13 +74,12 @@ public class Game {
         this.gameState = Objects.requireNonNull(gameState);
     }
 
-    // returns whether the client has been added as a player to the game
+    // returns whether the client should remain associated with this game (player or spectator)
     public boolean access(Client client, AccessAction accessAction) {
         Player player = getPlayerById(accessAction.playerId());
         if (player == null) {
             log.info("Game {}: New player {} accessing via client {}", gameId, accessAction.playerId(), client.getId());
-            client.send(getStateForAccessByNewPlayer());
-            return false;
+            return handleAccessByNewPlayer(client);
         } else {
             log.info("Game {}: New client {} connected for known player {}", gameId, client.getId(), player.id());
             addClientForPlayer(client, player);
@@ -88,14 +92,22 @@ public class Game {
         return gameState.players.stream().filter(p -> p.id().equals(playerId)).findAny().orElse(null);
     }
 
-    private PlayerState getStateForAccessByNewPlayer() {
+    // Returns true if the client should remain associated (spectator or can join), false if not
+    private boolean handleAccessByNewPlayer(Client client) {
         switch (gameState.state) {
             case WaitingForPlayers:
-                return new JoinState();
+                client.send(new JoinState());
+                return false;
             case Started:
-                return new AlreadyStartedGameState();
+                log.info("Game {}: Client {} joining as spectator (game in progress)", gameId, client.getId());
+                spectatorClients.add(client);
+                client.send(new SpectatorState());
+                return true;
             case Finished:
-                return getFinishedState();
+                log.info("Game {}: Client {} joining as spectator (game finished)", gameId, client.getId());
+                spectatorClients.add(client);
+                client.send(getFinishedState());
+                return true;
             default:
                 throw new IllegalStateException("Unknown state " + gameState.state);
         }
@@ -109,6 +121,11 @@ public class Game {
     // returns whether the client has been added as a player to the game
     public boolean join(Client client, JoinAction joinAction) {
         if (gameState.state == GameState.State.WaitingForPlayers) {
+            if (gameState.maxPlayers > 0 && gameState.players.size() >= gameState.maxPlayers) {
+                log.info("Game {}: Join rejected — game is full ({}/{})", gameId, gameState.players.size(), gameState.maxPlayers);
+                client.send(new AlreadyStartedGameState());
+                return false;
+            }
             log.info("Game {}: Player {} joining with name '{}' via client {}", gameId, joinAction.playerId(),
                     joinAction.name(), client.getId());
             Player player = getPlayerById(joinAction.playerId());
@@ -123,14 +140,24 @@ public class Game {
             return true;
         } else {
             log.info("Game {}: Join not possible in state {}", gameId, gameState.state);
-            client.send(getStateForAccessByNewPlayer());
-            return false;
+            return handleAccessByNewPlayer(client);
         }
     }
 
     private void updateStateForAllPlayers() {
         for (Player player : gameState.players) {
             updateStateForPlayer(player);
+        }
+        updateStateForSpectators();
+    }
+
+    private void updateStateForSpectators() {
+        if (spectatorClients.isEmpty()) return;
+        PlayerState spectatorState = gameState.state == GameState.State.Finished
+                ? getFinishedState()
+                : new SpectatorState();
+        for (Client client : spectatorClients) {
+            client.send(spectatorState);
         }
     }
 
@@ -155,7 +182,19 @@ public class Game {
     }
 
     private PlayerState getFinishedState() {
-        return new StoriesState(mapStoriesToFrontendStories());
+        int[] votesByStory = computeVotesByStory();
+        return new StoriesState(mapStoriesToFrontendStories(), votesByStory);
+    }
+
+    private int[] computeVotesByStory() {
+        int numStories = gameState.stories != null ? gameState.stories.length : 0;
+        int[] counts = new int[numStories];
+        for (int storyIndex : gameState.votes.values()) {
+            if (storyIndex >= 0 && storyIndex < numStories) {
+                counts[storyIndex]++;
+            }
+        }
+        return counts;
     }
 
     private FrontendStory[] mapStoriesToFrontendStories() {
@@ -204,19 +243,21 @@ public class Game {
         int storyIndex = getCurrentStoryIndexForPlayer(player);
         String text = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
         Player previousPlayer = getPreviousPlayerForStory(storyIndex);
-        return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text, mapPlayerToPlayerInfo(previousPlayer));
+        return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
+                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds);
     }
 
     private PlayerState getTypeState(Player player) {
         int roundOneBased = gameState.round + 1;
         int rounds = gameState.gameMatrix.length;
         if (gameState.round == 0) {
-            return new TypeState(roundOneBased, rounds);
+            return new TypeState(roundOneBased, rounds, gameState.roundTimerSeconds);
         } else {
             int storyIndex = getCurrentStoryIndexForPlayer(player);
             String imageFilename = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
             Player previousPlayer = getPreviousPlayerForStory(storyIndex);
-            return new TypeState(roundOneBased, rounds, getDrawingSrc(imageFilename), mapPlayerToPlayerInfo(previousPlayer));
+            return new TypeState(roundOneBased, rounds, getDrawingSrc(imageFilename),
+                    mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds);
         }
     }
 
@@ -266,6 +307,8 @@ public class Game {
     }
 
     public void clientDisconnected(Client client) {
+        spectatorClients.remove(client);
+
         Player player = clientToPlayer.remove(client);
         if (player == null) {
             log.info("Game {}: Client {} disconnect. Not a player in this game.", gameId, client.getId());
@@ -287,7 +330,7 @@ public class Game {
         }
     }
 
-    public void start(Client client) {
+    public void start(Client client, StartAction startAction) {
         Player player = clientToPlayer.get(client);
         if (player == null) {
             log.warn("Game {}: Cannot start game. Client {} is not a known player", gameId, client.getId());
@@ -300,6 +343,11 @@ public class Game {
         if (!player.isCreator()) {
             log.warn("Game {}: Non-creator {} cannot start the game (client: {})", gameId, player.id(), client.getId());
             return;
+        }
+
+        if (startAction != null) {
+            gameState.roundTimerSeconds = Math.max(0, startAction.roundTimerSeconds());
+            gameState.maxPlayers = Math.max(0, startAction.maxPlayers());
         }
 
         if (gameState.players.size() > 1) {
@@ -340,7 +388,7 @@ public class Game {
         }
         String text = typeAction.text();
         if (StringUtils.isEmpty(text)) {
-            throw new IllegalArgumentException("Empty text");
+            text = "(no response)";
         }
         int maxTextLength = 2000; // same limit as in webapp code
         if (text.length() > maxTextLength) {
@@ -348,6 +396,10 @@ public class Game {
         }
 
         Story story = getCurrentStoryForPlayer(player);
+        if (story.elements[gameState.round] != null) {
+            log.warn("Game {}: Player {} already submitted for round {}", gameId, player.id(), gameState.round);
+            return;
+        }
         story.elements[gameState.round] = StoryElement.createTextElement(text);
 
         checkAndHandleRoundFinished();
@@ -395,6 +447,10 @@ public class Game {
         }
 
         Story story = getCurrentStoryForPlayer(player);
+        if (story.elements[gameState.round] != null) {
+            log.warn("Game {}: Player {} already submitted drawing for round {}", gameId, player.id(), gameState.round);
+            return;
+        }
 
         String imageName = UUID.randomUUID().toString() + ".png";
         Path imagePath = gameDir.resolve(imageName);
@@ -408,6 +464,28 @@ public class Game {
 
         checkAndHandleRoundFinished();
 
+        updateStateForAllPlayers();
+    }
+
+    public void vote(Client client, VoteAction voteAction) {
+        Player player = clientToPlayer.get(client);
+        if (player == null) {
+            log.warn("Game {}: Cannot vote. Client {} is not a known player", gameId, client.getId());
+            return;
+        }
+        if (gameState.state != GameState.State.Finished) {
+            log.warn("Game {}: Ignoring vote in state {}", gameId, gameState.state);
+            return;
+        }
+        int storyIndex = voteAction.storyIndex();
+        if (storyIndex < 0 || storyIndex >= gameState.stories.length) {
+            log.warn("Game {}: Invalid story index {} from player {}", gameId, storyIndex, player.id());
+            return;
+        }
+        gameState.votes.put(player.id(), storyIndex);
+        log.info("Game {}: Player {} voted for story {}", gameId, player.id(), storyIndex);
+
+        storeState();
         updateStateForAllPlayers();
     }
 

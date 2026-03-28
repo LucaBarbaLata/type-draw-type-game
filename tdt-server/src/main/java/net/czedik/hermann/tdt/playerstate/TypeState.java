@@ -26,22 +26,29 @@ public class TypeState implements PlayerState {
      */
     public final PlayerInfo artist;
 
-    public TypeState(int round, int rounds) {
+    /**
+     * Seconds allowed per round. 0 means no timer.
+     */
+    public final int roundTimerSeconds;
+
+    public TypeState(int round, int rounds, int roundTimerSeconds) {
         if (round < 1)
             throw new IllegalArgumentException("Round must be positive number");
         this.round = round;
         this.rounds = rounds;
         this.drawingSrc = null;
         this.artist = null;
+        this.roundTimerSeconds = roundTimerSeconds;
     }
 
-    public TypeState(int round, int rounds, String drawingSrc, PlayerInfo artist) {
+    public TypeState(int round, int rounds, String drawingSrc, PlayerInfo artist, int roundTimerSeconds) {
         if (round < 1)
             throw new IllegalArgumentException("Round must be positive number");
         this.round = round;
         this.rounds = rounds;
         this.drawingSrc = Objects.requireNonNull(drawingSrc);
         this.artist = Objects.requireNonNull(artist);
+        this.roundTimerSeconds = roundTimerSeconds;
     }
 
     @Override

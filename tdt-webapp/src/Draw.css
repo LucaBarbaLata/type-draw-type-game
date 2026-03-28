@@ -35,7 +35,6 @@
   display: block;
   max-width: 100%;
   max-height: 100vh;
-  cursor: crosshair;
   border-radius: 2vmin;
 }
 
@@ -64,6 +63,21 @@
 
 .tool-button-done {
   background-color: #4caf50;
+}
+
+.tool-button-undo {
+  background-color: #555;
+  font-size: 2.5vmin;
+}
+
+.tool-button-eraser {
+  background-color: #888;
+  font-size: 2.5vmin;
+}
+
+.tool-button-active {
+  outline: 0.5vmin solid #fff;
+  outline-offset: 0.3vmin;
 }
 
 .tool-button img {

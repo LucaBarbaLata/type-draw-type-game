@@ -3,6 +3,7 @@ import { useWindowSize, getCanvasSize } from "./helpers";
 
 export interface ImageProvider {
   getImageDataURL: () => string;
+  undo: () => void;
 }
 
 // gets position in "natural" canvas coordinates for mouse/touch events
@@ -23,18 +24,24 @@ function getPositionInCanvas(
   return { x, y };
 }
 
+const MAX_UNDO_HISTORY = 50;
+
 const DrawCanvas = ({
   color,
   brushPixelSize,
+  isEraser,
   imageProviderRef,
   handleScaleChange,
 }: {
   color: string;
   brushPixelSize: number;
+  isEraser: boolean;
   imageProviderRef: React.MutableRefObject<ImageProvider | undefined>;
   handleScaleChange: (scale: number) => void;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
+
+  const historyRef = React.useRef<ImageData[]>([]);
 
   const canvasRefCallback = React.useCallback(
     (canvasElement: HTMLCanvasElement | null) => {
@@ -42,6 +49,13 @@ const DrawCanvas = ({
         setCanvas(canvasElement);
         imageProviderRef.current = {
           getImageDataURL: () => canvasElement.toDataURL("image/png"),
+          undo: () => {
+            const history = historyRef.current;
+            if (history.length === 0) return;
+            const ctx = getCanvas2DContext(canvasElement);
+            const snapshot = history.pop()!;
+            ctx.putImageData(snapshot, 0, 0);
+          },
         };
       }
     },
@@ -68,9 +82,21 @@ const DrawCanvas = ({
   // initial clear
   React.useEffect(clearCanvas, [canvas]);
 
+  const saveSnapshot = () => {
+    if (canvas === null) return;
+    const ctx = getCanvas2DContext(canvas);
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const history = historyRef.current;
+    if (history.length >= MAX_UNDO_HISTORY) {
+      history.shift();
+    }
+    history.push(snapshot);
+  };
+
   let pos: { x: number; y: number } | null = null;
 
   function paint_start(_: CanvasRenderingContext2D, x: number, y: number) {
+    saveSnapshot();
     pos = { x, y };
   }
   function paint_move(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -79,7 +105,7 @@ const DrawCanvas = ({
     }
     ctx.lineCap = "round";
     ctx.lineWidth = brushPixelSize;
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = isEraser ? "#ffffff" : color;
     ctx.beginPath();
     ctx.moveTo(pos!.x, pos!.y);
     ctx.lineTo(x, y);
@@ -177,6 +203,7 @@ const DrawCanvas = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         ref={canvasRefCallback}
+        style={{ cursor: isEraser ? "cell" : "crosshair" }}
       ></canvas>
     </div>
   );

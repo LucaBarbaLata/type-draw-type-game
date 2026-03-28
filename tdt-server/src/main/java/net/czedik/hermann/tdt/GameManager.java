@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
 import net.czedik.hermann.tdt.GameLoader.GameRef;
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
+import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.UnknownGameState;
 
 @Service
@@ -197,14 +199,25 @@ public class GameManager {
         return clientToGameRef.get(client);
     }
 
-    public void handleStartAction(Client client) {
+    public void handleStartAction(Client client, StartAction startAction) {
         GameRef gameRef = getGameRefForClient(client);
         if (gameRef == null) {
             log.warn("Cannot handle start. Client {} unknown", client.getId());
             return;
         }
         gameRef.useGame(game -> {
-            game.start(client);
+            game.start(client, startAction);
+        });
+    }
+
+    public void handleVoteAction(Client client, VoteAction voteAction) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle vote. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.vote(client, voteAction);
         });
     }
 

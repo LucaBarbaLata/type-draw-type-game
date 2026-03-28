@@ -6,6 +6,7 @@ import { PlayerInfo, Brush } from "./model";
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
 import DrawCanvas, { ImageProvider } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
+import RoundTimer from "./RoundTimer";
 
 import "./Draw.css";
 
@@ -22,18 +23,21 @@ const Draw = ({
   textWriter,
   round,
   rounds,
+  roundTimerSeconds,
   handleDone,
 }: {
   text: string;
   textWriter: PlayerInfo;
   round: number;
   rounds: number;
+  roundTimerSeconds: number;
   handleDone: (image: Blob) => void;
 }) => {
   const [showHelpDialog, setShowHelpDialog] = React.useState(true);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
 
   const [color, setColor] = React.useState("#000");
+  const [isEraser, setIsEraser] = React.useState(false);
 
   const [brushes, setBrushes] = React.useState(() => getBrushes(1));
 
@@ -43,6 +47,7 @@ const Draw = ({
 
   const handleSelectBrush = (brushIndex: number) => {
     setSelectedBrushIndex(brushIndex);
+    setIsEraser(false);
   };
 
   const handleScaleChange = React.useCallback((scale: number) => {
@@ -55,6 +60,18 @@ const Draw = ({
   >();
 
   const imageProviderRef = React.useRef<ImageProvider>();
+  const submittedRef = React.useRef(false);
+
+  const submitDrawing = React.useCallback(() => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    const imageProvider = imageProviderRef.current!;
+    const imageDataUrl = imageProvider.getImageDataURL();
+    window
+      .fetch(imageDataUrl)
+      .then((res) => res.blob())
+      .then((image) => handleDone(image));
+  }, [handleDone]);
 
   const handleClickDone = () => {
     const imageProvider = imageProviderRef.current!;
@@ -64,11 +81,7 @@ const Draw = ({
   };
 
   const handleConfirmDone = () => {
-    // nice trick using fetch to get the image as binary Blob instead of data url
-    window
-      .fetch(drawingDataUrl!)
-      .then((res) => res.blob())
-      .then((image) => handleDone(image));
+    submitDrawing();
     setShowConfirmDialog(false);
   };
 
@@ -82,6 +95,19 @@ const Draw = ({
     setFirstTimeHelpDialog(false);
     toggleToFullscreenAndLandscapeOnMobile();
   };
+
+  const handleUndo = () => {
+    imageProviderRef.current?.undo();
+  };
+
+  const handleToggleEraser = () => {
+    setIsEraser((prev) => !prev);
+  };
+
+  const handleTimerExpire = React.useCallback(() => {
+    setShowConfirmDialog(false);
+    submitDrawing();
+  }, [submitDrawing]);
 
   return (
     <div className="Draw">
@@ -105,14 +131,24 @@ const Draw = ({
         color={color}
         brushes={brushes}
         selectedBrush={selectedBrush}
+        isEraser={isEraser}
         triggerHelp={() => setShowHelpDialog(true)}
         onSelectBrush={handleSelectBrush}
-        onChangeColor={(newColor) => setColor(newColor)}
+        onChangeColor={(newColor) => {
+          setColor(newColor);
+          setIsEraser(false);
+        }}
+        onToggleEraser={handleToggleEraser}
+        onUndo={handleUndo}
         onDone={handleClickDone}
       />
+      {roundTimerSeconds > 0 && (
+        <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} />
+      )}
       <DrawCanvas
         color={color}
         brushPixelSize={selectedBrush.pixelSize}
+        isEraser={isEraser}
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
       />

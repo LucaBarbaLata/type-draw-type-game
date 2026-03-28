@@ -14,17 +14,23 @@ const DrawTools = ({
   color,
   brushes,
   selectedBrush,
+  isEraser,
   triggerHelp,
   onSelectBrush,
   onChangeColor,
+  onToggleEraser,
+  onUndo,
   onDone,
 }: {
   color: string;
   brushes: Brush[];
   selectedBrush: Brush;
+  isEraser: boolean;
   triggerHelp: () => void;
   onSelectBrush: (brushIndex: number) => void;
   onChangeColor: (color: string) => void;
+  onToggleEraser: () => void;
+  onUndo: () => void;
   onDone: () => void;
 }) => {
   const brushButton = React.useRef<HTMLDivElement>(null);
@@ -72,9 +78,23 @@ const DrawTools = ({
       <div className="tool-button tool-button-help" onClick={triggerHelp}>
         <img src={helpImg} alt="Help" title="Help (Show text to draw)" />
       </div>
+      <div
+        className="tool-button tool-button-undo"
+        onClick={onUndo}
+        title="Undo"
+      >
+        ↩
+      </div>
+      <div
+        className={`tool-button tool-button-eraser${isEraser ? " tool-button-active" : ""}`}
+        onClick={onToggleEraser}
+        title={isEraser ? "Eraser (active)" : "Eraser"}
+      >
+        ✕
+      </div>
       <BrushButton
         size={selectedBrush.displaySize}
-        color={color}
+        color={isEraser ? "#ffffff" : color}
         onClick={selectBrush}
         ref={brushButton}
       />
@@ -128,7 +148,7 @@ const BrushButton = React.forwardRef(
         className="tool-button tool-button-brush"
         onClick={onClick}
         ref={ref}
-        style={{ backgroundColor: color === "#FFF" ? "#aaa" : "white" }}
+        style={{ backgroundColor: color === "#FFF" || color === "#ffffff" ? "#aaa" : "white" }}
       >
         <div
           style={{
