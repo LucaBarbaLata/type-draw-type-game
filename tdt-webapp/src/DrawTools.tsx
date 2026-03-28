@@ -2,11 +2,7 @@ import React from "react";
 
 import { useWindowSize } from "./helpers";
 import { Brush } from "./model";
-<<<<<<< HEAD
-import { DrawTool, LayerInfo, MAX_LAYERS } from "./DrawCanvas";
-=======
 import { DrawTool } from "./DrawCanvas";
->>>>>>> parent of 5544e72 (Add multi-layer canvas support and layers UI)
 
 import Dialog from "./Dialog";
 import ColorPicker from "./ColorPicker";
