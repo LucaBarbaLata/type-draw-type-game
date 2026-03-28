@@ -21,6 +21,12 @@ public class GameRoundsGenerator {
 
         int[][] rounds = initMatrix(numberOfPlayers);
 
+        // Randomize the initial story assignment (round 0) so the same player doesn't
+        // always receive the same prompt across multiple games.
+        Integer[] initialStories = IntStream.range(0, numberOfPlayers).boxed().toArray(Integer[]::new);
+        Collections.shuffle(Arrays.asList(initialStories));
+        rounds[0] = Arrays.stream(initialStories).mapToInt(Integer::intValue).toArray();
+
         if (numberOfPlayers % 2 == 0) {
             generateForEven(numberOfPlayers, rounds);
         } else {
@@ -31,8 +37,7 @@ public class GameRoundsGenerator {
     }
 
     private static void generateForEven(int numberOfPlayers, int[][] rounds) {
-        // first round is easy, every player gets the story corresponding to their number
-        rounds[0] = IntStream.range(0, numberOfPlayers).toArray();
+        // rounds[0] is already initialized with a random permutation.
 
         /* This is an algorithm to generate a "perfect" game for an even number of players:
          (A perfect game means, that you get a story from every other player exactly once.)
@@ -62,7 +67,7 @@ public class GameRoundsGenerator {
         // Therefore instead, for now generate a valid game by first always just handing over to the next player,
         // and then shuffle the rounds, to at least make a bit better.
 
-        rounds[0] = IntStream.range(0, numberOfPlayers).toArray();
+        // rounds[0] is already initialized with a random permutation.
         for (int r = 0; r < rounds.length - 1; r++) {
             int[] currentRound = rounds[r];
             int[] nextRound = rounds[r + 1];
