@@ -250,7 +250,7 @@ const LobbyChat = ({
           <ChatMsg key={i}>
             <ChatFace><Face face={msg.sender.face} small={true} /></ChatFace>
             <ChatMsgContent>
-              <ChatSender>{msg.sender.name}</ChatSender>
+              <ChatSender>{msg.sender.isCreator ? <><CrownIcon>👑</CrownIcon> </> : null}{msg.sender.name}</ChatSender>
               <ChatText>{msg.text}</ChatText>
             </ChatMsgContent>
           </ChatMsg>
@@ -297,7 +297,7 @@ const BeforeGameStartScreen = ({
         <div className="Players">
           {players.map((player, index) => (
             <Player key={index} face={player.face}>
-              {index === 0 ? `👑 ${player.name}` : player.name}
+              {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
             </Player>
           ))}
         </div>
@@ -532,10 +532,15 @@ const ChatMsgContent = styled.div`
 `;
 
 const ChatSender = styled.span`
-  font-size: 1.1vmin;
+  font-size: 1.6vmin;
   color: var(--cyber-cyan);
   font-weight: bold;
   letter-spacing: 0.05em;
+`;
+
+const CrownIcon = styled.span`
+  font-size: 0.75em;
+  vertical-align: middle;
 `;
 
 const ChatText = styled.span`
