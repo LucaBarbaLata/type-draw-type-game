@@ -71,7 +71,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1.2vmin;
-  z-index: 50;
+  z-index: 1000;
   pointer-events: none;
 `;
 

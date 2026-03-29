@@ -152,17 +152,13 @@ const Game = () => {
   const prevIsTypeRoundRef = React.useRef(false);
 
   React.useEffect(() => {
-    console.log("[notif] playerState changed:", playerState.state, JSON.stringify(playerState));
     if (isWaitForRoundFinishState(playerState)) {
       const prev = prevWaitingRef.current;
-      console.log("[notif] in waitForRoundFinish, prev:", prev, "current waitingForPlayers:", playerState.waitingForPlayers);
       if (prev !== null) {
         const nowKeys = new Set(playerState.waitingForPlayers.map((p) => `${p.name}|${p.face}`));
         const finished = prev.filter((p) => !nowKeys.has(`${p.name}|${p.face}`));
-        console.log("[notif] finished players (mid-wait):", finished);
         if (finished.length > 0) {
           const action: "drawing" | "typing" = (playerState as any).isTypeRound ?? (playerState as any).typeRound ? "typing" : "drawing";
-          console.log("[notif] firing notifications for", finished, "action:", action);
           setNotifications((ns) => [
             ...ns,
             ...finished.map((p) => ({ id: ++notifIdRef.current, player: p, action })),
@@ -174,10 +170,8 @@ const Game = () => {
     } else {
       // Leaving waitForRoundFinish: any players still in prev finished last
       const prev = prevWaitingRef.current;
-      console.log("[notif] leaving waitForRoundFinish (or not in it), prev:", prev);
       if (prev !== null && prev.length > 0) {
         const action: "drawing" | "typing" = prevIsTypeRoundRef.current ? "typing" : "drawing";
-        console.log("[notif] firing notifications for last finishers:", prev, "action:", action);
         setNotifications((ns) => [
           ...ns,
           ...prev.map((p) => ({ id: ++notifIdRef.current, player: p, action })),
