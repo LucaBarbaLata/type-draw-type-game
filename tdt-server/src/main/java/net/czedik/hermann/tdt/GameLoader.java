@@ -54,6 +54,10 @@ public class GameLoader {
             log.error("Error loading game {}", gameId, e);
             return null;
         }
+        // Backward-compatibility: old state files lack gameMode; treat null as CLASSIC
+        if (gameState.gameMode == null) {
+            gameState.gameMode = GameMode.CLASSIC;
+        }
         return new Game(gameId, gameDir, gameState);
     }
 

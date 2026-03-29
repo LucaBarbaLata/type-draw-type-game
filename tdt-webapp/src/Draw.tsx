@@ -1,7 +1,7 @@
 import React from "react";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
-import { PlayerInfo, Brush } from "./model";
+import { GameMode, PlayerInfo, Brush } from "./model";
 
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
@@ -31,6 +31,7 @@ const Draw = ({
   round,
   rounds,
   roundTimerSeconds,
+  gameMode,
   handleDone,
   onSubmit,
   onUrgentStart,
@@ -44,6 +45,7 @@ const Draw = ({
   round: number;
   rounds: number;
   roundTimerSeconds: number;
+  gameMode: GameMode;
   handleDone: (image: Blob) => void;
   onSubmit?: () => void;
   onUrgentStart?: () => void;
@@ -160,6 +162,7 @@ const Draw = ({
         rounds={rounds}
         show={showHelpDialog}
         firstShow={firstTimeHelpDialog}
+        gameMode={gameMode}
         handleClose={() => {
           setShowHelpDialog(false);
           setFirstTimeHelpDialog(false);
@@ -171,6 +174,7 @@ const Draw = ({
         brushes={brushes}
         selectedBrush={selectedBrush}
         activeTool={activeTool}
+        gameMode={gameMode}
         triggerHelp={() => setShowHelpDialog(true)}
         onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
         onChangeColor={(c) => setColor(c)}
@@ -186,6 +190,7 @@ const Draw = ({
         color={color}
         brushPixelSize={selectedBrush.pixelSize}
         tool={activeTool}
+        gameMode={gameMode}
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
         onStrokeEnd={handleStrokeEnd}

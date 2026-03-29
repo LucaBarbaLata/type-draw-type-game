@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { PlayerInfo, StoryContent } from "./model";
+import { GameMode, PlayerInfo, StoryContent } from "./model";
 import { getPlayerId } from "./helpers";
 import Type from "./Type";
 import Draw from "./Draw";
@@ -33,6 +33,7 @@ interface WaitForPlayersState extends PlayerState {
   players: PlayerInfo[];
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
+  gameMode: GameMode;
 }
 
 function isWaitForPlayersState(
@@ -46,6 +47,7 @@ interface WaitForGameStartState extends PlayerState {
   players: PlayerInfo[];
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
+  gameMode: GameMode;
 }
 
 function isWaitForGameStartState(
@@ -61,6 +63,7 @@ interface TypeState extends PlayerState {
   drawingSrc: string | null;
   artist: PlayerInfo | null;
   roundTimerSeconds: number;
+  gameMode: GameMode;
 }
 
 function isTypeState(playerState: PlayerState): playerState is TypeState {
@@ -74,6 +77,7 @@ interface DrawState extends PlayerState {
   round: number;
   rounds: number;
   roundTimerSeconds: number;
+  gameMode: GameMode;
 }
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
@@ -262,6 +266,7 @@ const Game = () => {
         roundTimerSeconds: settings.roundTimerSeconds,
         chatEnabled: settings.chatEnabled,
         isPublic: settings.isPublic,
+        gameMode: settings.gameMode,
       },
     });
   }, []);
@@ -326,6 +331,7 @@ const Game = () => {
           chatEnabled={playerState.chatEnabled}
           chatMessages={playerState.chatMessages}
           onSendMessage={sendChat}
+          gameMode={playerState.gameMode ?? "CLASSIC"}
         />
       );
     } else if (isTypeState(playerState)) {
@@ -340,6 +346,7 @@ const Game = () => {
           drawingSrc={playerState.drawingSrc}
           artist={playerState.artist}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
+          gameMode={playerState.gameMode ?? "CLASSIC"}
           handleDone={handleTypeDone}
           onSubmit={playSubmitSuccess}
           onUrgentStart={playUrgentStart}
@@ -355,6 +362,7 @@ const Game = () => {
           round={playerState.round}
           rounds={playerState.rounds}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
+          gameMode={playerState.gameMode ?? "CLASSIC"}
           handleDone={handleDrawDone}
           onSubmit={playSubmitSuccess}
           onUrgentStart={playUrgentStart}

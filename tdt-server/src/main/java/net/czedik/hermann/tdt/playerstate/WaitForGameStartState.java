@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.Objects;
 
 import net.czedik.hermann.tdt.ChatMessage;
+import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.PlayerInfo;
 
-public record WaitForGameStartState(List<PlayerInfo> players, boolean chatEnabled, List<ChatMessage> chatMessages) implements PlayerState {
+public record WaitForGameStartState(List<PlayerInfo> players, boolean chatEnabled, List<ChatMessage> chatMessages, GameMode gameMode) implements PlayerState {
 
     public WaitForGameStartState {
         Objects.requireNonNull(players);

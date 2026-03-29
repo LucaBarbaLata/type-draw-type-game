@@ -1,5 +1,6 @@
 import React from "react";
 import { useWindowSize, getCanvasSize } from "./helpers";
+import { GameMode } from "./model";
 
 export type DrawTool = "pen" | "eraser" | "fill" | "line" | "rect" | "circle";
 
@@ -97,12 +98,19 @@ function drawShape(
   }
 }
 
+function toGrayscale(hex: string): string {
+  const [r, g, b] = hexToRgb(hex);
+  const l = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+  return `rgb(${l},${l},${l})`;
+}
+
 const MAX_UNDO_HISTORY = 50;
 
 const DrawCanvas = ({
   color,
   brushPixelSize,
   tool,
+  gameMode,
   imageProviderRef,
   handleScaleChange,
   onStrokeEnd,
@@ -112,6 +120,7 @@ const DrawCanvas = ({
   color: string;
   brushPixelSize: number;
   tool: DrawTool;
+  gameMode?: GameMode;
   imageProviderRef: React.MutableRefObject<ImageProvider | undefined>;
   handleScaleChange: (scale: number) => void;
   onStrokeEnd?: () => void;
@@ -126,6 +135,13 @@ const DrawCanvas = ({
   const posRef = React.useRef<{ x: number; y: number } | null>(null);
   const shapeStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const preShapeStateRef = React.useRef<ImageData | null>(null);
+
+  // Blind Draw: accumulate path while pen is down, render only on lift
+  const blindPathRef = React.useRef<{ x: number; y: number }[]>([]);
+  const isPenDownRef = React.useRef(false);
+
+  // Fog of War: overlay canvas ref
+  const fogCanvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   const [cursorPos, setCursorPos] = React.useState<{ x: number; y: number } | null>(null);
 
@@ -183,6 +199,12 @@ const DrawCanvas = ({
     }
   }, [canvas]); // intentionally omitting initialImageUrl — only restore on mount
 
+  // Initialize fog canvas with full fog on mount
+  React.useEffect(() => {
+    if (gameMode !== "FOG_OF_WAR" || !fogCanvasRef.current) return;
+    updateFog(null, null);
+  }, [gameMode, updateFog]);
+
   const saveSnapshot = (canvasEl: HTMLCanvasElement) => {
     const ctx = getCanvas2DContext(canvasEl);
     const snapshot = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
@@ -196,20 +218,78 @@ const DrawCanvas = ({
   function paint_start(_ctx: CanvasRenderingContext2D, x: number, y: number, canvasEl: HTMLCanvasElement) {
     saveSnapshot(canvasEl);
     posRef.current = { x, y };
+    isPenDownRef.current = true;
+    if (gameMode === "BLIND_DRAW") {
+      blindPathRef.current = [{ x, y }];
+    }
   }
   function paint_move(ctx: CanvasRenderingContext2D, x: number, y: number) {
     if (posRef.current === null) return;
+
+    // Shaky Hands: add random jitter to stroke coordinates
+    let dx = x, dy = y;
+    if (gameMode === "SHAKY_HANDS") {
+      const jitter = Math.min(12, brushPixelSize * 0.4);
+      dx = x + (Math.random() * 2 - 1) * jitter;
+      dy = y + (Math.random() * 2 - 1) * jitter;
+    }
+
+    // Blind Draw: accumulate path but don't render yet
+    if (gameMode === "BLIND_DRAW") {
+      blindPathRef.current.push({ x: dx, y: dy });
+      posRef.current = { x: dx, y: dy };
+      return;
+    }
+
+    const strokeColor = tool === "eraser" ? "#ffffff"
+      : gameMode === "TELEPHONE_NOIR" ? toGrayscale(color)
+      : color;
+
     ctx.lineCap = "round";
     ctx.lineWidth = brushPixelSize;
-    ctx.strokeStyle = tool === "eraser" ? "#ffffff" : color;
+    ctx.strokeStyle = strokeColor;
     ctx.beginPath();
     ctx.moveTo(posRef.current.x, posRef.current.y);
-    ctx.lineTo(x, y);
+    ctx.lineTo(dx, dy);
     ctx.stroke();
-    posRef.current = { x, y };
+    posRef.current = { x: dx, y: dy };
   }
   function paint_end(ctx: CanvasRenderingContext2D, x?: number, y?: number) {
+    isPenDownRef.current = false;
     if (posRef.current === null) return;
+
+    if (gameMode === "BLIND_DRAW") {
+      // Render the entire accumulated path at once
+      const path = blindPathRef.current;
+      if (path.length < 2) {
+        // Single tap — draw a dot
+        const strokeColor = tool === "eraser" ? "#ffffff"
+          : gameMode === "TELEPHONE_NOIR" ? toGrayscale(color)
+          : color;
+        ctx.lineCap = "round";
+        ctx.lineWidth = brushPixelSize;
+        ctx.strokeStyle = strokeColor;
+        ctx.beginPath();
+        ctx.moveTo(posRef.current.x, posRef.current.y);
+        ctx.lineTo(posRef.current.x, posRef.current.y);
+        ctx.stroke();
+      } else {
+        const strokeColor = tool === "eraser" ? "#ffffff" : color;
+        ctx.lineCap = "round";
+        ctx.lineWidth = brushPixelSize;
+        ctx.strokeStyle = strokeColor;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].x, path[i].y);
+        }
+        ctx.stroke();
+      }
+      blindPathRef.current = [];
+      posRef.current = null;
+      return;
+    }
+
     paint_move(ctx, x ?? posRef.current.x, y ?? posRef.current.y);
     posRef.current = null;
   }
@@ -220,21 +300,52 @@ const DrawCanvas = ({
     const snapshot = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
     preShapeStateRef.current = snapshot;
     shapeStartRef.current = { x, y };
+    isPenDownRef.current = true;
   }
   function shape_move(ctx: CanvasRenderingContext2D, x: number, y: number) {
     if (!shapeStartRef.current || !preShapeStateRef.current) return;
+    const shapeColor = gameMode === "TELEPHONE_NOIR" ? toGrayscale(color) : color;
     ctx.putImageData(preShapeStateRef.current, 0, 0);
-    drawShape(ctx, tool, shapeStartRef.current.x, shapeStartRef.current.y, x, y, color, brushPixelSize);
+    drawShape(ctx, tool, shapeStartRef.current.x, shapeStartRef.current.y, x, y, shapeColor, brushPixelSize);
   }
   function shape_end(ctx: CanvasRenderingContext2D, x?: number, y?: number) {
+    isPenDownRef.current = false;
     if (!shapeStartRef.current || !preShapeStateRef.current) return;
-    const ex = x ?? shapeStartRef.current.x;
-    const ey = y ?? shapeStartRef.current.y;
+    let ex = x ?? shapeStartRef.current.x;
+    let ey = y ?? shapeStartRef.current.y;
+    if (gameMode === "SHAKY_HANDS") {
+      const jitter = Math.min(12, brushPixelSize * 0.4);
+      ex += (Math.random() * 2 - 1) * jitter;
+      ey += (Math.random() * 2 - 1) * jitter;
+    }
+    const shapeColor = gameMode === "TELEPHONE_NOIR" ? toGrayscale(color) : color;
     ctx.putImageData(preShapeStateRef.current, 0, 0);
-    drawShape(ctx, tool, shapeStartRef.current.x, shapeStartRef.current.y, ex, ey, color, brushPixelSize);
+    drawShape(ctx, tool, shapeStartRef.current.x, shapeStartRef.current.y, ex, ey, shapeColor, brushPixelSize);
     shapeStartRef.current = null;
     preShapeStateRef.current = null;
   }
+
+  const updateFog = React.useCallback((clientX: number | null, clientY: number | null) => {
+    const fogCanvas = fogCanvasRef.current;
+    if (!fogCanvas) return;
+    const ctx2 = fogCanvas.getContext("2d")!;
+    ctx2.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
+    ctx2.fillStyle = "rgba(8,8,24,0.93)";
+    ctx2.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
+    if (clientX !== null && clientY !== null) {
+      const rect = fogCanvas.getBoundingClientRect();
+      const scaleX = fogCanvas.width / rect.width;
+      const scaleY = fogCanvas.height / rect.height;
+      const cx = (clientX - rect.left) * scaleX;
+      const cy = (clientY - rect.top) * scaleY;
+      const radius = 100 / scaleRef.current;
+      ctx2.globalCompositeOperation = "destination-out";
+      ctx2.beginPath();
+      ctx2.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx2.fill();
+      ctx2.globalCompositeOperation = "source-over";
+    }
+  }, []);
 
   const isShapeTool = tool === "line" || tool === "rect" || tool === "circle";
   const isPenTool = tool === "pen" || tool === "eraser";
@@ -243,7 +354,8 @@ const DrawCanvas = ({
     const ctx = getCanvas2DContext(canvasEl);
     if (tool === "fill") {
       saveSnapshot(canvasEl);
-      floodFill(ctx, x, y, color);
+      const fillColor = gameMode === "TELEPHONE_NOIR" ? toGrayscale(color) : color;
+      floodFill(ctx, x, y, fillColor);
       onStrokeEnd?.();
       onStrokeComplete?.();
     } else if (isShapeTool) {
@@ -275,6 +387,7 @@ const DrawCanvas = ({
   };
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     setCursorPos({ x: event.clientX, y: event.clientY });
+    if (gameMode === "FOG_OF_WAR") updateFog(event.clientX, event.clientY);
     if (event.buttons !== 1) {
       if (isPenTool) paint_end(getCanvas2DContext(event.currentTarget));
       return;
@@ -288,6 +401,7 @@ const DrawCanvas = ({
   };
   const handleMouseOut = (event: React.MouseEvent<HTMLCanvasElement>) => {
     setCursorPos(null);
+    if (gameMode === "FOG_OF_WAR") updateFog(null, null);
     const { x, y } = getPositionInCanvas(event.currentTarget, event);
     handlePointerUp(event.currentTarget, x, y);
   };
@@ -303,11 +417,13 @@ const DrawCanvas = ({
     event.preventDefault();
     if (event.touches.length !== 1) {
       setCursorPos(null);
+      if (gameMode === "FOG_OF_WAR") updateFog(null, null);
       handlePointerUp(event.currentTarget);
       return;
     }
     const touch = event.touches[0];
     setCursorPos({ x: touch.clientX, y: touch.clientY });
+    if (gameMode === "FOG_OF_WAR") updateFog(touch.clientX, touch.clientY);
     const { x, y } = getPositionInCanvas(event.currentTarget, touch);
     handlePointerMove(event.currentTarget, x, y);
   };
@@ -323,16 +439,18 @@ const DrawCanvas = ({
     }
   };
 
-  const showCircleCursor = cursorPos && (tool === "pen" || tool === "eraser");
+  const blindPenDown = gameMode === "BLIND_DRAW" && isPenDownRef.current;
+  const showCircleCursor = cursorPos && (tool === "pen" || tool === "eraser") && !blindPenDown;
   const previewSize = Math.max(4, brushPixelSize * scaleRef.current);
 
   const cursorStyle =
+    gameMode === "BLIND_DRAW" ? "none" :
     tool === "fill" ? "cell" :
     isShapeTool ? "crosshair" :
     cursorPos ? "none" : "crosshair";
 
   return (
-    <div className="Draw-canvas">
+    <div className="Draw-canvas" style={{ position: "relative" }}>
       {showCircleCursor && (
         <div
           style={{
@@ -365,6 +483,21 @@ const DrawCanvas = ({
         ref={canvasRefCallback}
         style={{ cursor: cursorStyle }}
       />
+      {gameMode === "FOG_OF_WAR" && (
+        <canvas
+          width="1440"
+          height="1080"
+          ref={fogCanvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        />
+      )}
     </div>
   );
 };

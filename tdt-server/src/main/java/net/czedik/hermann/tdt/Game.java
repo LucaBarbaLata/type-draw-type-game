@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
@@ -139,8 +140,11 @@ public class Game {
         gameState.roundTimerSeconds = Math.max(0, settingsAction.roundTimerSeconds());
         gameState.chatEnabled = settingsAction.chatEnabled();
         gameState.isPublic = settingsAction.isPublic();
-        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}, chatEnabled={}, isPublic={}", gameId,
-                gameState.maxPlayers, gameState.roundTimerSeconds, gameState.chatEnabled, gameState.isPublic);
+        if (settingsAction.gameMode() != null) {
+            gameState.gameMode = settingsAction.gameMode();
+        }
+        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}, chatEnabled={}, isPublic={}, gameMode={}", gameId,
+                gameState.maxPlayers, gameState.roundTimerSeconds, gameState.chatEnabled, gameState.isPublic, gameState.gameMode);
         updateStateForAllPlayers();
     }
 
@@ -403,21 +407,23 @@ public class Game {
         int storyIndex = getCurrentStoryIndexForPlayer(player);
         String text = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
         Player previousPlayer = getPreviousPlayerForStory(storyIndex);
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
-                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds);
+                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode);
     }
 
     private PlayerState getTypeState(Player player) {
         int roundOneBased = gameState.round + 1;
         int rounds = gameState.gameMatrix.length;
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         if (gameState.round == 0) {
-            return new TypeState(roundOneBased, rounds, gameState.roundTimerSeconds);
+            return new TypeState(roundOneBased, rounds, gameState.roundTimerSeconds, mode);
         } else {
             int storyIndex = getCurrentStoryIndexForPlayer(player);
             String imageFilename = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
             Player previousPlayer = getPreviousPlayerForStory(storyIndex);
             return new TypeState(roundOneBased, rounds, getDrawingSrc(imageFilename),
-                    mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds);
+                    mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode);
         }
     }
 
@@ -427,10 +433,11 @@ public class Game {
 
         List<PlayerInfo> playerInfos = mapPlayersToPlayerInfos(gameState.players);
         List<ChatMessage> messages = List.copyOf(chatMessages);
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         if (player.isCreator()) {
-            return new WaitForPlayersState(playerInfos, gameState.chatEnabled, messages);
+            return new WaitForPlayersState(playerInfos, gameState.chatEnabled, messages, mode);
         } else {
-            return new WaitForGameStartState(playerInfos, gameState.chatEnabled, messages);
+            return new WaitForGameStartState(playerInfos, gameState.chatEnabled, messages, mode);
         }
     }
 

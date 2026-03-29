@@ -1,5 +1,6 @@
 package net.czedik.hermann.tdt.playerstate;
 
+import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.PlayerInfo;
 
 import java.util.Objects;
@@ -31,7 +32,12 @@ public class TypeState implements PlayerState {
      */
     public final int roundTimerSeconds;
 
-    public TypeState(int round, int rounds, int roundTimerSeconds) {
+    /**
+     * The active game mode.
+     */
+    public final GameMode gameMode;
+
+    public TypeState(int round, int rounds, int roundTimerSeconds, GameMode gameMode) {
         if (round < 1)
             throw new IllegalArgumentException("Round must be positive number");
         this.round = round;
@@ -39,9 +45,10 @@ public class TypeState implements PlayerState {
         this.drawingSrc = null;
         this.artist = null;
         this.roundTimerSeconds = roundTimerSeconds;
+        this.gameMode = gameMode;
     }
 
-    public TypeState(int round, int rounds, String drawingSrc, PlayerInfo artist, int roundTimerSeconds) {
+    public TypeState(int round, int rounds, String drawingSrc, PlayerInfo artist, int roundTimerSeconds, GameMode gameMode) {
         if (round < 1)
             throw new IllegalArgumentException("Round must be positive number");
         this.round = round;
@@ -49,6 +56,7 @@ public class TypeState implements PlayerState {
         this.drawingSrc = Objects.requireNonNull(drawingSrc);
         this.artist = Objects.requireNonNull(artist);
         this.roundTimerSeconds = roundTimerSeconds;
+        this.gameMode = gameMode;
     }
 
     @Override

@@ -2,6 +2,7 @@ package net.czedik.hermann.tdt.playerstate;
 
 import java.util.Objects;
 
+import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.PlayerInfo;
 
 /**
@@ -12,13 +13,15 @@ import net.czedik.hermann.tdt.PlayerInfo;
  * @param text             Text that should be drawn
  * @param textWriter       author of the text
  * @param roundTimerSeconds seconds allowed per round, 0 means no timer
+ * @param gameMode         the active game mode
  */
 public record DrawState(
         int round,
         int rounds,
         String text,
         PlayerInfo textWriter,
-        int roundTimerSeconds) implements PlayerState {
+        int roundTimerSeconds,
+        GameMode gameMode) implements PlayerState {
 
     public DrawState {
         if (round < 1)

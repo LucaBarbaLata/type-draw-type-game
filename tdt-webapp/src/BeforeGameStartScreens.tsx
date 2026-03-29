@@ -2,12 +2,24 @@ import React from "react";
 import styled from "styled-components";
 import { QRCodeCanvas } from "qrcode.react";
 
-import { PlayerInfo } from "./model";
+import { GameMode, PlayerInfo } from "./model";
 import Player from "./Player";
 import Face from "./Face";
 import Logo from "./Logo";
 
 import "./BeforeGameStartScreens.css";
+
+const GAME_MODE_OPTIONS: { value: GameMode; label: string; description: string }[] = [
+  { value: "CLASSIC",        label: "Classic",          description: "The original game — type, draw, repeat." },
+  { value: "ONE_WORD",       label: "One-Word",         description: "Typing phases are limited to a single word — no spaces allowed." },
+  { value: "SHAKY_HANDS",    label: "Shaky Hands",      description: "A random wobble is added to every stroke. Good luck drawing a straight line." },
+  { value: "BLIND_DRAW",     label: "Blind Draw",       description: "Your brush is invisible while you draw. Strokes only appear when you lift the pen." },
+  { value: "TELEPHONE_NOIR", label: "Telephone Noir",   description: "The colour palette is locked to black, white, and grey. All drawings must be monochrome." },
+  { value: "OPPOSITE",       label: "Opposite Mode",    description: "Always draw the opposite of what you receive. The chain constantly inverts and un-inverts itself." },
+  { value: "FOG_OF_WAR",     label: "Fog of War",       description: "Only a small circle around your cursor is visible while drawing. Explore the canvas to see what you've done." },
+  { value: "HOT_POTATO",     label: "Hot Canvas",       description: "All players draw at the same time. Every 30 s the server rotates everyone to a different canvas." },
+  { value: "TEAM",           label: "Team Mode",        description: "Two players share one canvas and draw on it simultaneously in real time." },
+];
 
 export interface ChatMessage {
   sender: PlayerInfo;
@@ -19,6 +31,7 @@ export interface GameSettings {
   maxPlayers: number;
   chatEnabled: boolean;
   isPublic: boolean;
+  gameMode: GameMode;
 }
 
 export const WaitForPlayersScreen = ({
@@ -46,10 +59,11 @@ export const WaitForPlayersScreen = ({
   const [maxPlayers, setMaxPlayers] = React.useState(0);
   const [localChatEnabled, setLocalChatEnabled] = React.useState(true);
   const [localIsPublic, setLocalIsPublic] = React.useState(false);
+  const [localGameMode, setLocalGameMode] = React.useState<GameMode>("CLASSIC");
   const qrWrapperRef = React.useRef<HTMLDivElement>(null);
 
-  const notifyChange = (timerSecs: number, maxP: number, chat: boolean, pub: boolean) => {
-    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP, chatEnabled: chat, isPublic: pub });
+  const notifyChange = (timerSecs: number, maxP: number, chat: boolean, pub: boolean, mode: GameMode) => {
+    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP, chatEnabled: chat, isPublic: pub, gameMode: mode });
   };
 
   const buttonDisabled = players.length <= 1;
@@ -112,7 +126,7 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   setRoundTimerSeconds(v);
-                  notifyChange(v, maxPlayers, localChatEnabled, localIsPublic);
+                  notifyChange(v, maxPlayers, localChatEnabled, localIsPublic, localGameMode);
                 }}
               >
                 <option value={0}>No limit</option>
@@ -131,7 +145,7 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   setMaxPlayers(v);
-                  notifyChange(roundTimerSeconds, v, localChatEnabled, localIsPublic);
+                  notifyChange(roundTimerSeconds, v, localChatEnabled, localIsPublic, localGameMode);
                 }}
               >
                 <option value={0}>No limit</option>
@@ -149,7 +163,7 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = e.target.checked;
                   setLocalChatEnabled(v);
-                  notifyChange(roundTimerSeconds, maxPlayers, v, localIsPublic);
+                  notifyChange(roundTimerSeconds, maxPlayers, v, localIsPublic, localGameMode);
                 }}
               />
             </SettingRow>
@@ -162,10 +176,33 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = e.target.checked;
                   setLocalIsPublic(v);
-                  notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, v);
+                  notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, v, localGameMode);
                 }}
               />
             </SettingRow>
+            <SettingRow>
+              <label htmlFor="gamemode-select">Game Mode</label>
+              <select
+                id="gamemode-select"
+                value={localGameMode}
+                onChange={(e) => {
+                  const v = e.target.value as GameMode;
+                  setLocalGameMode(v);
+                  notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, localIsPublic, v);
+                }}
+              >
+                {GAME_MODE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} title={opt.description}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </SettingRow>
+            {localGameMode !== "CLASSIC" && (
+              <GameModeDescription>
+                {GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.description}
+              </GameModeDescription>
+            )}
           </SettingsSection>
 
           <StartBlock>
@@ -173,7 +210,7 @@ export const WaitForPlayersScreen = ({
               className="button"
               disabled={buttonDisabled}
               title={buttonDisabled ? "Waiting for more players" : "Let's go!"}
-              onClick={() => handleStart({ roundTimerSeconds, maxPlayers, chatEnabled: localChatEnabled, isPublic: localIsPublic })}
+              onClick={() => handleStart({ roundTimerSeconds, maxPlayers, chatEnabled: localChatEnabled, isPublic: localIsPublic, gameMode: localGameMode })}
             >
               Start Game
             </button>
@@ -190,13 +227,16 @@ export const WaitForGameStartScreen = ({
   chatEnabled,
   chatMessages,
   onSendMessage,
+  gameMode,
 }: {
   players: PlayerInfo[];
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
   onSendMessage: (text: string) => void;
+  gameMode: GameMode;
 }) => {
   const creator = players.find((p) => p.isCreator)!;
+  const modeOption = GAME_MODE_OPTIONS.find((o) => o.value === gameMode) ?? GAME_MODE_OPTIONS[0];
 
   return (
     <BeforeGameStartScreen
@@ -208,6 +248,11 @@ export const WaitForGameStartScreen = ({
       <RightContent>
         <Logo />
         <WaitText>Waiting for <strong>{creator.name}</strong> to start the game…</WaitText>
+        <GameModeBadge>
+          <GameModeBadgeLabel>Mode</GameModeBadgeLabel>
+          <GameModeBadgeName>{modeOption.label}</GameModeBadgeName>
+          <GameModeBadgeDesc>{modeOption.description}</GameModeBadgeDesc>
+        </GameModeBadge>
       </RightContent>
     </BeforeGameStartScreen>
   );
@@ -691,6 +736,48 @@ const ChatSendBtn = styled.button`
     opacity: 0.3;
     cursor: not-allowed;
   }
+`;
+
+const GameModeDescription = styled.div`
+  font-size: 1.3vmin;
+  color: rgba(0, 245, 255, 0.6);
+  font-style: italic;
+  margin-top: 0.4vmin;
+  line-height: 1.4;
+`;
+
+const GameModeBadge = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vmin;
+  padding: 1.2vmin 2vmin;
+  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border-radius: 100px;
+  background: rgba(0, 245, 255, 0.05);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.08);
+`;
+
+const GameModeBadgeLabel = styled.div`
+  font-size: 1.1vmin;
+  color: var(--cyber-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+`;
+
+const GameModeBadgeName = styled.div`
+  font-size: 1.8vmin;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+`;
+
+const GameModeBadgeDesc = styled.div`
+  font-size: 1.2vmin;
+  color: var(--cyber-text-muted);
+  text-align: center;
+  max-width: 40vmin;
 `;
 
 export default WaitForPlayersScreen;

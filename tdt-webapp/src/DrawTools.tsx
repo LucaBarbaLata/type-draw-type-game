@@ -1,7 +1,7 @@
 import React from "react";
 
 import { useWindowSize } from "./helpers";
-import { Brush } from "./model";
+import { GameMode, Brush } from "./model";
 import { DrawTool } from "./DrawCanvas";
 
 import Dialog from "./Dialog";
@@ -11,11 +11,14 @@ import helpImg from "./img/help.svg";
 import checkImg from "./img/check.svg";
 import colorwheelImg from "./img/colorwheel.svg";
 
+const NOIR_SWATCHES = ["#000000", "#2a2a2a", "#555555", "#808080", "#aaaaaa", "#cccccc", "#e8e8e8", "#ffffff"];
+
 const DrawTools = ({
   color,
   brushes,
   selectedBrush,
   activeTool,
+  gameMode,
   triggerHelp,
   onSelectBrush,
   onChangeColor,
@@ -28,6 +31,7 @@ const DrawTools = ({
   brushes: Brush[];
   selectedBrush: Brush;
   activeTool: DrawTool;
+  gameMode?: GameMode;
   triggerHelp: () => void;
   onSelectBrush: (brushIndex: number) => void;
   onChangeColor: (color: string) => void;
@@ -36,6 +40,7 @@ const DrawTools = ({
   onRedo: () => void;
   onDone: () => void;
 }) => {
+  const isNoir = gameMode === "TELEPHONE_NOIR";
   const brushButton = React.useRef<HTMLDivElement>(null);
   const brushPopup = React.useRef<HTMLDivElement>(null);
 
@@ -116,14 +121,33 @@ const DrawTools = ({
         ))}
       </div>
 
-      {/* Color picker */}
-      <div className="tool-color" onClick={() => setShowColorPicker(true)}>
-        <div className="tool-color-selectedcolor" style={{ backgroundColor: color }} />
-        <img src={colorwheelImg} alt="Pick color" title="Pick color" />
-      </div>
-      <Dialog show={showColorPicker}>
-        <ColorPicker handlePickColor={(c) => { onChangeColor(c); setShowColorPicker(false); }} />
-      </Dialog>
+      {/* Color picker — replaced by greyscale swatches in Telephone Noir mode */}
+      {isNoir ? (
+        <div className="tool-noir-swatches">
+          {NOIR_SWATCHES.map((swatch) => (
+            <div
+              key={swatch}
+              className="tool-noir-swatch"
+              style={{
+                backgroundColor: swatch,
+                outline: color === swatch ? "2px solid var(--cyber-cyan)" : "none",
+              }}
+              onClick={() => onChangeColor(swatch)}
+              title={swatch}
+            />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="tool-color" onClick={() => setShowColorPicker(true)}>
+            <div className="tool-color-selectedcolor" style={{ backgroundColor: color }} />
+            <img src={colorwheelImg} alt="Pick color" title="Pick color" />
+          </div>
+          <Dialog show={showColorPicker}>
+            <ColorPicker handlePickColor={(c) => { onChangeColor(c); setShowColorPicker(false); }} />
+          </Dialog>
+        </>
+      )}
 
       <div className="tool-button tool-button-done" onClick={onDone}>
         <img src={checkImg} alt="Done" title="Done" />

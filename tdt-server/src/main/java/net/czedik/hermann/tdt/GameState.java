@@ -58,6 +58,11 @@ public class GameState {
      */
     public Set<String> bannedPlayerIds = new HashSet<>();
 
+    /**
+     * The game mode for this session. Null values from old persisted state are treated as CLASSIC.
+     */
+    public GameMode gameMode = GameMode.CLASSIC;
+
     public enum State {
         WaitingForPlayers,
         Started,

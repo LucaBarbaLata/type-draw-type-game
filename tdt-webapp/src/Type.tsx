@@ -2,7 +2,7 @@ import React from "react";
 
 import { isBlank } from "./helpers";
 import Scrollable from "./Scrollable";
-import { PlayerInfo } from "./model";
+import { GameMode, PlayerInfo } from "./model";
 import RoundTimer from "./RoundTimer";
 import WaitingMessage from "./WaitingMessage";
 
@@ -16,6 +16,7 @@ const Type = ({
   drawingSrc,
   artist,
   roundTimerSeconds,
+  gameMode,
   handleDone,
   onSubmit,
   onUrgentStart,
@@ -27,12 +28,14 @@ const Type = ({
   drawingSrc: string | null;
   artist: PlayerInfo | null;
   roundTimerSeconds: number;
+  gameMode: GameMode;
   handleDone: (text: string) => void;
   onSubmit?: () => void;
   onUrgentStart?: () => void;
   onTick?: () => void;
   onTimerExpire?: () => void;
 }) => {
+  const oneWord = gameMode === "ONE_WORD";
   const [text, setText] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
   const submittedRef = React.useRef(false);
@@ -80,15 +83,30 @@ const Type = ({
           </h1>
           <div>
             {first
-              ? "... a sentence or short story:"
+              ? oneWord ? "... a single word:" : "... a sentence or short story:"
               : "... what you see on the drawing below:"}
           </div>
+          {oneWord && (
+            <div className="small" style={{ color: "var(--cyber-magenta)", marginTop: "0.5em" }}>
+              One word only — no spaces!
+            </div>
+          )}
         </div>
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          maxLength={2000}
-        />
+        {oneWord ? (
+          <input
+            type="text"
+            value={text}
+            onChange={(event) => setText(event.target.value.replace(/\s/g, ""))}
+            maxLength={50}
+            style={{ textAlign: "center" }}
+          />
+        ) : (
+          <textarea
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            maxLength={2000}
+          />
+        )}
         {first && (
           <div className="small">
             The next player will have to draw your text.

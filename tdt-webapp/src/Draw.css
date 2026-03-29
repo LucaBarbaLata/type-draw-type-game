@@ -237,6 +237,28 @@
   cursor: pointer;
 }
 
+.tool-noir-swatches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vmin;
+  margin: 1vmin 0;
+  align-items: center;
+}
+
+.tool-noir-swatch {
+  width: 8vmin;
+  height: 8vmin;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.tool-noir-swatch:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
+}
+
 .DrawHelp {
   min-height: 100%;
   display: flex;
