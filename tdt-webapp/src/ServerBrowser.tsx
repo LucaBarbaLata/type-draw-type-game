@@ -147,7 +147,7 @@ const ServerBrowser = () => {
                 {games.map((g) => (
                   <GameCard key={g.gameId}>
                     <CardLeft>
-                      <CreatorFace>{g.creatorFace}</CreatorFace>
+                      <Face face={g.creatorFace} small={true} />
                       <CardInfo>
                         <CreatorName>{g.creatorName}'s game</CreatorName>
                         <PlayerCount>
@@ -321,9 +321,6 @@ const CardLeft = styled.div`
   gap: 1.5vmin;
 `;
 
-const CreatorFace = styled.span`
-  font-size: 3vmin;
-`;
 
 const CardInfo = styled.div`
   display: flex;
