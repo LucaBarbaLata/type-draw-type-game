@@ -57,30 +57,36 @@
 }
 
 .button {
-  background-color: rgba(0, 245, 255, 0.07);
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.12) 0%, rgba(0, 245, 255, 0.05) 100%);
   border: 1.5px solid var(--cyber-cyan);
   color: var(--cyber-cyan);
-  padding: 2vmin 4vmin;
+  padding: 2vmin 5vmin;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  border-radius: 0.6vmin;
+  border-radius: 100px;
   font-size: 1em;
+  font-weight: 600;
   box-shadow: var(--cyber-glow);
   cursor: pointer;
   outline: none;
   text-shadow: 0 0 8px #00f5ff;
-  letter-spacing: 0.04em;
-  transition: background-color 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.06em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
 }
 
 .button:hover {
-  background-color: rgba(0, 245, 255, 0.16);
-  box-shadow: 0 0 14px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.28);
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.22) 0%, rgba(0, 245, 255, 0.1) 100%);
+  box-shadow: 0 0 18px #00f5ff, 0 0 50px rgba(0, 245, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: translateY(0);
 }
 
 .button-red {
-  background-color: rgba(255, 32, 121, 0.07);
+  background: linear-gradient(135deg, rgba(255, 32, 121, 0.12) 0%, rgba(255, 32, 121, 0.05) 100%);
   border-color: var(--cyber-magenta);
   color: var(--cyber-magenta);
   box-shadow: var(--cyber-glow-magenta);
@@ -88,12 +94,12 @@
 }
 
 .button-red:hover {
-  background-color: rgba(255, 32, 121, 0.16);
-  box-shadow: 0 0 14px #ff2079, 0 0 40px rgba(255, 32, 121, 0.28);
+  background: linear-gradient(135deg, rgba(255, 32, 121, 0.22) 0%, rgba(255, 32, 121, 0.1) 100%);
+  box-shadow: 0 0 18px #ff2079, 0 0 50px rgba(255, 32, 121, 0.3);
 }
 
 .button-blue {
-  background-color: rgba(0, 245, 255, 0.07);
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.12) 0%, rgba(0, 245, 255, 0.05) 100%);
   border-color: var(--cyber-cyan);
   color: var(--cyber-cyan);
   box-shadow: var(--cyber-glow);
@@ -101,12 +107,13 @@
 }
 
 .button:disabled {
-  background-color: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.02);
   border-color: #1e2c3a;
   color: #1e2c3a;
   box-shadow: none;
   text-shadow: none;
   cursor: not-allowed;
+  transform: none;
 }
 
 .Drawing {
