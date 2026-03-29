@@ -1,20 +1,63 @@
-# Type Draw Type Game
+# Type Draw Type
 
 ![Type Draw Type Logo](/tdt-webapp/src/img/logo.svg?raw=true&sanitize=true)
 
-_Type Draw Type_ is a simple and fun game for you and your friends.
-It is like the telephone game (Chinese whispers), only with pictures.
-Every player starts by typing a sentence.
-Then the texts are passed on and you have to draw the sentence you received.
-In the next round you get one of the drawings and have to describe it with another sentence (without knowing the initial sentence!).
-This goes on, by alternately typing and drawing, until all players have participated in every chain (story).
-In the end everybody sees all the stories and can wonder about how the initial sentences have transformed in unexpected ways!
+A multiplayer party game in the spirit of Telephone Pictionary. Players alternate between typing sentences and drawing pictures, each only seeing the previous player's output. By the end, the original sentence has usually transformed into something completely different — and hilarious.
 
-This is an open-source Web/mobile version of the pen-and-paper game Telephone Pictionary (also known as Paper Telephone and "Eat Poop You Cat"). It can be installed on mobile phones (Android and iPhone) by using the "Add to Home Screen" functionality.
+This is a heavily modified fork of [Hermann Czedik-Eysenberg's original](https://github.com/Bronkoknorb/type-draw-type-game).
 
-Alternative versions of the game are: [Drawception](https://drawception.com/), [Interference](https://www.playinterference.com/), [Doodle Or Die](http://doodleordie.com/), [Broken Picturephone](https://www.brokenpicturephone.com/), [Drawphone](https://github.com/tannerkrewson/drawphone), [Gartic Phone](https://garticphone.com/), Telestrations, Cranium Scribblish, Stille Post extrem, Scrawl (offline Board games).
+---
 
-## Installation on your own server
+## How it works
+
+1. Every player types a starting sentence.
+2. The sentences are shuffled and passed on — the next player draws what they received.
+3. The drawing is passed on — the next player types what they see (without knowing the original sentence).
+4. This continues, alternating typing and drawing, until everyone has touched every chain.
+5. All stories are revealed at the end for maximum confusion and laughter.
+
+With N players there are N rounds and N stories — each player contributes exactly once to each chain.
+
+---
+
+## Features
+
+### Gameplay
+- **Round timer** — optional per-round time limit (30 / 60 / 90 / 120 / 180 seconds), with audio warnings and auto-submit on expiry
+- **Max players** — creator can cap the lobby at 2–12 players
+- **Spectator mode** — late joiners watch the game without disrupting ongoing rounds
+- **Auto-reconnect** — WebSocket reconnects automatically on connection drops; player name and face are remembered across sessions
+- **Canvas caching** — drawing progress is saved to sessionStorage so a reload or brief disconnect doesn't wipe your work
+
+### Drawing tools
+- Pen, eraser, flood fill, line, rectangle, ellipse
+- 5 brush sizes with visual preview
+- Full color picker
+- Undo / redo (up to 50 steps)
+- Drawing timelapse replay — captured during the draw round and played back during the story reveal (click to play/pause)
+
+### Lobby & sharing
+- Shareable game code and URL
+- QR code for instant mobile joining (click to download as PNG)
+
+### Results
+- Progressive story reveal — uncover one element at a time with animations
+- Download any story as a formatted PNG image
+
+### How to Play guide
+- Interactive 5-step tutorial built into the home screen, with mockup examples for each phase
+
+### Audio
+- Fully synthesized sounds via Web Audio API (no samples) — round start, urgent countdown ticks, timer expire, submit, reveal, fanfare, and more
+- Global mute toggle
+
+### UI
+- Cyberpunk aesthetic — dark background, cyan/magenta glows, responsive vmin-based layout
+- Works on desktop and mobile; can be added to the home screen (PWA-ready)
+
+---
+
+## Running with Docker
 
 ### Prerequisites
 
@@ -35,7 +78,7 @@ cd type-draw-type-game
 ./build.sh
 ```
 
-This builds the webapp and server inside Docker and extracts the JAR to `./build/server.jar`.
+Builds the React frontend and Spring Boot server inside Docker, then extracts the production JAR to `./build/server.jar`.
 
 **3. Build the runtime image:**
 
@@ -49,78 +92,60 @@ docker build -f Dockerfile_prod -t tdt-game-prod .
 docker run --rm -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
 ```
 
-The game is now available at `http://<your-server-ip>:8080/`
+The game is now at `http://<your-server-ip>:8080/`
 
-> `tdt-data` is a named Docker volume where game data is persisted.
+`tdt-data` is a named Docker volume where game state is persisted across restarts.
 
-**To check logs:**
-
-```bash
-docker logs tdt
-```
-
-**To stop/update:**
-
-```bash
-docker stop tdt && docker rm tdt
-# pull latest changes, rebuild, then run again
-```
+---
 
 ## Development
 
-### Backend Server
+### Backend
 
-The backend is built with Spring Boot (Java) and Gradle.
-
-Prerequisites: Java 21+
+Spring Boot 3 / Java 21, built with Gradle.
 
 ```bash
 cd tdt-server
 ./gradlew bootRun
 ```
 
-For live-reloads, run in a second terminal:
+For live reloads, run in a second terminal:
 
 ```bash
 ./gradlew build --continuous
 ```
 
-See also [tdt-server/HELP.md](tdt-server/HELP.md).
+### Frontend
 
-### Frontend Web App
-
-The frontend is a React + TypeScript app built with Vite and yarn.
-
-Prerequisites: Node.js 20+, yarn (via `corepack enable`)
+React 18 / TypeScript / Vite, built with Yarn.
 
 ```bash
 cd tdt-webapp
 yarn
-yarn run dev
+yarn dev
 ```
 
-This starts a dev server with hot reload and proxies API requests to the backend on port 8080.
+Dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend on port 8080.
 
-See also [tdt-webapp/README-webapp.md](tdt-webapp/README-webapp.md).
+---
 
-## Build
+## Tech stack
 
-To build everything (webapp + server) inside Docker:
+| Layer | Stack |
+|---|---|
+| Frontend | React 18, TypeScript 5, Vite, styled-components |
+| Backend | Spring Boot 3.3, Java 21, Gradle |
+| Real-time | WebSocket (Spring) |
+| Audio | Web Audio API (fully synthesized) |
+| Container | Docker multi-stage build, Eclipse Temurin JRE 21 |
+| Storage | JSON state files in a Docker volume |
 
-```bash
-./build.sh
-```
-
-Then build the production runtime image:
-
-```bash
-docker build -f Dockerfile_prod -t tdt-game-prod .
-```
+---
 
 ## Credits
 
-Original game by **Hermann Czedik-Eysenberg** — git-dev@hermann.czedik.net
+Original game by **Hermann Czedik-Eysenberg** — [github.com/Bronkoknorb](https://github.com/Bronkoknorb)
 
-Forked and improved by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI overhaul, new drawing tools (flood fill, shapes, redo), animated waiting messages, QR code lobby, auto-reconnect, and story image export.
+Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI, full drawing toolset (fill, shapes, undo/redo), drawing timelapse replay, synthesized audio engine, QR code lobby, round timer, spectator mode, story PNG export, interactive how-to guide, auto-reconnect, and canvas progress caching.
 
-License: [GNU AFFERO GENERAL PUBLIC LICENSE](LICENSE)
+License: [GNU Affero General Public License](LICENSE)
