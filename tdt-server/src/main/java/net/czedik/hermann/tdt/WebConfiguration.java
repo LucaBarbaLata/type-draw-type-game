@@ -18,6 +18,7 @@ public class WebConfiguration implements WebMvcConfigurer {
         registry.addViewController("/g/{gameId:\\w+}").setViewName(FORWARD_TO_ROOT);
         registry.addViewController("/new").setViewName(FORWARD_TO_ROOT);
         registry.addViewController("/join").setViewName(FORWARD_TO_ROOT);
+        registry.addViewController("/server-browser").setViewName(FORWARD_TO_ROOT);
     }
 
     @Override
