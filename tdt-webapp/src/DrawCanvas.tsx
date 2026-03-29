@@ -199,12 +199,6 @@ const DrawCanvas = ({
     }
   }, [canvas]); // intentionally omitting initialImageUrl — only restore on mount
 
-  // Initialize fog canvas with full fog on mount
-  React.useEffect(() => {
-    if (gameMode !== "FOG_OF_WAR" || !fogCanvasRef.current) return;
-    updateFog(null, null);
-  }, [gameMode, updateFog]);
-
   const saveSnapshot = (canvasEl: HTMLCanvasElement) => {
     const ctx = getCanvas2DContext(canvasEl);
     const snapshot = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
@@ -263,9 +257,7 @@ const DrawCanvas = ({
       const path = blindPathRef.current;
       if (path.length < 2) {
         // Single tap — draw a dot
-        const strokeColor = tool === "eraser" ? "#ffffff"
-          : gameMode === "TELEPHONE_NOIR" ? toGrayscale(color)
-          : color;
+        const strokeColor = tool === "eraser" ? "#ffffff" : color;
         ctx.lineCap = "round";
         ctx.lineWidth = brushPixelSize;
         ctx.strokeStyle = strokeColor;
@@ -346,6 +338,12 @@ const DrawCanvas = ({
       ctx2.globalCompositeOperation = "source-over";
     }
   }, []);
+
+  // Initialize fog canvas with full fog on mount
+  React.useEffect(() => {
+    if (gameMode !== "FOG_OF_WAR" || !fogCanvasRef.current) return;
+    updateFog(null, null);
+  }, [gameMode, updateFog]);
 
   const isShapeTool = tool === "line" || tool === "rect" || tool === "circle";
   const isPenTool = tool === "pen" || tool === "eraser";
