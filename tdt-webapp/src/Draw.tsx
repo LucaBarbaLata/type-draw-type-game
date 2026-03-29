@@ -53,9 +53,8 @@ const Draw = ({
   cacheKey?: string;
 }) => {
   const [cachedImageUrl] = React.useState<string | undefined>(() =>
-    cacheKey ? (localStorage.getItem(cacheKey) ?? undefined) : undefined
+    cacheKey ? (sessionStorage.getItem(cacheKey) ?? undefined) : undefined
   );
-  const cacheSaveTimeRef = React.useRef(0);
   const [showHelpDialog, setShowHelpDialog] = React.useState(true);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
 
@@ -92,21 +91,27 @@ const Draw = ({
 
   const handleStrokeEnd = React.useCallback(() => {
     const now = Date.now();
-    if (now - lastSnapshotTimeRef.current >= REPLAY_THROTTLE_MS && replayFramesRef.current.length < REPLAY_MAX_FRAMES) {
-      captureFrame();
-      lastSnapshotTimeRef.current = now;
-    }
-    if (cacheKey && now - cacheSaveTimeRef.current >= 1000) {
-      cacheSaveTimeRef.current = now;
-      const dataUrl = imageProviderRef.current?.getCanvas().toDataURL("image/jpeg", 0.85);
-      if (dataUrl) try { localStorage.setItem(cacheKey, dataUrl); } catch { /* quota exceeded */ }
-    }
-  }, [captureFrame, cacheKey]);
+    if (now - lastSnapshotTimeRef.current < REPLAY_THROTTLE_MS) return;
+    if (replayFramesRef.current.length >= REPLAY_MAX_FRAMES) return;
+    captureFrame();
+    lastSnapshotTimeRef.current = Date.now();
+  }, [captureFrame]);
+
+  const handleStrokeComplete = React.useCallback(() => {
+    if (!cacheKey) return;
+    const canvas = imageProviderRef.current?.getCanvas();
+    if (!canvas) return;
+    setTimeout(() => {
+      try {
+        sessionStorage.setItem(cacheKey, canvas.toDataURL("image/jpeg", 0.9));
+      } catch { /* quota exceeded */ }
+    }, 0);
+  }, [cacheKey]);
 
   const submitDrawing = React.useCallback(() => {
     if (submittedRef.current) return;
     submittedRef.current = true;
-    if (cacheKey) localStorage.removeItem(cacheKey);
+    if (cacheKey) sessionStorage.removeItem(cacheKey);
     onSubmit?.();
     setSubmitted(true);
     if (replayFramesRef.current.length > 0) {
@@ -184,6 +189,7 @@ const Draw = ({
         imageProviderRef={imageProviderRef}
         handleScaleChange={handleScaleChange}
         onStrokeEnd={handleStrokeEnd}
+        onStrokeComplete={handleStrokeComplete}
         initialImageUrl={cachedImageUrl}
       />
     </div>

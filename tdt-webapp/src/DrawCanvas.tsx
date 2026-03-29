@@ -106,6 +106,7 @@ const DrawCanvas = ({
   imageProviderRef,
   handleScaleChange,
   onStrokeEnd,
+  onStrokeComplete,
   initialImageUrl,
 }: {
   color: string;
@@ -114,6 +115,7 @@ const DrawCanvas = ({
   imageProviderRef: React.MutableRefObject<ImageProvider | undefined>;
   handleScaleChange: (scale: number) => void;
   onStrokeEnd?: () => void;
+  onStrokeComplete?: () => void;
   initialImageUrl?: string;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
@@ -243,6 +245,7 @@ const DrawCanvas = ({
       saveSnapshot(canvasEl);
       floodFill(ctx, x, y, color);
       onStrokeEnd?.();
+      onStrokeComplete?.();
     } else if (isShapeTool) {
       shape_start(ctx, x, y, canvasEl);
     } else {
@@ -262,6 +265,7 @@ const DrawCanvas = ({
     if (isShapeTool) shape_end(ctx, x, y);
     else if (isPenTool) paint_end(ctx, x, y);
     onStrokeEnd?.();
+    onStrokeComplete?.();
   };
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
