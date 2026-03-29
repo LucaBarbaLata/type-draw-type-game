@@ -30,6 +30,7 @@ export const WaitForPlayersScreen = ({
   handleSettingsChange,
   onSendMessage,
   onKickPlayer,
+  onBanPlayer,
 }: {
   gameId: string;
   players: PlayerInfo[];
