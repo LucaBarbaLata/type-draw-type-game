@@ -4,6 +4,7 @@ import { QRCodeCanvas } from "qrcode.react";
 
 import { PlayerInfo } from "./model";
 import Player from "./Player";
+import Face from "./Face";
 import Logo from "./Logo";
 
 import "./BeforeGameStartScreens.css";
@@ -247,7 +248,7 @@ const LobbyChat = ({
         )}
         {enabled && messages.map((msg, i) => (
           <ChatMsg key={i}>
-            <ChatFace>{msg.sender.face}</ChatFace>
+            <ChatFace><Face face={msg.sender.face} small={true} /></ChatFace>
             <ChatMsgContent>
               <ChatSender>{msg.sender.name}</ChatSender>
               <ChatText>{msg.text}</ChatText>
@@ -520,8 +521,6 @@ const ChatMsg = styled.div`
 `;
 
 const ChatFace = styled.span`
-  font-size: 1.8vmin;
-  line-height: 1;
   flex-shrink: 0;
 `;
 
