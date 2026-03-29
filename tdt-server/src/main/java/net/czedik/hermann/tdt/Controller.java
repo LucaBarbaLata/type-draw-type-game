@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -34,6 +35,11 @@ public class Controller {
         CreateGameResponse response = new CreateGameResponse(gameId);
         log.info("Created game: {}", response);
         return response;
+    }
+
+    @GetMapping(path = "/games", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<PublicGameInfo> getPublicGames() {
+        return gameManager.getPublicGames();
     }
 
     @GetMapping(path = "/image/{gameId:\\w+}/{imageId:[\\w\\-]+}.png")

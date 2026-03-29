@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import net.czedik.hermann.tdt.GameLoader.GameRef;
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
@@ -40,6 +43,9 @@ public class GameManager {
 
     // guarded by this
     private final Map<Client, GameRef> clientToGameRef = new HashMap<>();
+
+    // guarded by this
+    private final Map<String, PublicGameInfo> publicGamesRegistry = new HashMap<>();
 
     private final Path gamesPath;
 
@@ -71,7 +77,11 @@ public class GameManager {
     }
 
     public void handleJoinAction(Client client, JoinAction joinAction) {
-        handleAccessOrJoinAction(client, game -> game.join(client, joinAction), joinAction.gameId());
+        handleAccessOrJoinAction(client, game -> {
+            boolean result = game.join(client, joinAction);
+            updatePublicRegistry(game);
+            return result;
+        }, joinAction.gameId());
     }
 
     private void handleAccessOrJoinAction(Client client, Function<Game, Boolean> actionHandler, String gameId) {
@@ -178,6 +188,24 @@ public class GameManager {
         }
     }
 
+    private void updatePublicRegistry(Game game) {
+        if (game == null) return;
+        PublicGameInfo info = game.getPublicInfo();
+        synchronized (this) {
+            if (info == null) {
+                publicGamesRegistry.remove(game.gameId);
+            } else {
+                publicGamesRegistry.put(game.gameId, info);
+            }
+        }
+    }
+
+    public List<PublicGameInfo> getPublicGames() {
+        synchronized (this) {
+            return new ArrayList<>(publicGamesRegistry.values());
+        }
+    }
+
     public void clientDisconnected(Client client) {
         GameRef gameRef;
         synchronized (this) {
@@ -190,6 +218,7 @@ public class GameManager {
             gameRef.useGame(game -> {
                 if (game != null) {
                     game.clientDisconnected(client);
+                    updatePublicRegistry(game);
                 }
             });
         } finally {
@@ -209,6 +238,7 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.settings(client, settingsAction);
+            updatePublicRegistry(game);
         });
     }
 
@@ -220,6 +250,7 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.start(client, startAction);
+            updatePublicRegistry(game);
         });
     }
 
@@ -257,6 +288,17 @@ public class GameManager {
             } catch (IOException e) {
                 log.error("Error handling drawing replay for client {}", client.getId(), e);
             }
+        });
+    }
+
+    public void handleChatAction(Client client, ChatAction chatAction) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle chat. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.chat(client, chatAction);
         });
     }
 

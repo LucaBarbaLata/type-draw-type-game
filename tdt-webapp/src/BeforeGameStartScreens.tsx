@@ -8,28 +8,43 @@ import Logo from "./Logo";
 
 import "./BeforeGameStartScreens.css";
 
+export interface ChatMessage {
+  sender: PlayerInfo;
+  text: string;
+}
+
 export interface GameSettings {
   roundTimerSeconds: number;
   maxPlayers: number;
+  chatEnabled: boolean;
+  isPublic: boolean;
 }
 
 export const WaitForPlayersScreen = ({
   gameId,
   players,
+  chatEnabled,
+  chatMessages,
   handleStart,
   handleSettingsChange,
+  onSendMessage,
 }: {
   gameId: string;
   players: PlayerInfo[];
+  chatEnabled: boolean;
+  chatMessages: ChatMessage[];
   handleStart: (settings: GameSettings) => void;
   handleSettingsChange: (settings: GameSettings) => void;
+  onSendMessage: (text: string) => void;
 }) => {
   const [roundTimerSeconds, setRoundTimerSeconds] = React.useState(0);
   const [maxPlayers, setMaxPlayers] = React.useState(0);
+  const [localChatEnabled, setLocalChatEnabled] = React.useState(true);
+  const [localIsPublic, setLocalIsPublic] = React.useState(false);
   const qrWrapperRef = React.useRef<HTMLDivElement>(null);
 
-  const notifyChange = (timerSecs: number, maxP: number) => {
-    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP });
+  const notifyChange = (timerSecs: number, maxP: number, chat: boolean, pub: boolean) => {
+    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP, chatEnabled: chat, isPublic: pub });
   };
 
   const buttonDisabled = players.length <= 1;
@@ -46,7 +61,12 @@ export const WaitForPlayersScreen = ({
   };
 
   return (
-    <BeforeGameStartScreen players={players}>
+    <BeforeGameStartScreen
+      players={players}
+      chatEnabled={chatEnabled}
+      chatMessages={chatMessages}
+      onSendMessage={onSendMessage}
+    >
       <RightContent>
         <Logo />
 
@@ -85,7 +105,7 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   setRoundTimerSeconds(v);
-                  notifyChange(v, maxPlayers);
+                  notifyChange(v, maxPlayers, localChatEnabled, localIsPublic);
                 }}
               >
                 <option value={0}>No limit</option>
@@ -104,7 +124,7 @@ export const WaitForPlayersScreen = ({
                 onChange={(e) => {
                   const v = Number(e.target.value);
                   setMaxPlayers(v);
-                  notifyChange(roundTimerSeconds, v);
+                  notifyChange(roundTimerSeconds, v, localChatEnabled, localIsPublic);
                 }}
               >
                 <option value={0}>No limit</option>
@@ -113,6 +133,32 @@ export const WaitForPlayersScreen = ({
                 ))}
               </select>
             </SettingRow>
+            <SettingRow>
+              <label htmlFor="chat-toggle">Lobby Chat</label>
+              <ChatToggle
+                id="chat-toggle"
+                type="checkbox"
+                checked={localChatEnabled}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setLocalChatEnabled(v);
+                  notifyChange(roundTimerSeconds, maxPlayers, v, localIsPublic);
+                }}
+              />
+            </SettingRow>
+            <SettingRow>
+              <label htmlFor="public-toggle">Public Lobby</label>
+              <ChatToggle
+                id="public-toggle"
+                type="checkbox"
+                checked={localIsPublic}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setLocalIsPublic(v);
+                  notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, v);
+                }}
+              />
+            </SettingRow>
           </SettingsSection>
 
           <StartBlock>
@@ -120,7 +166,7 @@ export const WaitForPlayersScreen = ({
               className="button"
               disabled={buttonDisabled}
               title={buttonDisabled ? "Waiting for more players" : "Let's go!"}
-              onClick={() => handleStart({ roundTimerSeconds, maxPlayers })}
+              onClick={() => handleStart({ roundTimerSeconds, maxPlayers, chatEnabled: localChatEnabled, isPublic: localIsPublic })}
             >
               Start Game
             </button>
@@ -134,13 +180,24 @@ export const WaitForPlayersScreen = ({
 
 export const WaitForGameStartScreen = ({
   players,
+  chatEnabled,
+  chatMessages,
+  onSendMessage,
 }: {
   players: PlayerInfo[];
+  chatEnabled: boolean;
+  chatMessages: ChatMessage[];
+  onSendMessage: (text: string) => void;
 }) => {
   const creator = players.find((p) => p.isCreator)!;
 
   return (
-    <BeforeGameStartScreen players={players}>
+    <BeforeGameStartScreen
+      players={players}
+      chatEnabled={chatEnabled}
+      chatMessages={chatMessages}
+      onSendMessage={onSendMessage}
+    >
       <RightContent>
         <Logo />
         <WaitText>Waiting for <strong>{creator.name}</strong> to start the game…</WaitText>
@@ -149,11 +206,87 @@ export const WaitForGameStartScreen = ({
   );
 };
 
+// ── Chat ─────────────────────────────────────────────────────────────────────
+
+const LobbyChat = ({
+  enabled,
+  messages,
+  onSend,
+}: {
+  enabled: boolean;
+  messages: ChatMessage[];
+  onSend: (text: string) => void;
+}) => {
+  const [draft, setDraft] = React.useState("");
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = () => {
+    const text = draft.trim();
+    if (!text) return;
+    onSend(text);
+    setDraft("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSend();
+  };
+
+  return (
+    <ChatBox>
+      <ChatTitle>Chat</ChatTitle>
+      <ChatMessages>
+        {!enabled && (
+          <ChatDisabled>Chat disabled by host</ChatDisabled>
+        )}
+        {enabled && messages.length === 0 && (
+          <ChatEmpty>No messages yet…</ChatEmpty>
+        )}
+        {enabled && messages.map((msg, i) => (
+          <ChatMsg key={i}>
+            <ChatFace>{msg.sender.face}</ChatFace>
+            <ChatMsgContent>
+              <ChatSender>{msg.sender.name}</ChatSender>
+              <ChatText>{msg.text}</ChatText>
+            </ChatMsgContent>
+          </ChatMsg>
+        ))}
+        <div ref={messagesEndRef} />
+      </ChatMessages>
+      <ChatInputRow>
+        <ChatInput
+          type="text"
+          placeholder={enabled ? "Say something…" : "Chat disabled"}
+          value={draft}
+          disabled={!enabled}
+          maxLength={200}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <ChatSendBtn onClick={handleSend} disabled={!enabled || !draft.trim()}>
+          ↵
+        </ChatSendBtn>
+      </ChatInputRow>
+    </ChatBox>
+  );
+};
+
+// ── Layout ──────────────────────────────────────────────────────────────────
+
 const BeforeGameStartScreen = ({
   players,
+  chatEnabled,
+  chatMessages,
+  onSendMessage,
   children,
 }: {
   players: PlayerInfo[];
+  chatEnabled: boolean;
+  chatMessages: ChatMessage[];
+  onSendMessage: (text: string) => void;
   children: React.ReactNode;
 }) => {
   return (
@@ -167,13 +300,12 @@ const BeforeGameStartScreen = ({
             </Player>
           ))}
         </div>
+        <LobbyChat enabled={chatEnabled} messages={chatMessages} onSend={onSendMessage} />
       </div>
       <div className="BeforeGameStartScreen-right">{children}</div>
     </div>
   );
 };
-
-// ── Layout ──────────────────────────────────────────────────────────────────
 
 const RightContent = styled.div`
   display: flex;
@@ -334,6 +466,145 @@ const SettingRow = styled.div`
   select option {
     background: #0c0c20;
     color: #c8d8f0;
+  }
+`;
+
+const ChatToggle = styled.input`
+  width: 2vmin;
+  height: 2vmin;
+  cursor: pointer;
+  accent-color: #00f5ff;
+`;
+
+// ── Chat styles ───────────────────────────────────────────────────────────────
+
+const ChatBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-top: 1.5px solid rgba(0, 245, 255, 0.2);
+  margin-right: 5vmin;
+  flex: 0 0 auto;
+  height: 28vh;
+`;
+
+const ChatTitle = styled.div`
+  padding: 1vmin 2vmin 0.5vmin;
+  font-size: 1.3vmin;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+`;
+
+const ChatMessages = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5vmin 2vmin;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vmin;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 245, 255, 0.3);
+    border-radius: 2px;
+  }
+`;
+
+const ChatMsg = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8vmin;
+`;
+
+const ChatFace = styled.span`
+  font-size: 1.8vmin;
+  line-height: 1;
+  flex-shrink: 0;
+`;
+
+const ChatMsgContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.1vmin;
+  min-width: 0;
+`;
+
+const ChatSender = styled.span`
+  font-size: 1.1vmin;
+  color: var(--cyber-cyan);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+`;
+
+const ChatText = styled.span`
+  font-size: 1.4vmin;
+  color: var(--cyber-text);
+  word-break: break-word;
+`;
+
+const ChatEmpty = styled.div`
+  font-size: 1.3vmin;
+  color: var(--cyber-text-muted);
+  font-style: italic;
+  padding: 1vmin 0;
+`;
+
+const ChatDisabled = styled.div`
+  font-size: 1.3vmin;
+  color: rgba(255, 32, 121, 0.6);
+  font-style: italic;
+  padding: 1vmin 0;
+`;
+
+const ChatInputRow = styled.div`
+  display: flex;
+  gap: 1vmin;
+  padding: 1vmin 2vmin;
+  border-top: 1px solid rgba(0, 245, 255, 0.1);
+`;
+
+const ChatInput = styled.input`
+  flex: 1;
+  font-size: 1.4vmin;
+  padding: 0.6vmin 1vmin;
+  background: rgba(0, 245, 255, 0.04);
+  border: 1px solid rgba(0, 245, 255, 0.25);
+  border-radius: 0.5vmin;
+  color: var(--cyber-text);
+  outline: none;
+  text-align: left;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus {
+    border-color: rgba(0, 245, 255, 0.6);
+  }
+`;
+
+const ChatSendBtn = styled.button`
+  font-size: 1.6vmin;
+  padding: 0.5vmin 1.2vmin;
+  background: rgba(0, 245, 255, 0.08);
+  border: 1px solid rgba(0, 245, 255, 0.35);
+  border-radius: 0.5vmin;
+  color: var(--cyber-cyan);
+  cursor: pointer;
+  transition: background 0.1s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 245, 255, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 `;
 

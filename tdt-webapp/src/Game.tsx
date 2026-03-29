@@ -23,9 +23,16 @@ interface PlayerState {
   state: string;
 }
 
+interface ChatMessage {
+  sender: PlayerInfo;
+  text: string;
+}
+
 interface WaitForPlayersState extends PlayerState {
   state: "waitForPlayers";
   players: PlayerInfo[];
+  chatEnabled: boolean;
+  chatMessages: ChatMessage[];
 }
 
 function isWaitForPlayersState(
@@ -37,6 +44,8 @@ function isWaitForPlayersState(
 interface WaitForGameStartState extends PlayerState {
   state: "waitForGameStart";
   players: PlayerInfo[];
+  chatEnabled: boolean;
+  chatMessages: ChatMessage[];
 }
 
 function isWaitForGameStartState(
@@ -118,7 +127,7 @@ function isFinalState(newPlayerState: PlayerState) {
 interface Action {
   action: string;
   content?: {
-    [key: string]: string | number;
+    [key: string]: string | number | boolean;
   };
 }
 
@@ -250,8 +259,14 @@ const Game = () => {
       content: {
         maxPlayers: settings.maxPlayers,
         roundTimerSeconds: settings.roundTimerSeconds,
+        chatEnabled: settings.chatEnabled,
+        isPublic: settings.isPublic,
       },
     });
+  }, []);
+
+  const sendChat = React.useCallback((text: string) => {
+    send({ action: "chat", content: { text } });
   }, []);
 
   const getComponentForState = () => {
@@ -286,12 +301,22 @@ const Game = () => {
         <WaitForPlayersScreen
           gameId={gameIdNotNull}
           players={playerState.players}
+          chatEnabled={playerState.chatEnabled}
+          chatMessages={playerState.chatMessages}
           handleStart={handleStartGame}
           handleSettingsChange={handleSettingsChange}
+          onSendMessage={sendChat}
         />
       );
     } else if (isWaitForGameStartState(playerState)) {
-      return <WaitForGameStartScreen players={playerState.players} />;
+      return (
+        <WaitForGameStartScreen
+          players={playerState.players}
+          chatEnabled={playerState.chatEnabled}
+          chatMessages={playerState.chatMessages}
+          onSendMessage={sendChat}
+        />
+      );
     } else if (isTypeState(playerState)) {
       const handleTypeDone = (text: string) => {
         send({ action: "type", content: { text } });

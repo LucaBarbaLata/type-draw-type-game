@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
@@ -51,11 +52,16 @@ public class Game {
 
     public static final String STATE_FILENAME = "state.json";
 
+    private static final int MAX_CHAT_MESSAGES = 50;
+    private static final int MAX_CHAT_TEXT_LENGTH = 200;
+
     public final String gameId;
 
     private final Path gameDir;
 
     private final GameState gameState;
+
+    private final List<ChatMessage> chatMessages = new ArrayList<>();
 
     private final Map<Client, Player> clientToPlayer = new HashMap<>();
 
@@ -126,8 +132,38 @@ public class Game {
         }
         gameState.maxPlayers = Math.max(0, settingsAction.maxPlayers());
         gameState.roundTimerSeconds = Math.max(0, settingsAction.roundTimerSeconds());
-        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}", gameId,
-                gameState.maxPlayers, gameState.roundTimerSeconds);
+        gameState.chatEnabled = settingsAction.chatEnabled();
+        gameState.isPublic = settingsAction.isPublic();
+        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}, chatEnabled={}, isPublic={}", gameId,
+                gameState.maxPlayers, gameState.roundTimerSeconds, gameState.chatEnabled, gameState.isPublic);
+        updateStateForAllPlayers();
+    }
+
+    public void chat(Client client, ChatAction chatAction) {
+        if (gameState.state != GameState.State.WaitingForPlayers) {
+            log.warn("Game {}: Ignoring chat in state {}", gameId, gameState.state);
+            return;
+        }
+        if (!gameState.chatEnabled) {
+            log.warn("Game {}: Chat is disabled, ignoring message from client {}", gameId, client.getId());
+            return;
+        }
+        Player player = clientToPlayer.get(client);
+        if (player == null) {
+            log.warn("Game {}: Unknown client {} tried to chat", gameId, client.getId());
+            return;
+        }
+        String text = chatAction.text();
+        if (text == null || text.isBlank() || text.length() > MAX_CHAT_TEXT_LENGTH) {
+            return;
+        }
+        ChatMessage message = new ChatMessage(mapPlayerToPlayerInfo(player), text.strip());
+        chatMessages.add(message);
+        if (chatMessages.size() > MAX_CHAT_MESSAGES) {
+            chatMessages.remove(0);
+        }
+        log.info("Game {}: Chat from {}: {}", gameId, player.name(), text.strip());
+        updateStateForAllPlayers();
     }
 
     private void addClientForPlayer(Client client, Player player) {
@@ -319,11 +355,20 @@ public class Game {
             throw new IllegalStateException("Only valid to call this method in started state");
 
         List<PlayerInfo> playerInfos = mapPlayersToPlayerInfos(gameState.players);
+        List<ChatMessage> messages = List.copyOf(chatMessages);
         if (player.isCreator()) {
-            return new WaitForPlayersState(playerInfos);
+            return new WaitForPlayersState(playerInfos, gameState.chatEnabled, messages);
         } else {
-            return new WaitForGameStartState(playerInfos);
+            return new WaitForGameStartState(playerInfos, gameState.chatEnabled, messages);
         }
+    }
+
+    public PublicGameInfo getPublicInfo() {
+        if (gameState.state != GameState.State.WaitingForPlayers) return null;
+        if (!gameState.isPublic) return null;
+        Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(null);
+        if (creator == null) return null;
+        return new PublicGameInfo(gameId, creator.name(), creator.face(), gameState.players.size(), gameState.maxPlayers);
     }
 
     private String getDrawingSrc(String imageFilename) {

@@ -18,6 +18,10 @@ const Home = () => {
     toggleToFullscreenAndLandscapeOnMobile();
   };
 
+  const handleBrowseGames = () => {
+    navigate("/browse");
+  };
+
   return (
     <BigLogoScreen>
       <Buttons>
@@ -28,6 +32,9 @@ const Home = () => {
         </button>
         <button className="button button-blue" onClick={handleJoinGame}>
           Join Game
+        </button>
+        <button className="button button-blue" onClick={handleBrowseGames}>
+          Browse Public Games
         </button>
       </Buttons>
     </BigLogoScreen>

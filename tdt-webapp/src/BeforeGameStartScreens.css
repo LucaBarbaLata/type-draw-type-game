@@ -47,8 +47,8 @@
 }
 
 .Players {
-  flex: auto;
-  min-height: 10vmin;
+  flex: 1 1 0;
+  min-height: 8vmin;
   border: 1.5px solid rgba(0, 245, 255, 0.5);
   border-left-width: 0;
   border-bottom-width: 0;

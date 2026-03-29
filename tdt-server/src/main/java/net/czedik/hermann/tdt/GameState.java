@@ -41,6 +41,16 @@ public class GameState {
      */
     public java.util.Map<String, String> replayFiles = new java.util.HashMap<>();
 
+    /**
+     * Whether lobby chat is enabled. Default true.
+     */
+    public boolean chatEnabled = true;
+
+    /**
+     * Whether this game is listed in the public browser. Default false.
+     */
+    public boolean isPublic = false;
+
     public enum State {
         WaitingForPlayers,
         Started,
