@@ -106,6 +106,7 @@ const DrawCanvas = ({
   imageProviderRef,
   handleScaleChange,
   onStrokeEnd,
+  initialImageUrl,
 }: {
   color: string;
   brushPixelSize: number;
@@ -113,6 +114,7 @@ const DrawCanvas = ({
   imageProviderRef: React.MutableRefObject<ImageProvider | undefined>;
   handleScaleChange: (scale: number) => void;
   onStrokeEnd?: () => void;
+  initialImageUrl?: string;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
@@ -172,7 +174,12 @@ const DrawCanvas = ({
     const ctx = getCanvas2DContext(canvas);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, [canvas]);
+    if (initialImageUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = initialImageUrl;
+    }
+  }, [canvas]); // intentionally omitting initialImageUrl — only restore on mount
 
   const saveSnapshot = (canvasEl: HTMLCanvasElement) => {
     const ctx = getCanvas2DContext(canvasEl);

@@ -325,6 +325,7 @@ const Game = () => {
           onTick={playUrgentTick}
           onTimerExpire={playTimerExpire}
           onSendReplay={handleSendReplay}
+          cacheKey={`draw-${gameIdNotNull}-r${playerState.round}`}
         />
       );
     } else if (isWaitForRoundFinishState(playerState)) {
