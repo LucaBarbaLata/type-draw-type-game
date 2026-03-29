@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import styled, { keyframes } from "styled-components";
 
 import { PlayerInfo } from "./model";
@@ -45,17 +46,19 @@ const Notifications = ({
 }: {
   items: NotificationItem[];
   onDismiss: (id: number) => void;
-}) => (
-  <Container>
-    {items.map((item) => (
-      <NotificationToast
-        key={item.id}
-        item={item}
-        onDismiss={() => onDismiss(item.id)}
-      />
-    ))}
-  </Container>
-);
+}) =>
+  ReactDOM.createPortal(
+    <Container>
+      {items.map((item) => (
+        <NotificationToast
+          key={item.id}
+          item={item}
+          onDismiss={() => onDismiss(item.id)}
+        />
+      ))}
+    </Container>,
+    document.body
+  );
 
 export default Notifications;
 
