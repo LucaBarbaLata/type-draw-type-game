@@ -532,7 +532,7 @@ const ChatMsgContent = styled.div`
 `;
 
 const ChatSender = styled.span`
-  font-size: 1.6vmin;
+  font-size: 2.4vmin;
   color: var(--cyber-cyan);
   font-weight: bold;
   letter-spacing: 0.05em;
