@@ -149,7 +149,7 @@ const ServerBrowser = () => {
                     <CardLeft>
                       <Face face={g.creatorFace} small={true} />
                       <CardInfo>
-                        <CreatorName>{g.creatorName}'s game</CreatorName>
+                        <CreatorName>👑 {g.creatorName}'s game</CreatorName>
                         <PlayerCount>
                           {g.playerCount}
                           {g.maxPlayers > 0 ? `/${g.maxPlayers}` : ""} player
