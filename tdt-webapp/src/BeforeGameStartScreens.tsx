@@ -539,12 +539,14 @@ const ChatSender = styled.span`
 `;
 
 const CrownIcon = styled.span`
-  font-size: 0.75em;
-  vertical-align: middle;
+  font-size: 0.7em;
+  line-height: 1;
+  position: relative;
+  top: -0.1em;
 `;
 
 const ChatText = styled.span`
-  font-size: 1.4vmin;
+  font-size: 2vmin;
   color: var(--cyber-text);
   word-break: break-word;
 `;
