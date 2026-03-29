@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.BanAction;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
@@ -109,6 +110,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("kick".equals(action)) {
             KickAction kickAction = JSONHelper.objectMapper.treeToValue(content, KickAction.class);
             gameManager.handleKickAction(client, kickAction);
+        } else if ("ban".equals(action)) {
+            BanAction banAction = JSONHelper.objectMapper.treeToValue(content, BanAction.class);
+            gameManager.handleBanAction(client, banAction);
         } else {
             throw new IllegalArgumentException("Unknown action: " + action);
         }

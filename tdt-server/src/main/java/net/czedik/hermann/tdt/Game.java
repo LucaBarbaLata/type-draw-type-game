@@ -33,9 +33,11 @@ import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.BanAction;
 import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.AlreadyStartedGameState;
+import net.czedik.hermann.tdt.playerstate.BannedState;
 import net.czedik.hermann.tdt.playerstate.KickedState;
 import net.czedik.hermann.tdt.playerstate.DrawState;
 import net.czedik.hermann.tdt.playerstate.FrontendStory;
@@ -199,6 +201,37 @@ public class Game {
         updateStateForAllPlayers();
     }
 
+    public void ban(Client client, BanAction banAction) {
+        if (gameState.state != GameState.State.WaitingForPlayers) {
+            log.warn("Game {}: Ignoring ban in state {}", gameId, gameState.state);
+            return;
+        }
+        Player requester = clientToPlayer.get(client);
+        if (requester == null || !requester.isCreator()) {
+            log.warn("Game {}: Non-creator client {} attempted to ban", gameId, client.getId());
+            return;
+        }
+        Player target = gameState.players.stream()
+                .filter(p -> !p.isCreator() && p.name().equals(banAction.playerName()))
+                .findFirst().orElse(null);
+        if (target == null) {
+            log.warn("Game {}: Ban target '{}' not found", gameId, banAction.playerName());
+            return;
+        }
+        log.info("Game {}: Creator banning player '{}'", gameId, target.name());
+        gameState.bannedPlayerIds.add(target.id());
+        Set<Client> targetClients = playerToClients.remove(target);
+        gameState.players.remove(target);
+        if (targetClients != null) {
+            BannedState bannedState = new BannedState();
+            for (Client targetClient : targetClients) {
+                clientToPlayer.remove(targetClient);
+                targetClient.send(bannedState);
+            }
+        }
+        updateStateForAllPlayers();
+    }
+
     private void addClientForPlayer(Client client, Player player) {
         clientToPlayer.put(client, player);
         playerToClients.computeIfAbsent(player, p -> new HashSet<>()).add(client);
@@ -207,6 +240,11 @@ public class Game {
     // returns whether the client has been added as a player to the game
     public boolean join(Client client, JoinAction joinAction) {
         if (gameState.state == GameState.State.WaitingForPlayers) {
+            if (gameState.bannedPlayerIds.contains(joinAction.playerId())) {
+                log.info("Game {}: Rejected join from banned player {}", gameId, joinAction.playerId());
+                client.send(new BannedState());
+                return false;
+            }
             if (gameState.maxPlayers > 0 && gameState.players.size() >= gameState.maxPlayers) {
                 log.info("Game {}: Join rejected — game is full ({}/{})", gameId, gameState.players.size(), gameState.maxPlayers);
                 client.send(new AlreadyStartedGameState());
@@ -401,6 +439,8 @@ public class Game {
         if (!gameState.isPublic) return null;
         Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(null);
         if (creator == null) return null;
+        // Don't advertise the lobby if the creator has disconnected
+        if (playerToClients.getOrDefault(creator, Collections.emptySet()).isEmpty()) return null;
         return new PublicGameInfo(gameId, creator.name(), creator.face(), gameState.players.size(), gameState.maxPlayers);
     }
 

@@ -39,6 +39,7 @@ export const WaitForPlayersScreen = ({
   handleSettingsChange: (settings: GameSettings) => void;
   onSendMessage: (text: string) => void;
   onKickPlayer: (playerName: string) => void;
+  onBanPlayer: (playerName: string) => void;
 }) => {
   const [roundTimerSeconds, setRoundTimerSeconds] = React.useState(0);
   const [maxPlayers, setMaxPlayers] = React.useState(0);
@@ -70,6 +71,7 @@ export const WaitForPlayersScreen = ({
       chatMessages={chatMessages}
       onSendMessage={onSendMessage}
       onKickPlayer={onKickPlayer}
+      onBanPlayer={onBanPlayer}
     >
       <RightContent>
         <Logo />
@@ -286,6 +288,7 @@ const BeforeGameStartScreen = ({
   chatMessages,
   onSendMessage,
   onKickPlayer,
+  onBanPlayer,
   children,
 }: {
   players: PlayerInfo[];
@@ -293,6 +296,7 @@ const BeforeGameStartScreen = ({
   chatMessages: ChatMessage[];
   onSendMessage: (text: string) => void;
   onKickPlayer?: (playerName: string) => void;
+  onBanPlayer?: (playerName: string) => void;
   children: React.ReactNode;
 }) => {
   return (
@@ -305,10 +309,19 @@ const BeforeGameStartScreen = ({
               <Player face={player.face}>
                 {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
               </Player>
-              {onKickPlayer && !player.isCreator && (
-                <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player">
-                  ✕
-                </KickBtn>
+              {!player.isCreator && (onKickPlayer || onBanPlayer) && (
+                <PlayerActions>
+                  {onKickPlayer && (
+                    <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player">
+                      ✕
+                    </KickBtn>
+                  )}
+                  {onBanPlayer && (
+                    <BanBtn onClick={() => onBanPlayer(player.name)} title="Ban player">
+                      ⊘
+                    </BanBtn>
+                  )}
+                </PlayerActions>
               )}
             </PlayerRow>
           ))}
@@ -325,6 +338,12 @@ const PlayerRow = styled.div`
   align-items: center;
   justify-content: space-between;
   padding-right: 1vmin;
+`;
+
+const PlayerActions = styled.div`
+  display: flex;
+  gap: 0.6vmin;
+  flex-shrink: 0;
 `;
 
 const KickBtn = styled.button`
@@ -344,6 +363,26 @@ const KickBtn = styled.button`
     background: rgba(255, 32, 121, 0.15);
     border-color: var(--cyber-magenta);
     box-shadow: var(--cyber-glow-magenta);
+  }
+`;
+
+const BanBtn = styled.button`
+  background: none;
+  border: 1.5px solid rgba(255, 160, 0, 0.5);
+  border-radius: 50%;
+  color: #ffa000;
+  width: 3.5vmin;
+  height: 3.5vmin;
+  font-size: 1.5vmin;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, border-color 0.1s;
+
+  &:hover {
+    background: rgba(255, 160, 0, 0.15);
+    border-color: #ffa000;
+    box-shadow: 0 0 8px #ffa000, 0 0 20px rgba(255, 160, 0, 0.2);
   }
 `;
 

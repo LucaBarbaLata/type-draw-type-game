@@ -274,6 +274,10 @@ const Game = () => {
     send({ action: "kick", content: { playerName } });
   }, []);
 
+  const sendBan = React.useCallback((playerName: string) => {
+    send({ action: "ban", content: { playerName } });
+  }, []);
+
   const getComponentForState = () => {
     if (playerState.state === "loading") {
       return <LoadingGame />;
@@ -312,6 +316,7 @@ const Game = () => {
           handleSettingsChange={handleSettingsChange}
           onSendMessage={sendChat}
           onKickPlayer={sendKick}
+          onBanPlayer={sendBan}
         />
       );
     } else if (isWaitForGameStartState(playerState)) {
@@ -389,6 +394,13 @@ const Game = () => {
       return (
         <Message>
           You have been kicked from the lobby.{" "}
+          <KickedLink onClick={() => navigate("/")}>Go back home</KickedLink>
+        </Message>
+      );
+    } else if (playerState.state === "banned") {
+      return (
+        <Message>
+          You have been banned from this lobby.{" "}
           <KickedLink onClick={() => navigate("/")}>Go back home</KickedLink>
         </Message>
       );

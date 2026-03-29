@@ -1,7 +1,9 @@
 package net.czedik.hermann.tdt;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This one gets stored/read from disk, so be careful with changes: they need to
@@ -50,6 +52,11 @@ public class GameState {
      * Whether this game is listed in the public browser. Default false.
      */
     public boolean isPublic = false;
+
+    /**
+     * Player IDs that have been banned from this lobby.
+     */
+    public Set<String> bannedPlayerIds = new HashSet<>();
 
     public enum State {
         WaitingForPlayers,

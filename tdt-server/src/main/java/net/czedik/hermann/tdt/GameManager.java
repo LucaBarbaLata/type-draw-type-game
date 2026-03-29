@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import net.czedik.hermann.tdt.GameLoader.GameRef;
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.BanAction;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
@@ -311,6 +312,18 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.kick(client, kickAction);
+        });
+    }
+
+    public void handleBanAction(Client client, BanAction banAction) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle ban. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.ban(client, banAction);
+            updatePublicRegistry(game);
         });
     }
 
