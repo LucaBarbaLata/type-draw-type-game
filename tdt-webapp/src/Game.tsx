@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
 import { PlayerInfo, StoryContent } from "./model";
@@ -133,6 +133,7 @@ interface Action {
 
 const Game = () => {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const gameIdNotNull = gameId!;
 
   const [playerState, setPlayerState] = React.useState<PlayerState>({ state: "loading" });
@@ -269,6 +270,10 @@ const Game = () => {
     send({ action: "chat", content: { text } });
   }, []);
 
+  const sendKick = React.useCallback((playerName: string) => {
+    send({ action: "kick", content: { playerName } });
+  }, []);
+
   const getComponentForState = () => {
     if (playerState.state === "loading") {
       return <LoadingGame />;
@@ -306,6 +311,7 @@ const Game = () => {
           handleStart={handleStartGame}
           handleSettingsChange={handleSettingsChange}
           onSendMessage={sendChat}
+          onKickPlayer={sendKick}
         />
       );
     } else if (isWaitForGameStartState(playerState)) {
@@ -378,6 +384,13 @@ const Game = () => {
           waitingForPlayers={playerState.waitingForPlayers}
           stories={playerState.stories}
         />
+      );
+    } else if (playerState.state === "kicked") {
+      return (
+        <Message>
+          You have been kicked from the lobby.{" "}
+          <KickedLink onClick={() => navigate("/")}>Go back home</KickedLink>
+        </Message>
       );
     } else if (playerState.state === "alreadyStartedGame") {
       return (
@@ -506,6 +519,12 @@ const MuteButton = styled.button`
 const Message = ({ children }: { children: React.ReactNode }) => {
   return <BigLogoScreen>{children}</BigLogoScreen>;
 };
+
+const KickedLink = styled.span`
+  color: var(--cyber-cyan);
+  text-decoration: underline;
+  cursor: pointer;
+`;
 
 const LoadingGame = () => {
   return <div>Loading game...</div>;

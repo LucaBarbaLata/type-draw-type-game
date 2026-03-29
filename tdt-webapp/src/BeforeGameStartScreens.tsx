@@ -29,6 +29,7 @@ export const WaitForPlayersScreen = ({
   handleStart,
   handleSettingsChange,
   onSendMessage,
+  onKickPlayer,
 }: {
   gameId: string;
   players: PlayerInfo[];
@@ -37,6 +38,7 @@ export const WaitForPlayersScreen = ({
   handleStart: (settings: GameSettings) => void;
   handleSettingsChange: (settings: GameSettings) => void;
   onSendMessage: (text: string) => void;
+  onKickPlayer: (playerName: string) => void;
 }) => {
   const [roundTimerSeconds, setRoundTimerSeconds] = React.useState(0);
   const [maxPlayers, setMaxPlayers] = React.useState(0);
@@ -67,6 +69,7 @@ export const WaitForPlayersScreen = ({
       chatEnabled={chatEnabled}
       chatMessages={chatMessages}
       onSendMessage={onSendMessage}
+      onKickPlayer={onKickPlayer}
     >
       <RightContent>
         <Logo />
@@ -282,12 +285,14 @@ const BeforeGameStartScreen = ({
   chatEnabled,
   chatMessages,
   onSendMessage,
+  onKickPlayer,
   children,
 }: {
   players: PlayerInfo[];
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
   onSendMessage: (text: string) => void;
+  onKickPlayer?: (playerName: string) => void;
   children: React.ReactNode;
 }) => {
   return (
@@ -296,9 +301,16 @@ const BeforeGameStartScreen = ({
         <div className="Players-title">Players:</div>
         <div className="Players">
           {players.map((player, index) => (
-            <Player key={index} face={player.face}>
-              {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
-            </Player>
+            <PlayerRow key={index}>
+              <Player face={player.face}>
+                {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
+              </Player>
+              {onKickPlayer && !player.isCreator && (
+                <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player">
+                  ✕
+                </KickBtn>
+              )}
+            </PlayerRow>
           ))}
         </div>
         <LobbyChat enabled={chatEnabled} messages={chatMessages} onSend={onSendMessage} />
@@ -307,6 +319,33 @@ const BeforeGameStartScreen = ({
     </div>
   );
 };
+
+const PlayerRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 1vmin;
+`;
+
+const KickBtn = styled.button`
+  background: none;
+  border: 1.5px solid rgba(255, 32, 121, 0.5);
+  border-radius: 50%;
+  color: var(--cyber-magenta);
+  width: 3.5vmin;
+  height: 3.5vmin;
+  font-size: 1.5vmin;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, border-color 0.1s;
+
+  &:hover {
+    background: rgba(255, 32, 121, 0.15);
+    border-color: var(--cyber-magenta);
+    box-shadow: var(--cyber-glow-magenta);
+  }
+`;
 
 const RightContent = styled.div`
   display: flex;

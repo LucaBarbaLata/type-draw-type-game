@@ -33,8 +33,10 @@ import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.AlreadyStartedGameState;
+import net.czedik.hermann.tdt.playerstate.KickedState;
 import net.czedik.hermann.tdt.playerstate.DrawState;
 import net.czedik.hermann.tdt.playerstate.FrontendStory;
 import net.czedik.hermann.tdt.playerstate.FrontendStoryElement;
@@ -164,6 +166,36 @@ public class Game {
             chatMessages.remove(0);
         }
         log.info("Game {}: Chat from {}: {}", gameId, player.name(), text.strip());
+        updateStateForAllPlayers();
+    }
+
+    public void kick(Client client, KickAction kickAction) {
+        if (gameState.state != GameState.State.WaitingForPlayers) {
+            log.warn("Game {}: Ignoring kick in state {}", gameId, gameState.state);
+            return;
+        }
+        Player requester = clientToPlayer.get(client);
+        if (requester == null || !requester.isCreator()) {
+            log.warn("Game {}: Non-creator client {} attempted to kick", gameId, client.getId());
+            return;
+        }
+        Player target = gameState.players.stream()
+                .filter(p -> !p.isCreator() && p.name().equals(kickAction.playerName()))
+                .findFirst().orElse(null);
+        if (target == null) {
+            log.warn("Game {}: Kick target '{}' not found", gameId, kickAction.playerName());
+            return;
+        }
+        log.info("Game {}: Creator kicking player '{}'", gameId, target.name());
+        Set<Client> targetClients = playerToClients.remove(target);
+        gameState.players.remove(target);
+        if (targetClients != null) {
+            KickedState kickedState = new KickedState();
+            for (Client targetClient : targetClients) {
+                clientToPlayer.remove(targetClient);
+                targetClient.send(kickedState);
+            }
+        }
         updateStateForAllPlayers();
     }
 
