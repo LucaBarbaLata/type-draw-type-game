@@ -297,7 +297,7 @@ const BeforeGameStartScreen = ({
         <div className="Players">
           {players.map((player, index) => (
             <Player key={index} face={player.face}>
-              {player.name}
+              {index === 0 ? `👑 ${player.name}` : player.name}
             </Player>
           ))}
         </div>
