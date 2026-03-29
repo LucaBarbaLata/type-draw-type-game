@@ -212,7 +212,6 @@
   left: 1vmin;
   top: 1vmin;
   border-radius: 50%;
-  z-index: -1;
 }
 
 .tool-color img {
