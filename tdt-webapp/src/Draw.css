@@ -193,9 +193,10 @@
   box-shadow: var(--cyber-glow);
   backdrop-filter: blur(12px);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5vmin;
 }
 
 .tool-color {
