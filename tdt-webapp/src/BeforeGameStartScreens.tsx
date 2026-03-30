@@ -79,7 +79,8 @@ export const WaitForPlayersScreen = ({
     handleSettingsChange(buildSettings(timerSecs, maxP, chat, pub, mode, hpInt, hpTot));
   };
 
-  const buttonDisabled = players.length <= 1;
+  const minPlayers = localGameMode === "TEAM" ? 4 : 2;
+  const buttonDisabled = players.length < minPlayers;
   const link = window.location.toString();
 
   const handleDownloadQR = () => {
@@ -258,7 +259,7 @@ export const WaitForPlayersScreen = ({
             <button
               className="button"
               disabled={buttonDisabled}
-              title={buttonDisabled ? "Waiting for more players" : "Let's go!"}
+              title={buttonDisabled ? (localGameMode === "TEAM" ? "Team Mode requires at least 4 players" : "Waiting for more players") : "Let's go!"}
               onClick={() => handleStart(buildSettings(roundTimerSeconds, maxPlayers, localChatEnabled, localIsPublic, localGameMode, hpInterval, hpTotal))}
             >
               Start Game

@@ -247,7 +247,7 @@ const DrawCanvas = ({
     // Shaky Hands: add random jitter to stroke coordinates
     let dx = x, dy = y;
     if (gameMode === "SHAKY_HANDS") {
-      const jitter = Math.min(12, brushPixelSize * 0.4);
+      const jitter = Math.min(70, 28 + brushPixelSize * 0.8);
       dx = x + (Math.random() * 2 - 1) * jitter;
       dy = y + (Math.random() * 2 - 1) * jitter;
     }
@@ -333,7 +333,7 @@ const DrawCanvas = ({
     let ex = x ?? shapeStartRef.current.x;
     let ey = y ?? shapeStartRef.current.y;
     if (gameMode === "SHAKY_HANDS") {
-      const jitter = Math.min(12, brushPixelSize * 0.4);
+      const jitter = Math.min(70, 28 + brushPixelSize * 0.8);
       ex += (Math.random() * 2 - 1) * jitter;
       ey += (Math.random() * 2 - 1) * jitter;
     }
@@ -351,7 +351,7 @@ const DrawCanvas = ({
     if (!fogCanvas) return;
     const ctx2 = fogCanvas.getContext("2d")!;
     ctx2.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
-    ctx2.fillStyle = "rgba(8,8,24,0.93)";
+    ctx2.fillStyle = "rgba(8,8,24,1)";
     ctx2.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
     if (clientX !== null && clientY !== null) {
       const rect = fogCanvas.getBoundingClientRect();
@@ -359,7 +359,7 @@ const DrawCanvas = ({
       const scaleY = fogCanvas.height / rect.height;
       const cx = (clientX - rect.left) * scaleX;
       const cy = (clientY - rect.top) * scaleY;
-      const radius = 100 / scaleRef.current;
+      const radius = 60 / scaleRef.current;
       ctx2.globalCompositeOperation = "destination-out";
       ctx2.beginPath();
       ctx2.arc(cx, cy, radius, 0, Math.PI * 2);

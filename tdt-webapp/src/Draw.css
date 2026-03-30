@@ -242,16 +242,16 @@
 }
 
 .tool-noir-swatches {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6vmin;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8vmin;
   margin: 1vmin 0;
-  align-items: center;
+  justify-items: center;
 }
 
 .tool-noir-swatch {
-  width: 8vmin;
-  height: 8vmin;
+  width: 7vmin;
+  height: 7vmin;
   border-radius: 50%;
   border: 1.5px solid rgba(0, 245, 255, 0.4);
   cursor: pointer;
