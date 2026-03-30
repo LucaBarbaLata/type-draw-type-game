@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
 import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
@@ -46,6 +48,8 @@ import net.czedik.hermann.tdt.playerstate.FrontendStory;
 import net.czedik.hermann.tdt.playerstate.FrontendStoryElement;
 import net.czedik.hermann.tdt.playerstate.HotPotatoDrawState;
 import net.czedik.hermann.tdt.playerstate.TeamStrokeEvent;
+import net.czedik.hermann.tdt.playerstate.TeamCanvasRequestEvent;
+import net.czedik.hermann.tdt.playerstate.TeamCanvasSyncEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
 import net.czedik.hermann.tdt.playerstate.SpectatorState;
@@ -807,6 +811,54 @@ public class Game {
             }
         }
         return null;
+    }
+
+    /**
+     * Relays a canvas-request from the sender to their team partner(s).
+     * Used when a player reconnects and needs the partner's current canvas state.
+     */
+    public void teamCanvasRequest(Client senderClient, TeamCanvasRequestAction action) {
+        Player sender = clientToPlayer.get(senderClient);
+        if (sender == null) return;
+        if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) return;
+        if (isTypeRound()) return;
+
+        int senderIndex = gameState.players.indexOf(sender);
+        int[] pair = getTeamPairForPlayer(senderIndex);
+        if (pair == null) return;
+
+        TeamCanvasRequestEvent event = new TeamCanvasRequestEvent(action.round(), sender.name());
+        for (int partnerIndex : pair) {
+            if (partnerIndex == senderIndex) continue;
+            Player partner = gameState.players.get(partnerIndex);
+            for (Client partnerClient : playerToClients.getOrDefault(partner, Collections.emptySet())) {
+                partnerClient.send(event);
+            }
+        }
+    }
+
+    /**
+     * Relays a canvas image from the sender to their team partner(s).
+     * Sent in response to a teamCanvasRequest.
+     */
+    public void teamCanvasSync(Client senderClient, TeamCanvasSyncAction action) {
+        Player sender = clientToPlayer.get(senderClient);
+        if (sender == null) return;
+        if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) return;
+        if (isTypeRound()) return;
+
+        int senderIndex = gameState.players.indexOf(sender);
+        int[] pair = getTeamPairForPlayer(senderIndex);
+        if (pair == null) return;
+
+        TeamCanvasSyncEvent event = new TeamCanvasSyncEvent(action.imageDataUrl(), action.round(), sender.name());
+        for (int partnerIndex : pair) {
+            if (partnerIndex == senderIndex) continue;
+            Player partner = gameState.players.get(partnerIndex);
+            for (Client partnerClient : playerToClients.getOrDefault(partner, Collections.emptySet())) {
+                partnerClient.send(event);
+            }
+        }
     }
 
     /**

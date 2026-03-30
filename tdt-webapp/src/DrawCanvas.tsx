@@ -10,6 +10,7 @@ export interface ImageProvider {
   undo: () => void;
   redo: () => void;
   applyRemoteStroke: (seg: RemoteStroke) => void;
+  loadImageDataURL: (dataUrl: string) => void;
 }
 
 function getPositionInCanvas(
@@ -193,6 +194,15 @@ const DrawCanvas = ({
             } else if (seg.type === "fill") {
               floodFill(ctx, seg.x0, seg.y0, seg.color);
             }
+          },
+          loadImageDataURL: (dataUrl: string) => {
+            const img = new Image();
+            img.onload = () => {
+              const ctx = getCanvas2DContext(canvasElement);
+              ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+              ctx.drawImage(img, 0, 0, canvasElement.width, canvasElement.height);
+            };
+            img.src = dataUrl;
           },
         };
       }

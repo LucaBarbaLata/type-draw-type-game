@@ -31,6 +31,8 @@ import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.UnknownGameState;
@@ -365,6 +367,28 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.teamStroke(client, action);
+        });
+    }
+
+    public void handleTeamCanvasRequestAction(Client client, TeamCanvasRequestAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle teamCanvasRequest. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.teamCanvasRequest(client, action);
+        });
+    }
+
+    public void handleTeamCanvasSyncAction(Client client, TeamCanvasSyncAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle teamCanvasSync. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.teamCanvasSync(client, action);
         });
     }
 

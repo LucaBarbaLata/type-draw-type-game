@@ -168,6 +168,9 @@ const Game = () => {
   // Team mode: partner cursor position (canvas coordinates) and draw canvas ref
   const [partnerCursor, setPartnerCursor] = React.useState<{ x: number; y: number; name: string } | null>(null);
   const imageProviderRef = React.useRef<import("./DrawCanvas").ImageProvider | undefined>();
+  // Team mode: track the current draw round so teamStroke messages include the correct round number
+  const currentDrawRoundRef = React.useRef<number>(0);
+  const sentCanvasRequestForRoundRef = React.useRef<number>(-1);
 
   const [reconnectCount, setReconnectCount] = React.useState(0);
 
@@ -231,6 +234,15 @@ const Game = () => {
         }
         return;
       }
+      if (msg.state === "teamCanvasRequest") {
+        handleTeamCanvasRequest();
+        return;
+      }
+      if (msg.state === "teamCanvasSync") {
+        const syncMsg = msg as unknown as { state: string; imageDataUrl: string };
+        imageProviderRef.current?.loadImageDataURL(syncMsg.imageDataUrl);
+        return;
+      }
       if (isFinalState(msg)) {
         closeSocket();
       }
@@ -261,6 +273,23 @@ const Game = () => {
     };
   }, [gameIdNotNull, reconnectCount]);
 
+  // Keep currentDrawRoundRef in sync, and on entering a team draw round request the partner's canvas
+  React.useEffect(() => {
+    if (!isDrawState(playerState)) return;
+    currentDrawRoundRef.current = playerState.round;
+    if ((playerState.gameMode ?? "CLASSIC") !== "TEAM") return;
+    if (sentCanvasRequestForRoundRef.current === playerState.round) return;
+    sentCanvasRequestForRoundRef.current = playerState.round;
+    // Small delay to ensure DrawCanvas has mounted and imageProviderRef is set
+    const timer = setTimeout(() => {
+      socketRef.current?.send(JSON.stringify({
+        action: "teamCanvasRequest",
+        content: { round: playerState.round },
+      }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [playerState]);
+
   // Auto-rejoin if we have saved name/face in localStorage
   React.useEffect(() => {
     if (playerState.state !== "join") return;
@@ -287,7 +316,16 @@ const Game = () => {
   const handleStrokeSegment = React.useCallback((seg: StrokeSegment) => {
     socketRef.current?.send(JSON.stringify({
       action: "teamStroke",
-      content: seg,
+      content: { ...seg, round: currentDrawRoundRef.current },
+    }));
+  }, []);
+
+  const handleTeamCanvasRequest = React.useCallback(() => {
+    const dataUrl = imageProviderRef.current?.getImageDataURL();
+    if (!dataUrl) return;
+    socketRef.current?.send(JSON.stringify({
+      action: "teamCanvasSync",
+      content: { round: currentDrawRoundRef.current, imageDataUrl: dataUrl },
     }));
   }, []);
 

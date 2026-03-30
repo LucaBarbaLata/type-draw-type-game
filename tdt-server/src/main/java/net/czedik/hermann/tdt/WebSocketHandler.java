@@ -26,6 +26,8 @@ import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
+import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
@@ -117,6 +119,12 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("teamStroke".equals(action)) {
             TeamStrokeAction teamStrokeAction = JSONHelper.objectMapper.treeToValue(content, TeamStrokeAction.class);
             gameManager.handleTeamStrokeAction(client, teamStrokeAction);
+        } else if ("teamCanvasRequest".equals(action)) {
+            TeamCanvasRequestAction teamCanvasRequestAction = JSONHelper.objectMapper.treeToValue(content, TeamCanvasRequestAction.class);
+            gameManager.handleTeamCanvasRequestAction(client, teamCanvasRequestAction);
+        } else if ("teamCanvasSync".equals(action)) {
+            TeamCanvasSyncAction teamCanvasSyncAction = JSONHelper.objectMapper.treeToValue(content, TeamCanvasSyncAction.class);
+            gameManager.handleTeamCanvasSyncAction(client, teamCanvasSyncAction);
         } else {
             throw new IllegalArgumentException("Unknown action: " + action);
         }
