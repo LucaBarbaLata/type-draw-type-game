@@ -20,6 +20,24 @@ With N players there are N rounds and N stories — each player contributes exac
 
 ---
 
+## Game Modes
+
+Select a mode when creating a lobby. All players see the active mode before the game starts.
+
+| Mode | Description |
+|---|---|
+| **Classic** | The original game — type, draw, repeat. |
+| **One-Word** | Typing phases are limited to a single word — no spaces allowed. |
+| **Shaky Hands** | A random wobble is added to every stroke. Good luck drawing a straight line. |
+| **Blind Draw** | Your brush is invisible while you draw. Strokes only appear when you lift the pen. |
+| **Telephone Noir** | The colour palette is locked to black, white, and grey. All drawings must be monochrome. |
+| **Opposite Mode** | Always draw the *opposite* of what you receive. The chain constantly inverts itself. |
+| **Fog of War** | Only a small circle around your cursor is visible while drawing. |
+| **Hot Canvas** | All players draw simultaneously. Every rotation the server passes each canvas to the next player — nobody finishes their own drawing. |
+| **Team Mode** | Two players share one canvas and draw on it simultaneously in real time via WebSocket stroke relay. |
+
+---
+
 ## Features
 
 ### Gameplay
@@ -146,6 +164,6 @@ Dev server runs at `http://localhost:5173` and proxies `/api` requests to the ba
 
 Original game by **Hermann Czedik-Eysenberg** — [github.com/Bronkoknorb](https://github.com/Bronkoknorb)
 
-Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI, full drawing toolset (fill, shapes, undo/redo), drawing timelapse replay, synthesized audio engine, QR code lobby, round timer, spectator mode, story PNG export, interactive how-to guide, auto-reconnect, and canvas progress caching.
+Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI, full drawing toolset (fill, shapes, undo/redo), drawing timelapse replay, synthesized audio engine, QR code lobby, round timer, spectator mode, story PNG export, interactive how-to guide, auto-reconnect, canvas progress caching, and nine game modes (One-Word, Shaky Hands, Blind Draw, Telephone Noir, Opposite, Fog of War, Hot Canvas, Team Mode).
 
 License: [GNU Affero General Public License](LICENSE)
