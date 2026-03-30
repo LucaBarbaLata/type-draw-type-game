@@ -8,6 +8,8 @@
 }
 
 .Draw-tools {
+  position: relative;
+  z-index: 1;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -182,6 +184,7 @@
 
 .tool-popup {
   position: absolute;
+  z-index: 10;
   margin-left: 2vmin;
   padding: 1vmin;
   border-radius: 2vmin;
