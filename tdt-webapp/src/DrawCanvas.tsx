@@ -26,6 +26,9 @@ function getPositionInCanvas(
 }
 
 function hexToRgb(hex: string): [number, number, number] {
+  // Expand 3-digit shorthand #RGB → #RRGGBB
+  const short = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
+  if (short) hex = `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`;
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return r ? [parseInt(r[1], 16), parseInt(r[2], 16), parseInt(r[3], 16)] : [0, 0, 0];
 }
