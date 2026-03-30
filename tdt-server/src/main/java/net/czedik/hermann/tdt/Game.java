@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
@@ -43,6 +44,8 @@ import net.czedik.hermann.tdt.playerstate.KickedState;
 import net.czedik.hermann.tdt.playerstate.DrawState;
 import net.czedik.hermann.tdt.playerstate.FrontendStory;
 import net.czedik.hermann.tdt.playerstate.FrontendStoryElement;
+import net.czedik.hermann.tdt.playerstate.HotPotatoDrawState;
+import net.czedik.hermann.tdt.playerstate.TeamStrokeEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
 import net.czedik.hermann.tdt.playerstate.SpectatorState;
@@ -143,8 +146,15 @@ public class Game {
         if (settingsAction.gameMode() != null) {
             gameState.gameMode = settingsAction.gameMode();
         }
-        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}, chatEnabled={}, isPublic={}, gameMode={}", gameId,
-                gameState.maxPlayers, gameState.roundTimerSeconds, gameState.chatEnabled, gameState.isPublic, gameState.gameMode);
+        if (settingsAction.hotPotatoIntervalSeconds() > 0) {
+            gameState.hotPotatoIntervalSeconds = settingsAction.hotPotatoIntervalSeconds();
+        }
+        if (settingsAction.hotPotatoTotalSeconds() > 0) {
+            gameState.hotPotatoTotalSeconds = settingsAction.hotPotatoTotalSeconds();
+        }
+        log.info("Game {}: Settings updated — maxPlayers={}, roundTimerSeconds={}, chatEnabled={}, isPublic={}, gameMode={}, hpInterval={}, hpTotal={}", gameId,
+                gameState.maxPlayers, gameState.roundTimerSeconds, gameState.chatEnabled, gameState.isPublic, gameState.gameMode,
+                gameState.hotPotatoIntervalSeconds, gameState.hotPotatoTotalSeconds);
         updateStateForAllPlayers();
     }
 
@@ -346,7 +356,36 @@ public class Game {
 
     private PlayerState getFinishedState() {
         int[] votesByStory = computeVotesByStory();
-        return new StoriesState(mapStoriesToFrontendStories(), votesByStory);
+        FrontendStory[] frontendStories = gameState.gameMode == GameMode.HOT_POTATO
+                ? mapHotPotatoStoriesToFrontendStories()
+                : mapStoriesToFrontendStories();
+        return new StoriesState(frontendStories, votesByStory);
+    }
+
+    private FrontendStory[] mapHotPotatoStoriesToFrontendStories() {
+        FrontendStory[] result = new FrontendStory[gameState.stories.length];
+        for (int storyIndex = 0; storyIndex < gameState.stories.length; storyIndex++) {
+            StoryElement[] elements = gameState.stories[storyIndex].elements;
+
+            // Count non-null frames
+            int count = 0;
+            for (StoryElement e : elements) {
+                if (e != null) count++;
+            }
+
+            FrontendStoryElement[] fe = new FrontendStoryElement[count];
+            int idx = 0;
+            for (int r = 0; r < elements.length; r++) {
+                if (elements[r] == null) continue;
+                // Find which player drew canvas storyIndex at rotation r
+                int playerIndex = ArrayUtils.indexOf(gameState.hotPotatoMatrix[r], storyIndex);
+                Player player = gameState.players.get(playerIndex);
+                String content = getDrawingSrc(elements[r].content);
+                fe[idx++] = new FrontendStoryElement("image", content, mapPlayerToPlayerInfo(player), null);
+            }
+            result[storyIndex] = new FrontendStory(fe);
+        }
+        return result;
     }
 
     private int[] computeVotesByStory() {
@@ -387,6 +426,10 @@ public class Game {
         if (gameState.state != GameState.State.Started)
             throw new IllegalStateException("Only valid to call this method in started state");
 
+        if (gameState.gameMode == GameMode.HOT_POTATO) {
+            return getHotPotatoState(player);
+        }
+
         if (!hasPlayerFinishedCurrentRound(player)) {
             if (isTypeRound()) {
                 return getTypeState(player);
@@ -396,6 +439,46 @@ public class Game {
         } else {
             return getWaitForRoundFinishedState();
         }
+    }
+
+    private PlayerState getHotPotatoState(Player player) {
+        int rotation = gameState.hotPotatoCurrentRotation;
+        if (rotation >= gameState.hotPotatoTotalRotations) {
+            // Shouldn't normally be reached (state transitions to Finished), but guard anyway
+            return getFinishedState();
+        }
+
+        int playerIndex = gameState.players.indexOf(player);
+        if (playerIndex < 0) return getFinishedState();
+
+        if (gameState.hotPotatoSubmitted.contains(player.id())) {
+            // Player already submitted for this rotation — show waiting screen
+            List<Player> waitingFor = gameState.players.stream()
+                    .filter(p -> !gameState.hotPotatoSubmitted.contains(p.id()))
+                    .collect(Collectors.toList());
+            return new WaitForRoundFinishState(mapPlayersToPlayerInfos(waitingFor), false);
+        }
+
+        int storyIndex = gameState.hotPotatoMatrix[rotation][playerIndex];
+
+        // Find the most recent submitted frame for this canvas (becomes initialCanvasUrl)
+        String initialCanvasUrl = null;
+        for (int r = rotation - 1; r >= 0; r--) {
+            StoryElement elem = gameState.stories[storyIndex].elements[r];
+            if (elem != null) {
+                initialCanvasUrl = getDrawingSrc(elem.content);
+                break;
+            }
+        }
+
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        return new HotPotatoDrawState(
+                rotation + 1,
+                gameState.hotPotatoTotalRotations,
+                gameState.hotPotatoIntervalSeconds,
+                initialCanvasUrl,
+                mode
+        );
     }
 
     private PlayerState getWaitForRoundFinishedState() {
@@ -434,10 +517,12 @@ public class Game {
         List<PlayerInfo> playerInfos = mapPlayersToPlayerInfos(gameState.players);
         List<ChatMessage> messages = List.copyOf(chatMessages);
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        int hpInterval = gameState.hotPotatoIntervalSeconds;
+        int hpTotal = gameState.hotPotatoTotalSeconds;
         if (player.isCreator()) {
-            return new WaitForPlayersState(playerInfos, gameState.chatEnabled, messages, mode);
+            return new WaitForPlayersState(playerInfos, gameState.chatEnabled, messages, mode, hpInterval, hpTotal);
         } else {
-            return new WaitForGameStartState(playerInfos, gameState.chatEnabled, messages, mode);
+            return new WaitForGameStartState(playerInfos, gameState.chatEnabled, messages, mode, hpInterval, hpTotal);
         }
     }
 
@@ -576,8 +661,18 @@ public class Game {
     }
 
     private void startGame() {
-        log.info("Game {}: Starting", gameId);
+        log.info("Game {}: Starting (mode={})", gameId, gameState.gameMode);
         gameState.state = GameState.State.Started;
+
+        if (gameState.gameMode == GameMode.HOT_POTATO) {
+            startHotPotatoGame();
+            return;
+        }
+
+        if (gameState.gameMode == GameMode.TEAM) {
+            startTeamGame();
+            return;
+        }
 
         gameState.gameMatrix = GameRoundsGenerator.generate(gameState.players.size());
 
@@ -587,6 +682,173 @@ public class Game {
         storeState();
 
         updateStateForAllPlayers();
+    }
+
+    private void startHotPotatoGame() {
+        int numPlayers = gameState.players.size();
+        int interval = Math.max(10, gameState.hotPotatoIntervalSeconds);
+        int totalSeconds = Math.max(interval, gameState.hotPotatoTotalSeconds);
+        int totalRotations = Math.max(1, totalSeconds / interval);
+
+        gameState.hotPotatoIntervalSeconds = interval;
+        gameState.hotPotatoTotalRotations = totalRotations;
+        gameState.hotPotatoCurrentRotation = 0;
+        gameState.hotPotatoSubmitted = new HashSet<>();
+
+        // hotPotatoMatrix[rotation][playerIndex] = storyIndex
+        gameState.hotPotatoMatrix = new int[totalRotations][numPlayers];
+        for (int r = 0; r < totalRotations; r++) {
+            for (int p = 0; p < numPlayers; p++) {
+                gameState.hotPotatoMatrix[r][p] = (p + r) % numPlayers;
+            }
+        }
+
+        // Each story has totalRotations slots (one per rotation)
+        gameState.stories = new Story[numPlayers];
+        Arrays.setAll(gameState.stories, i -> new Story(totalRotations));
+
+        log.info("Game {}: Hot Potato started — {} players, {} rotations of {}s each",
+                gameId, numPlayers, totalRotations, interval);
+
+        storeState();
+        updateStateForAllPlayers();
+    }
+
+    /**
+     * Called by the external timer (GameManager) at the end of each hot potato drawing interval
+     * plus a 5-second submission grace period.
+     *
+     * @return delay in seconds before the next tick should fire, or 0 if the game is now finished
+     */
+    public int hotPotatoTick() {
+        if (gameState.gameMode != GameMode.HOT_POTATO || gameState.state != GameState.State.Started) {
+            log.warn("Game {}: hotPotatoTick called in unexpected state", gameId);
+            return 0;
+        }
+
+        gameState.hotPotatoCurrentRotation++;
+        gameState.hotPotatoSubmitted = new HashSet<>();
+
+        log.info("Game {}: Hot Potato tick — advancing to rotation {}/{}",
+                gameId, gameState.hotPotatoCurrentRotation, gameState.hotPotatoTotalRotations);
+
+        if (gameState.hotPotatoCurrentRotation >= gameState.hotPotatoTotalRotations) {
+            log.info("Game {}: Hot Potato — all rotations complete, finishing game", gameId);
+            gameState.state = GameState.State.Finished;
+            storeState();
+            updateStateForAllPlayers();
+            return 0;
+        }
+
+        storeState();
+        updateStateForAllPlayers();
+        // Next tick fires after interval + 5s grace window
+        return gameState.hotPotatoIntervalSeconds + 5;
+    }
+
+    /** Returns true when the game is in Hot Potato mode and has just started (used by GameManager to schedule first tick). */
+    public boolean isHotPotatoActive() {
+        return gameState.gameMode == GameMode.HOT_POTATO && gameState.state == GameState.State.Started;
+    }
+
+    public int getHotPotatoTickDelay() {
+        return gameState.hotPotatoIntervalSeconds + 5;
+    }
+
+    // ---- Team Mode ----------------------------------------------------------
+
+    private void startTeamGame() {
+        int numPlayers = gameState.players.size();
+
+        // Build pairs: [0,1], [2,3], ... Solo last player if odd count
+        List<int[]> pairList = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i += 2) {
+            if (i + 1 < numPlayers) {
+                pairList.add(new int[]{i, i + 1});
+            } else {
+                pairList.add(new int[]{i}); // solo
+            }
+        }
+        gameState.teamPairs = pairList.toArray(new int[0][]);
+
+        int numStories = pairList.size();
+        int[][] pairsMatrix = GameRoundsGenerator.generate(numStories);
+
+        // Expand pairs matrix to full player matrix:
+        // both players in a pair share the same story index in each round
+        gameState.gameMatrix = new int[pairsMatrix.length][numPlayers];
+        for (int round = 0; round < pairsMatrix.length; round++) {
+            for (int pairIdx = 0; pairIdx < pairList.size(); pairIdx++) {
+                int storyIdx = pairsMatrix[round][pairIdx];
+                for (int memberIdx : pairList.get(pairIdx)) {
+                    gameState.gameMatrix[round][memberIdx] = storyIdx;
+                }
+            }
+        }
+
+        gameState.stories = new Story[numStories];
+        Arrays.setAll(gameState.stories, i -> new Story(pairsMatrix.length));
+
+        log.info("Game {}: Team mode started — {} players, {} pairs, {} rounds",
+                gameId, numPlayers, numStories, pairsMatrix.length);
+
+        storeState();
+        updateStateForAllPlayers();
+    }
+
+    /**
+     * Returns the team pair array that contains the given playerIndex, or null if not found.
+     */
+    private int[] getTeamPairForPlayer(int playerIndex) {
+        if (gameState.teamPairs == null) return null;
+        for (int[] pair : gameState.teamPairs) {
+            for (int idx : pair) {
+                if (idx == playerIndex) return pair;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Relays a stroke segment from the sender to their team partner(s).
+     */
+    public void teamStroke(Client senderClient, TeamStrokeAction action) {
+        Player sender = clientToPlayer.get(senderClient);
+        if (sender == null) {
+            log.warn("Game {}: teamStroke from unknown client {}", gameId, senderClient.getId());
+            return;
+        }
+        if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) {
+            log.warn("Game {}: teamStroke ignored — mode={} state={}", gameId, gameState.gameMode, gameState.state);
+            return;
+        }
+        if (isTypeRound()) {
+            return; // no relay during type rounds
+        }
+        if (action.round() != gameState.round + 1) {
+            log.warn("Game {}: teamStroke ignored — wrong round {} (current={})", gameId, action.round(), gameState.round + 1);
+            return;
+        }
+
+        int senderIndex = gameState.players.indexOf(sender);
+        int[] pair = getTeamPairForPlayer(senderIndex);
+        if (pair == null) return;
+
+        TeamStrokeEvent event = new TeamStrokeEvent(
+                action.type(), action.tool(),
+                action.x0(), action.y0(),
+                action.x1(), action.y1(),
+                action.color(), action.brushPixelSize(),
+                action.round(), sender.name()
+        );
+
+        for (int partnerIndex : pair) {
+            if (partnerIndex == senderIndex) continue;
+            Player partner = gameState.players.get(partnerIndex);
+            for (Client partnerClient : playerToClients.getOrDefault(partner, Collections.emptySet())) {
+                partnerClient.send(event);
+            }
+        }
     }
 
     public void type(Client client, TypeAction typeAction) {
@@ -659,6 +921,12 @@ public class Game {
             log.warn("Game {}: Ignoring draw in state {}", gameId, gameState.state);
             return;
         }
+
+        if (gameState.gameMode == GameMode.HOT_POTATO) {
+            hotPotatoDraw(player, image);
+            return;
+        }
+
         if (!isDrawRound()) {
             log.warn("Game {}: Ignoring draw in type round {}", gameId, gameState.round);
             return;
@@ -684,6 +952,37 @@ public class Game {
 
         updateStateForAllPlayers();
         updateStateForSpectators();
+    }
+
+    private void hotPotatoDraw(Player player, ByteBuffer image) throws IOException {
+        int rotation = gameState.hotPotatoCurrentRotation;
+        if (rotation >= gameState.hotPotatoTotalRotations) {
+            log.warn("Game {}: Ignoring hot potato draw — game already finished", gameId);
+            return;
+        }
+        if (gameState.hotPotatoSubmitted.contains(player.id())) {
+            log.warn("Game {}: Player {} already submitted for rotation {}", gameId, player.id(), rotation);
+            return;
+        }
+
+        int playerIndex = gameState.players.indexOf(player);
+        if (playerIndex < 0) return;
+        int storyIndex = gameState.hotPotatoMatrix[rotation][playerIndex];
+
+        String imageName = UUID.randomUUID().toString() + ".png";
+        Path imagePath = gameDir.resolve(imageName);
+        try (ByteChannel channel =
+                     Files.newByteChannel(imagePath, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))) {
+            channel.write(image);
+        }
+
+        gameState.stories[storyIndex].elements[rotation] = StoryElement.createImageElement(imageName);
+        gameState.hotPotatoSubmitted.add(player.id());
+
+        log.info("Game {}: Player {} submitted hot potato canvas {} for rotation {}",
+                gameId, player.id(), storyIndex, rotation);
+
+        updateStateForAllPlayers();
     }
 
     public void vote(Client client, VoteAction voteAction) {

@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
-import { GameMode, PlayerInfo, StoryContent } from "./model";
+import { GameMode, PlayerInfo, StoryContent, StrokeSegment, RemoteStroke } from "./model";
 import { getPlayerId } from "./helpers";
 import Type from "./Type";
 import Draw from "./Draw";
@@ -34,6 +34,8 @@ interface WaitForPlayersState extends PlayerState {
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
   gameMode: GameMode;
+  hotPotatoIntervalSeconds: number;
+  hotPotatoTotalSeconds: number;
 }
 
 function isWaitForPlayersState(
@@ -48,6 +50,8 @@ interface WaitForGameStartState extends PlayerState {
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
   gameMode: GameMode;
+  hotPotatoIntervalSeconds: number;
+  hotPotatoTotalSeconds: number;
 }
 
 function isWaitForGameStartState(
@@ -82,6 +86,19 @@ interface DrawState extends PlayerState {
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
   return playerState.state === "draw";
+}
+
+interface HotPotatoDrawState extends PlayerState {
+  state: "hotPotatoDraw";
+  rotationNumber: number;
+  totalRotations: number;
+  intervalSeconds: number;
+  initialCanvasUrl: string | null;
+  gameMode: GameMode;
+}
+
+function isHotPotatoDrawState(playerState: PlayerState): playerState is HotPotatoDrawState {
+  return playerState.state === "hotPotatoDraw";
 }
 
 interface WaitForRoundFinishState extends PlayerState {
@@ -119,6 +136,10 @@ function isSpectatorState(playerState: PlayerState): playerState is SpectatorSta
   return playerState.state === "spectator";
 }
 
+interface TeamStrokeMessage extends RemoteStroke {
+  state: "teamStroke";
+}
+
 function isFinalState(newPlayerState: PlayerState) {
   return (
     newPlayerState.state === "unknownGame" ||
@@ -143,6 +164,10 @@ const Game = () => {
   const [playerState, setPlayerState] = React.useState<PlayerState>({ state: "loading" });
 
   const [connectionError, setConnectionError] = React.useState(false);
+
+  // Team mode: partner cursor position (canvas coordinates) and draw canvas ref
+  const [partnerCursor, setPartnerCursor] = React.useState<{ x: number; y: number; name: string } | null>(null);
+  const imageProviderRef = React.useRef<import("./DrawCanvas").ImageProvider | undefined>();
 
   const [reconnectCount, setReconnectCount] = React.useState(0);
 
@@ -197,11 +222,19 @@ const Game = () => {
     };
 
     socket.onmessage = (messageEvent) => {
-      const newPlayerState: PlayerState = JSON.parse(messageEvent.data);
-      if (isFinalState(newPlayerState)) {
+      const msg: PlayerState = JSON.parse(messageEvent.data);
+      if (msg.state === "teamStroke") {
+        const seg = msg as unknown as TeamStrokeMessage;
+        imageProviderRef.current?.applyRemoteStroke(seg);
+        if (seg.x1 != null && seg.y1 != null) {
+          setPartnerCursor({ x: seg.x1, y: seg.y1, name: seg.fromPlayer });
+        }
+        return;
+      }
+      if (isFinalState(msg)) {
         closeSocket();
       }
-      setPlayerState(newPlayerState);
+      setPlayerState(msg);
     };
 
     socket.onerror = (error) => {
@@ -251,6 +284,13 @@ const Game = () => {
     socketRef.current!.send(image);
   }, []);
 
+  const handleStrokeSegment = React.useCallback((seg: StrokeSegment) => {
+    socketRef.current?.send(JSON.stringify({
+      action: "teamStroke",
+      content: seg,
+    }));
+  }, []);
+
   const handleSendReplay = React.useCallback((round: number, frames: string[]) => {
     socketRef.current!.send(JSON.stringify({
       action: "drawingReplay",
@@ -267,6 +307,8 @@ const Game = () => {
         chatEnabled: settings.chatEnabled,
         isPublic: settings.isPublic,
         gameMode: settings.gameMode,
+        hotPotatoIntervalSeconds: settings.hotPotatoIntervalSeconds,
+        hotPotatoTotalSeconds: settings.hotPotatoTotalSeconds,
       },
     });
   }, []);
@@ -332,6 +374,8 @@ const Game = () => {
           chatMessages={playerState.chatMessages}
           onSendMessage={sendChat}
           gameMode={playerState.gameMode ?? "CLASSIC"}
+          hotPotatoIntervalSeconds={playerState.hotPotatoIntervalSeconds}
+          hotPotatoTotalSeconds={playerState.hotPotatoTotalSeconds}
         />
       );
     } else if (isTypeState(playerState)) {
@@ -355,6 +399,7 @@ const Game = () => {
         />
       );
     } else if (isDrawState(playerState)) {
+      const isTeam = (playerState.gameMode ?? "CLASSIC") === "TEAM";
       return (
         <Draw
           text={playerState.text}
@@ -369,7 +414,30 @@ const Game = () => {
           onTick={playUrgentTick}
           onTimerExpire={playTimerExpire}
           onSendReplay={handleSendReplay}
+          onStrokeSegment={isTeam ? handleStrokeSegment : undefined}
           cacheKey={`draw-${gameIdNotNull}-r${playerState.round}`}
+          partnerCursor={isTeam ? partnerCursor : null}
+          imageProviderRef={isTeam ? imageProviderRef : undefined}
+        />
+      );
+    } else if (isHotPotatoDrawState(playerState)) {
+      return (
+        <Draw
+          key={`hp-${playerState.rotationNumber}`}
+          text=""
+          textWriter={{ name: "", face: "A", isCreator: false }}
+          round={playerState.rotationNumber}
+          rounds={playerState.totalRotations}
+          roundTimerSeconds={playerState.intervalSeconds}
+          gameMode={playerState.gameMode ?? "HOT_POTATO"}
+          handleDone={handleDrawDone}
+          onSubmit={playSubmitSuccess}
+          onUrgentStart={playUrgentStart}
+          onTick={playUrgentTick}
+          onTimerExpire={playTimerExpire}
+          onSendReplay={handleSendReplay}
+          initialImageUrl={playerState.initialCanvasUrl ?? undefined}
+          cacheKey={`hp-${gameIdNotNull}-r${playerState.rotationNumber}`}
         />
       );
     } else if (isWaitForRoundFinishState(playerState)) {

@@ -32,6 +32,8 @@ export interface GameSettings {
   chatEnabled: boolean;
   isPublic: boolean;
   gameMode: GameMode;
+  hotPotatoIntervalSeconds: number;
+  hotPotatoTotalSeconds: number;
 }
 
 export const WaitForPlayersScreen = ({
@@ -60,10 +62,21 @@ export const WaitForPlayersScreen = ({
   const [localChatEnabled, setLocalChatEnabled] = React.useState(true);
   const [localIsPublic, setLocalIsPublic] = React.useState(false);
   const [localGameMode, setLocalGameMode] = React.useState<GameMode>("CLASSIC");
+  const [hpInterval, setHpInterval] = React.useState(30);
+  const [hpTotal, setHpTotal] = React.useState(180);
   const qrWrapperRef = React.useRef<HTMLDivElement>(null);
 
-  const notifyChange = (timerSecs: number, maxP: number, chat: boolean, pub: boolean, mode: GameMode) => {
-    handleSettingsChange({ roundTimerSeconds: timerSecs, maxPlayers: maxP, chatEnabled: chat, isPublic: pub, gameMode: mode });
+  const buildSettings = (
+    timerSecs: number, maxP: number, chat: boolean, pub: boolean,
+    mode: GameMode, hpInt: number, hpTot: number
+  ): GameSettings => ({
+    roundTimerSeconds: timerSecs, maxPlayers: maxP, chatEnabled: chat,
+    isPublic: pub, gameMode: mode,
+    hotPotatoIntervalSeconds: hpInt, hotPotatoTotalSeconds: hpTot,
+  });
+
+  const notifyChange = (timerSecs: number, maxP: number, chat: boolean, pub: boolean, mode: GameMode, hpInt = hpInterval, hpTot = hpTotal) => {
+    handleSettingsChange(buildSettings(timerSecs, maxP, chat, pub, mode, hpInt, hpTot));
   };
 
   const buttonDisabled = players.length <= 1;
@@ -198,7 +211,43 @@ export const WaitForPlayersScreen = ({
                 ))}
               </select>
             </SettingRow>
-            {localGameMode !== "CLASSIC" && (
+            {localGameMode === "HOT_POTATO" && (
+              <>
+                <SettingRow>
+                  <label htmlFor="hp-interval-select">Rotation Every</label>
+                  <select
+                    id="hp-interval-select"
+                    value={hpInterval}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setHpInterval(v);
+                      notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, localIsPublic, localGameMode, v, hpTotal);
+                    }}
+                  >
+                    <option value={15}>15 s</option>
+                    <option value={30}>30 s</option>
+                    <option value={60}>60 s</option>
+                  </select>
+                </SettingRow>
+                <SettingRow>
+                  <label htmlFor="hp-total-select">Total Duration</label>
+                  <select
+                    id="hp-total-select"
+                    value={hpTotal}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setHpTotal(v);
+                      notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, localIsPublic, localGameMode, hpInterval, v);
+                    }}
+                  >
+                    <option value={180}>3 min</option>
+                    <option value={300}>5 min</option>
+                    <option value={600}>10 min</option>
+                  </select>
+                </SettingRow>
+              </>
+            )}
+            {localGameMode !== "CLASSIC" && localGameMode !== "HOT_POTATO" && (
               <GameModeDescription>
                 {GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.description}
               </GameModeDescription>
@@ -210,7 +259,7 @@ export const WaitForPlayersScreen = ({
               className="button"
               disabled={buttonDisabled}
               title={buttonDisabled ? "Waiting for more players" : "Let's go!"}
-              onClick={() => handleStart({ roundTimerSeconds, maxPlayers, chatEnabled: localChatEnabled, isPublic: localIsPublic, gameMode: localGameMode })}
+              onClick={() => handleStart(buildSettings(roundTimerSeconds, maxPlayers, localChatEnabled, localIsPublic, localGameMode, hpInterval, hpTotal))}
             >
               Start Game
             </button>
@@ -228,15 +277,20 @@ export const WaitForGameStartScreen = ({
   chatMessages,
   onSendMessage,
   gameMode,
+  hotPotatoIntervalSeconds,
+  hotPotatoTotalSeconds,
 }: {
   players: PlayerInfo[];
   chatEnabled: boolean;
   chatMessages: ChatMessage[];
   onSendMessage: (text: string) => void;
   gameMode: GameMode;
+  hotPotatoIntervalSeconds?: number;
+  hotPotatoTotalSeconds?: number;
 }) => {
   const creator = players.find((p) => p.isCreator)!;
   const modeOption = GAME_MODE_OPTIONS.find((o) => o.value === gameMode) ?? GAME_MODE_OPTIONS[0];
+  const isHotPotato = gameMode === "HOT_POTATO";
 
   return (
     <BeforeGameStartScreen
@@ -252,6 +306,11 @@ export const WaitForGameStartScreen = ({
           <GameModeBadgeLabel>Mode</GameModeBadgeLabel>
           <GameModeBadgeName>{modeOption.label}</GameModeBadgeName>
           <GameModeBadgeDesc>{modeOption.description}</GameModeBadgeDesc>
+          {isHotPotato && hotPotatoIntervalSeconds != null && hotPotatoTotalSeconds != null && (
+            <GameModeBadgeDesc>
+              {hotPotatoIntervalSeconds}s rotations · {hotPotatoTotalSeconds / 60} min total
+            </GameModeBadgeDesc>
+          )}
         </GameModeBadge>
       </RightContent>
     </BeforeGameStartScreen>
@@ -750,12 +809,15 @@ const GameModeBadge = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4vmin;
-  padding: 1.2vmin 2vmin;
+  gap: 0.5vmin;
+  padding: 1.5vmin 2.5vmin;
   border: 1.5px solid rgba(0, 245, 255, 0.3);
-  border-radius: 100px;
+  border-radius: 2vmin;
   background: rgba(0, 245, 255, 0.05);
   box-shadow: 0 0 10px rgba(0, 245, 255, 0.08);
+  max-width: 48vmin;
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const GameModeBadgeLabel = styled.div`

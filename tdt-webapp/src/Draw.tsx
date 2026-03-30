@@ -1,7 +1,7 @@
 import React from "react";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
-import { GameMode, PlayerInfo, Brush } from "./model";
+import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
 
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
@@ -38,7 +38,11 @@ const Draw = ({
   onTick,
   onTimerExpire,
   onSendReplay,
+  onStrokeSegment,
   cacheKey,
+  initialImageUrl: initialImageUrlProp,
+  partnerCursor,
+  imageProviderRef: imageProviderRefProp,
 }: {
   text: string;
   textWriter: PlayerInfo;
@@ -52,12 +56,18 @@ const Draw = ({
   onTick?: () => void;
   onTimerExpire?: () => void;
   onSendReplay?: (round: number, frames: string[]) => void;
+  onStrokeSegment?: (seg: StrokeSegment) => void;
   cacheKey?: string;
+  initialImageUrl?: string;
+  partnerCursor?: { x: number; y: number; name: string } | null;
+  imageProviderRef?: React.MutableRefObject<ImageProvider | undefined>;
 }) => {
+  const isHotPotato = gameMode === "HOT_POTATO";
   const [cachedImageUrl] = React.useState<string | undefined>(() =>
     cacheKey ? (sessionStorage.getItem(cacheKey) ?? undefined) : undefined
   );
-  const [showHelpDialog, setShowHelpDialog] = React.useState(true);
+  const resolvedInitialImageUrl = initialImageUrlProp ?? cachedImageUrl;
+  const [showHelpDialog, setShowHelpDialog] = React.useState(!isHotPotato);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);
 
   const [color, setColor] = React.useState("#000");
@@ -75,7 +85,8 @@ const Draw = ({
   const [drawingDataUrl, setDrawingDataUrl] = React.useState<string | undefined>();
 
   const [submitted, setSubmitted] = React.useState(false);
-  const imageProviderRef = React.useRef<ImageProvider>();
+  const internalImageProviderRef = React.useRef<ImageProvider | undefined>();
+  const imageProviderRef = imageProviderRefProp ?? internalImageProviderRef;
   const submittedRef = React.useRef(false);
 
   const replayFramesRef = React.useRef<string[]>([]);
@@ -128,6 +139,10 @@ const Draw = ({
   }, [handleDone, onSubmit, onSendReplay, round, captureFrame, cacheKey]);
 
   const handleClickDone = () => {
+    if (isHotPotato) {
+      submitDrawing();
+      return;
+    }
     setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
     setShowConfirmDialog(true);
   };
@@ -179,8 +194,8 @@ const Draw = ({
         onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
         onChangeColor={(c) => setColor(c)}
         onSetTool={setActiveTool}
-        onUndo={() => imageProviderRef.current?.undo()}
-        onRedo={() => imageProviderRef.current?.redo()}
+        onUndo={() => gameMode !== "TEAM" && imageProviderRef.current?.undo()}
+        onRedo={() => gameMode !== "TEAM" && imageProviderRef.current?.redo()}
         onDone={handleClickDone}
       />
       {roundTimerSeconds > 0 && (
@@ -195,7 +210,9 @@ const Draw = ({
         handleScaleChange={handleScaleChange}
         onStrokeEnd={handleStrokeEnd}
         onStrokeComplete={handleStrokeComplete}
-        initialImageUrl={cachedImageUrl}
+        onStrokeSegment={onStrokeSegment}
+        initialImageUrl={resolvedInitialImageUrl}
+        partnerCursor={partnerCursor}
       />
     </div>
   );

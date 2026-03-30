@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -27,6 +30,7 @@ import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
+import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.UnknownGameState;
@@ -39,6 +43,8 @@ public class GameManager {
     private static final int GAME_ID_LENGTH = 5;
     private static final Pattern gameIdPattern = Pattern
             .compile("[" + CHARACTERS_WITHOUT_AMBIGUOUS + "]{" + GAME_ID_LENGTH + "}");
+
+    private final ScheduledExecutorService hotPotatoExecutor = Executors.newSingleThreadScheduledExecutor();
 
     // guarded by this
     private final Map<String, GameLoader> gameLoaders = new HashMap<>();
@@ -252,8 +258,32 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.start(client, startAction);
+            if (game.isHotPotatoActive()) {
+                scheduleHotPotatoTick(game.gameId, game.getHotPotatoTickDelay());
+            }
             updatePublicRegistry(game);
         });
+    }
+
+    private void scheduleHotPotatoTick(String gameId, int delaySeconds) {
+        log.info("GameManager: scheduling hot potato tick for game {} in {}s", gameId, delaySeconds);
+        hotPotatoExecutor.schedule(() -> handleHotPotatoTick(gameId), delaySeconds, TimeUnit.SECONDS);
+    }
+
+    private void handleHotPotatoTick(String gameId) {
+        log.info("GameManager: hot potato tick firing for game {}", gameId);
+        GameRef gameRef = getGameRef(gameId);
+        try {
+            int nextDelay = gameRef.useGame(game -> {
+                if (game == null) return 0;
+                return game.hotPotatoTick();
+            });
+            if (nextDelay > 0) {
+                scheduleHotPotatoTick(gameId, nextDelay);
+            }
+        } finally {
+            closeGameRef(gameRef);
+        }
     }
 
     public void handleVoteAction(Client client, VoteAction voteAction) {
@@ -324,6 +354,17 @@ public class GameManager {
         gameRef.useGame(game -> {
             game.ban(client, banAction);
             updatePublicRegistry(game);
+        });
+    }
+
+    public void handleTeamStrokeAction(Client client, TeamStrokeAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle teamStroke. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.teamStroke(client, action);
         });
     }
 

@@ -63,6 +63,39 @@ public class GameState {
      */
     public GameMode gameMode = GameMode.CLASSIC;
 
+    /**
+     * Team pairs for TEAM mode: teamPairs[pairIndex] = { playerIndex0, playerIndex1 }.
+     * A solo player (odd count) is represented as { playerIndex }.
+     */
+    public int[][] teamPairs = null;
+
+    // --- Hot Potato settings (relevant only when gameMode == HOT_POTATO) ---
+
+    /** Seconds each player draws before a canvas rotation. */
+    public int hotPotatoIntervalSeconds = 30;
+
+    /** Total seconds the hot potato game lasts; determines number of rotations. */
+    public int hotPotatoTotalSeconds = 180;
+
+    // --- Hot Potato runtime state (populated at startGame, not stored between restarts) ---
+
+    /** Total number of canvas rotations for this game. */
+    public int hotPotatoTotalRotations = 0;
+
+    /** Current rotation index (0-based). */
+    public int hotPotatoCurrentRotation = 0;
+
+    /**
+     * Rotation assignment matrix: hotPotatoMatrix[rotationIndex][playerIndex] = storyIndex.
+     * Player p works on story hotPotatoMatrix[r][p] during rotation r.
+     */
+    public int[][] hotPotatoMatrix = null;
+
+    /**
+     * Player IDs that have submitted a canvas for the current rotation.
+     */
+    public java.util.Set<String> hotPotatoSubmitted = new java.util.HashSet<>();
+
     public enum State {
         WaitingForPlayers,
         Started,

@@ -25,6 +25,7 @@ import net.czedik.hermann.tdt.actions.BanAction;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
+import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
@@ -113,6 +114,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("ban".equals(action)) {
             BanAction banAction = JSONHelper.objectMapper.treeToValue(content, BanAction.class);
             gameManager.handleBanAction(client, banAction);
+        } else if ("teamStroke".equals(action)) {
+            TeamStrokeAction teamStrokeAction = JSONHelper.objectMapper.treeToValue(content, TeamStrokeAction.class);
+            gameManager.handleTeamStrokeAction(client, teamStrokeAction);
         } else {
             throw new IllegalArgumentException("Unknown action: " + action);
         }

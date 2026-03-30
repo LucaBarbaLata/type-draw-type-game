@@ -1,6 +1,6 @@
 import React from "react";
 import { useWindowSize, getCanvasSize } from "./helpers";
-import { GameMode } from "./model";
+import { GameMode, StrokeSegment, RemoteStroke } from "./model";
 
 export type DrawTool = "pen" | "eraser" | "fill" | "line" | "rect" | "circle";
 
@@ -9,6 +9,7 @@ export interface ImageProvider {
   getImageDataURL: () => string;
   undo: () => void;
   redo: () => void;
+  applyRemoteStroke: (seg: RemoteStroke) => void;
 }
 
 function getPositionInCanvas(
@@ -115,7 +116,9 @@ const DrawCanvas = ({
   handleScaleChange,
   onStrokeEnd,
   onStrokeComplete,
+  onStrokeSegment,
   initialImageUrl,
+  partnerCursor,
 }: {
   color: string;
   brushPixelSize: number;
@@ -125,7 +128,9 @@ const DrawCanvas = ({
   handleScaleChange: (scale: number) => void;
   onStrokeEnd?: () => void;
   onStrokeComplete?: () => void;
+  onStrokeSegment?: (seg: StrokeSegment) => void;
   initialImageUrl?: string;
+  partnerCursor?: { x: number; y: number; name: string } | null;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
@@ -169,6 +174,22 @@ const DrawCanvas = ({
             historyRef.current.push(current);
             const snapshot = redo.pop()!;
             ctx.putImageData(snapshot, 0, 0);
+          },
+          applyRemoteStroke: (seg: RemoteStroke) => {
+            const ctx = getCanvas2DContext(canvasElement);
+            if (seg.type === "pen_seg") {
+              ctx.lineCap = "round";
+              ctx.lineWidth = seg.brushPixelSize;
+              ctx.strokeStyle = seg.color;
+              ctx.beginPath();
+              ctx.moveTo(seg.x0, seg.y0);
+              ctx.lineTo(seg.x1!, seg.y1!);
+              ctx.stroke();
+            } else if (seg.type === "shape" && seg.tool) {
+              drawShape(ctx, seg.tool as DrawTool, seg.x0, seg.y0, seg.x1!, seg.y1!, seg.color, seg.brushPixelSize);
+            } else if (seg.type === "fill") {
+              floodFill(ctx, seg.x0, seg.y0, seg.color);
+            }
           },
         };
       }
@@ -239,14 +260,17 @@ const DrawCanvas = ({
       : gameMode === "TELEPHONE_NOIR" ? toGrayscale(color)
       : color;
 
+    const fromX = posRef.current.x;
+    const fromY = posRef.current.y;
     ctx.lineCap = "round";
     ctx.lineWidth = brushPixelSize;
     ctx.strokeStyle = strokeColor;
     ctx.beginPath();
-    ctx.moveTo(posRef.current.x, posRef.current.y);
+    ctx.moveTo(fromX, fromY);
     ctx.lineTo(dx, dy);
     ctx.stroke();
     posRef.current = { x: dx, y: dy };
+    onStrokeSegment?.({ type: "pen_seg", tool, x0: fromX, y0: fromY, x1: dx, y1: dy, color: strokeColor, brushPixelSize });
   }
   function paint_end(ctx: CanvasRenderingContext2D, x?: number, y?: number) {
     isPenDownRef.current = false;
@@ -311,8 +335,10 @@ const DrawCanvas = ({
       ey += (Math.random() * 2 - 1) * jitter;
     }
     const shapeColor = gameMode === "TELEPHONE_NOIR" ? toGrayscale(color) : color;
+    const sx = shapeStartRef.current.x, sy = shapeStartRef.current.y;
     ctx.putImageData(preShapeStateRef.current, 0, 0);
-    drawShape(ctx, tool, shapeStartRef.current.x, shapeStartRef.current.y, ex, ey, shapeColor, brushPixelSize);
+    drawShape(ctx, tool, sx, sy, ex, ey, shapeColor, brushPixelSize);
+    onStrokeSegment?.({ type: "shape", tool, x0: sx, y0: sy, x1: ex, y1: ey, color: shapeColor, brushPixelSize });
     shapeStartRef.current = null;
     preShapeStateRef.current = null;
   }
@@ -356,6 +382,7 @@ const DrawCanvas = ({
       floodFill(ctx, x, y, fillColor);
       onStrokeEnd?.();
       onStrokeComplete?.();
+      onStrokeSegment?.({ type: "fill", tool: "fill", x0: x, y0: y, color: fillColor, brushPixelSize });
     } else if (isShapeTool) {
       shape_start(ctx, x, y, canvasEl);
     } else {
@@ -447,8 +474,52 @@ const DrawCanvas = ({
     isShapeTool ? "crosshair" :
     cursorPos ? "none" : "crosshair";
 
+  // Convert canvas pixel coordinates to fixed client coordinates for cursor overlay
+  const partnerClientPos = React.useMemo(() => {
+    if (!partnerCursor || !canvas) return null;
+    const canvasSize = getCanvasSize(canvas);
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvasSize.width / canvas.width;
+    const scaleY = canvasSize.height / canvas.height;
+    return {
+      x: partnerCursor.x * scaleX + rect.left + canvasSize.x,
+      y: partnerCursor.y * scaleY + rect.top + canvasSize.y,
+      name: partnerCursor.name,
+    };
+  }, [partnerCursor, canvas, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="Draw-canvas" style={{ position: "relative" }}>
+      {partnerClientPos && (
+        <div
+          style={{
+            position: "fixed",
+            left: partnerClientPos.x,
+            top: partnerClientPos.y,
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            zIndex: 101,
+          }}
+        >
+          <div style={{
+            width: 12, height: 12,
+            borderRadius: "50%",
+            backgroundColor: "rgba(255, 160, 0, 0.85)",
+            border: "1.5px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 0 6px rgba(255,160,0,0.7)",
+          }} />
+          <div style={{
+            fontSize: 10,
+            color: "#ffa000",
+            textShadow: "0 0 4px rgba(255,160,0,0.8)",
+            whiteSpace: "nowrap",
+            marginTop: 2,
+            textAlign: "center",
+          }}>
+            {partnerClientPos.name}
+          </div>
+        </div>
+      )}
       {showCircleCursor && (
         <div
           style={{
