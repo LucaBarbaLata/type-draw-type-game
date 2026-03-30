@@ -11,12 +11,15 @@ import WaitingMessage from "./WaitingMessage";
 
 import "./Draw.css";
 
-function getBrushes(scale: number): Brush[] {
-  const sizes = [2, 8, 16, 32, 64];
-  return sizes.map((size) => ({
-    pixelSize: size,
-    displaySize: Math.ceil(size * scale),
-  }));
+function getBrushes(_scale: number): Brush[] {
+  const brushes: Array<{ pixelSize: number; displaySize: number }> = [
+    { pixelSize: 2,  displaySize: 4  },
+    { pixelSize: 8,  displaySize: 10 },
+    { pixelSize: 16, displaySize: 18 },
+    { pixelSize: 32, displaySize: 28 },
+    { pixelSize: 64, displaySize: 40 },
+  ];
+  return brushes;
 }
 
 const REPLAY_MAX_FRAMES = 80;
