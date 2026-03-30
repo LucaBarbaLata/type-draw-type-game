@@ -201,7 +201,7 @@ const TopBar = styled.div`
 
 const BrowserTitle = styled.h1`
   margin: 0;
-  font-size: max(3vmin, 18px);
+  font-size: 3vmin;
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
   text-transform: uppercase;
@@ -220,7 +220,6 @@ const Panel = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 2vmin 3vmin;
   overflow-y: auto;
 `;
@@ -241,13 +240,11 @@ const PanelDivider = styled.div`
 
 const PanelHeading = styled.h2`
   margin: 0 0 2.5vmin;
-  font-size: max(2.2vmin, 14px);
+  font-size: 2.2vmin;
   color: var(--cyber-magenta);
   text-shadow: var(--cyber-glow-magenta);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  text-align: center;
-  width: 100%;
 `;
 
 // Create Match panel
@@ -286,7 +283,7 @@ const NameInput = styled.input`
 // Join Match panel
 const StatusMsg = styled.div`
   color: #6688aa;
-  font-size: max(1.8vmin, 12px);
+  font-size: 1.8vmin;
   text-align: center;
   margin-top: 2vmin;
 `;
@@ -332,18 +329,18 @@ const CardInfo = styled.div`
 `;
 
 const CreatorName = styled.div`
-  font-size: max(1.8vmin, 12px);
+  font-size: 1.8vmin;
   color: var(--cyber-cyan);
   font-weight: bold;
 `;
 
 const PlayerCount = styled.div`
-  font-size: max(1.4vmin, 10px);
+  font-size: 1.4vmin;
   color: #6688aa;
 `;
 
 const JoinBtn = styled.button`
-  font-size: max(1.6vmin, 11px);
+  font-size: 1.6vmin;
   padding: 0.7vmin 2vmin;
   background: rgba(0, 245, 255, 0.1);
   border: 1.5px solid rgba(0, 245, 255, 0.5);
