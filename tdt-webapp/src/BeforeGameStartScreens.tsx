@@ -566,9 +566,9 @@ const QRHint = styled.div`
 
 const BottomRow = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  gap: 3vmin;
+  gap: 2vmin;
   width: 100%;
 `;
 
@@ -581,14 +581,14 @@ const StartBlock = styled.div`
 `;
 
 const StartNote = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 9px);
   color: #3d5570;
   text-align: center;
   letter-spacing: 0.05em;
 `;
 
 const WaitText = styled.div`
-  font-size: 2vmin;
+  font-size: max(2vmin, 13px);
   color: #6688aa;
   text-align: center;
   letter-spacing: 0.05em;
@@ -602,7 +602,8 @@ const WaitText = styled.div`
 // ── Settings ─────────────────────────────────────────────────────────────────
 
 const SettingsSection = styled.div`
-  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
   padding: 1.5vmin 2vmin;
   background: rgba(0, 245, 255, 0.03);
   border: 1.5px solid rgba(0, 245, 255, 0.25);
@@ -613,7 +614,7 @@ const SettingsSection = styled.div`
 const SettingsTitle = styled.div`
   font-weight: bold;
   margin-bottom: 1.2vmin;
-  font-size: 1.6vmin;
+  font-size: max(1.6vmin, 11px);
   color: #00f5ff;
   text-shadow: 0 0 8px #00f5ff;
   text-transform: uppercase;
@@ -628,7 +629,7 @@ const SettingRow = styled.div`
   margin-bottom: 0.8vmin;
 
   label {
-    font-size: 1.5vmin;
+    font-size: max(1.5vmin, 10px);
     white-space: nowrap;
     color: #6688aa;
     text-transform: uppercase;
@@ -636,7 +637,7 @@ const SettingRow = styled.div`
   }
 
   select {
-    font-size: 1.5vmin;
+    font-size: max(1.5vmin, 10px);
     padding: 0.4vmin 0.8vmin;
     border-radius: 0.5vmin;
     border: 1.5px solid rgba(0, 245, 255, 0.4);
@@ -673,7 +674,7 @@ const ChatBox = styled.div`
 
 const ChatTitle = styled.div`
   padding: 1vmin 2vmin 0.5vmin;
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 9px);
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
   text-transform: uppercase;
@@ -735,14 +736,14 @@ const ChatText = styled.span`
 `;
 
 const ChatEmpty = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 9px);
   color: var(--cyber-text-muted);
   font-style: italic;
   padding: 1vmin 0;
 `;
 
 const ChatDisabled = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 9px);
   color: rgba(255, 32, 121, 0.6);
   font-style: italic;
   padding: 1vmin 0;
@@ -757,7 +758,7 @@ const ChatInputRow = styled.div`
 
 const ChatInput = styled.input`
   flex: 1;
-  font-size: 1.4vmin;
+  font-size: max(1.4vmin, 10px);
   padding: 0.6vmin 1vmin;
   background: rgba(0, 245, 255, 0.04);
   border: 1px solid rgba(0, 245, 255, 0.25);
@@ -777,7 +778,7 @@ const ChatInput = styled.input`
 `;
 
 const ChatSendBtn = styled.button`
-  font-size: 1.6vmin;
+  font-size: max(1.6vmin, 11px);
   padding: 0.5vmin 1.2vmin;
   background: rgba(0, 245, 255, 0.08);
   border: 1px solid rgba(0, 245, 255, 0.35);
@@ -798,7 +799,7 @@ const ChatSendBtn = styled.button`
 `;
 
 const GameModeDescription = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 9px);
   color: rgba(0, 245, 255, 0.6);
   font-style: italic;
   margin-top: 0.4vmin;
@@ -821,14 +822,14 @@ const GameModeBadge = styled.div`
 `;
 
 const GameModeBadgeLabel = styled.div`
-  font-size: 1.1vmin;
+  font-size: max(1.1vmin, 8px);
   color: var(--cyber-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 `;
 
 const GameModeBadgeName = styled.div`
-  font-size: 1.8vmin;
+  font-size: max(1.8vmin, 12px);
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
   font-weight: 600;
@@ -836,7 +837,7 @@ const GameModeBadgeName = styled.div`
 `;
 
 const GameModeBadgeDesc = styled.div`
-  font-size: 1.2vmin;
+  font-size: max(1.2vmin, 9px);
   color: var(--cyber-text-muted);
   text-align: center;
   max-width: 40vmin;
