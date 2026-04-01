@@ -8,6 +8,8 @@ import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 import DrawingReplay from "./replay/DrawingReplay";
 
+const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮"];
+
 const Stories = ({
   stories,
   onReveal,
@@ -15,8 +17,10 @@ const Stories = ({
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
-  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
+  onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
 }) => {
+  // Track the current player's chosen reaction per element: key = "storyIdx_elemIdx" -> emoji | null
+  const [myReactions, setMyReactions] = React.useState<Record<string, string | null>>({});
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
 
@@ -54,7 +58,15 @@ const Stories = ({
         story={currentStory}
         storyIndex={selectedStory}
         revealedCount={revealedCount}
-        onLikeDrawing={onLikeDrawing}
+        myReactions={myReactions}
+        onReact={onLikeDrawing ? (elemIdx, reaction) => {
+          const key = `${selectedStory}_${elemIdx}`;
+          setMyReactions(prev => {
+            const current = prev[key];
+            return { ...prev, [key]: current === reaction ? null : reaction };
+          });
+          onLikeDrawing(selectedStory, elemIdx, reaction);
+        } : undefined}
       />
       {!allRevealed && (
         <RevealControls>
@@ -303,26 +315,37 @@ const Story = ({
   story,
   storyIndex,
   revealedCount,
-  onLikeDrawing,
+  myReactions,
+  onReact,
 }: {
   story: StoryContent;
   storyIndex: number;
   revealedCount: number;
-  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
+  myReactions: Record<string, string | null>;
+  onReact?: (elemIdx: number, reaction: string) => void;
 }) => (
   <StyledStory>
     {story.elements.slice(0, revealedCount).map((e, index) => (
       <AnimatedElement key={index}>
         <StoryElementComponent
           element={e}
-          onLike={e.type === "image" && onLikeDrawing ? () => onLikeDrawing(storyIndex, index) : undefined}
+          myReaction={myReactions[`${storyIndex}_${index}`] ?? null}
+          onReact={e.type === "image" && onReact ? (r) => onReact(index, r) : undefined}
         />
       </AnimatedElement>
     ))}
   </StyledStory>
 );
 
-const StoryElementComponent = ({ element, onLike }: { element: StoryElement; onLike?: () => void }) => {
+const StoryElementComponent = ({
+  element,
+  myReaction,
+  onReact,
+}: {
+  element: StoryElement;
+  myReaction?: string | null;
+  onReact?: (reaction: string) => void;
+}) => {
   if (element.type === "text") {
     return (
       <TextStoryElement>
@@ -332,15 +355,18 @@ const StoryElementComponent = ({ element, onLike }: { element: StoryElement; onL
     );
   }
 
-  const likeBar = (
-    <LikeRow>
-      <LikeButton onClick={onLike} title="Like this drawing">
-        👍
-      </LikeButton>
-      {(element.likeCount ?? 0) > 0 && (
-        <LikeCount>{element.likeCount}</LikeCount>
-      )}
-    </LikeRow>
+  const reactionBar = (
+    <ReactionRow>
+      {REACTIONS.map((emoji) => {
+        const count = element.reactions?.[emoji] ?? 0;
+        const active = myReaction === emoji;
+        return (
+          <ReactionButton key={emoji} $active={active} onClick={() => onReact?.(emoji)} title={emoji}>
+            {emoji}{count > 0 && <ReactionCount>{count}</ReactionCount>}
+          </ReactionButton>
+        );
+      })}
+    </ReactionRow>
   );
 
   if (element.replayUrl) {
@@ -348,7 +374,7 @@ const StoryElementComponent = ({ element, onLike }: { element: StoryElement; onL
       <ImageStoryElement>
         <Player face={element.player.face}>{element.player.name} painted:</Player>
         <DrawingReplay replayUrl={element.replayUrl} staticFallback={element.content} />
-        {likeBar}
+        {reactionBar}
       </ImageStoryElement>
     );
   }
@@ -357,7 +383,7 @@ const StoryElementComponent = ({ element, onLike }: { element: StoryElement; onL
     <ImageStoryElement>
       <Player face={element.player.face}>{element.player.name} painted:</Player>
       <img src={element.content} alt="Drawing" />
-      {likeBar}
+      {reactionBar}
     </ImageStoryElement>
   );
 };
@@ -385,35 +411,40 @@ const ImageStoryElement = styled.div`
   }
 `;
 
-const LikeRow = styled.div`
+const ReactionRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 1vmin;
+  gap: 1.2vmin;
   margin-top: 1.5vmin;
+  flex-wrap: wrap;
 `;
 
-const LikeButton = styled.button`
-  background: none;
-  border: 1.5px solid rgba(0, 245, 255, 0.35);
+const ReactionButton = styled.button<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  background: ${({ $active }) => $active ? "rgba(0, 245, 255, 0.15)" : "none"};
+  border: 1.5px solid ${({ $active }) => $active ? "rgba(0, 245, 255, 0.8)" : "rgba(0, 245, 255, 0.3)"};
   border-radius: 2vmin;
-  color: var(--cyber-cyan);
   font-size: 2.2vmin;
   padding: 0.4vmin 1.2vmin;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: ${({ $active }) => $active ? "0 0 10px rgba(0, 245, 255, 0.35)" : "none"};
 
   &:hover {
-    background: rgba(0, 245, 255, 0.1);
+    background: rgba(0, 245, 255, 0.12);
     border-color: rgba(0, 245, 255, 0.7);
     box-shadow: 0 0 8px rgba(0, 245, 255, 0.25);
   }
 `;
 
-const LikeCount = styled.span`
-  font-size: 1.8vmin;
+const ReactionCount = styled.span`
+  font-size: 1.6vmin;
   color: var(--cyber-cyan);
   text-shadow: 0 0 6px rgba(0, 245, 255, 0.5);
-  min-width: 2ch;
+  min-width: 1.5ch;
+  line-height: 1;
 `;
 
 const NavButtons = styled.div`

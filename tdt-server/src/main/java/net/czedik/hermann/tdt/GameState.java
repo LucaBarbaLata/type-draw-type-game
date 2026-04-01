@@ -44,9 +44,9 @@ public class GameState {
     public java.util.Map<String, String> replayFiles = new java.util.HashMap<>();
 
     /**
-     * Drawing likes: "storyIndex_roundIndex" -> set of player IDs who liked it.
+     * Drawing reactions: "storyIndex_roundIndex" -> (playerId -> emoji).
      */
-    public java.util.Map<String, java.util.Set<String>> drawingLikes = new java.util.HashMap<>();
+    public java.util.Map<String, java.util.Map<String, String>> drawingReactions = new java.util.HashMap<>();
 
     /**
      * Whether lobby chat is enabled. Default true.

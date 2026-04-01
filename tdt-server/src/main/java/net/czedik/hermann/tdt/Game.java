@@ -331,7 +331,7 @@ public class Game {
                 Player player = getPlayerForStoryInRound(storyIndex, roundNo);
                 String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
                 String replayUrl1 = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
-                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1, 0);
+                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1, java.util.Collections.emptyMap());
             }
             result[storyIndex] = new FrontendStory(fe);
         }
@@ -385,7 +385,7 @@ public class Game {
                 int playerIndex = ArrayUtils.indexOf(gameState.hotPotatoMatrix[r], storyIndex);
                 Player player = gameState.players.get(playerIndex);
                 String content = getDrawingSrc(elements[r].content);
-                fe[idx++] = new FrontendStoryElement("image", content, mapPlayerToPlayerInfo(player), null, 0);
+                fe[idx++] = new FrontendStoryElement("image", content, mapPlayerToPlayerInfo(player), null, java.util.Collections.emptyMap());
             }
             result[storyIndex] = new FrontendStory(fe);
         }
@@ -420,13 +420,19 @@ public class Game {
             Player player = getPlayerForStoryInRound(storyIndex, roundNo);
             String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
             String replayUrl = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
-            int likeCount = 0;
-            if ("image".equals(e.type) && gameState.drawingLikes != null) {
-                java.util.Set<String> likers = gameState.drawingLikes.get(storyIndex + "_" + roundNo);
-                if (likers != null) likeCount = likers.size();
+            java.util.Map<String, Integer> reactions = java.util.Collections.emptyMap();
+            if ("image".equals(e.type) && gameState.drawingReactions != null) {
+                java.util.Map<String, String> playerReactions = gameState.drawingReactions.get(storyIndex + "_" + roundNo);
+                if (playerReactions != null && !playerReactions.isEmpty()) {
+                    java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+                    for (String emoji : playerReactions.values()) {
+                        counts.merge(emoji, 1, Integer::sum);
+                    }
+                    reactions = counts;
+                }
             }
             frontendStory.elements()[roundNo] = new FrontendStoryElement(e.type, content,
-                    mapPlayerToPlayerInfo(player), replayUrl, likeCount);
+                    mapPlayerToPlayerInfo(player), replayUrl, reactions);
         }
         return frontendStory;
     }
@@ -1131,16 +1137,24 @@ public class Game {
             log.warn("Game {}: rateDrawing called on non-image element", gameId);
             return;
         }
-        if (gameState.drawingLikes == null) {
-            gameState.drawingLikes = new java.util.HashMap<>();
+        String reaction = action.reaction();
+        if (reaction == null || reaction.isBlank()) {
+            log.warn("Game {}: rateDrawing called with blank reaction", gameId);
+            return;
+        }
+        if (gameState.drawingReactions == null) {
+            gameState.drawingReactions = new java.util.HashMap<>();
         }
         String key = storyIndex + "_" + roundIndex;
-        java.util.Set<String> likers = gameState.drawingLikes.computeIfAbsent(key, k -> new java.util.HashSet<>());
-        // Toggle: add if not present, remove if already liked
-        if (!likers.remove(player.id())) {
-            likers.add(player.id());
+        java.util.Map<String, String> playerReactions = gameState.drawingReactions.computeIfAbsent(key, k -> new java.util.HashMap<>());
+        String existing = playerReactions.get(player.id());
+        // Toggle: remove if same reaction already set, otherwise add/replace
+        if (reaction.equals(existing)) {
+            playerReactions.remove(player.id());
+        } else {
+            playerReactions.put(player.id(), reaction);
         }
-        log.info("Game {}: Player {} toggled like on drawing {}/{} (now {} likes)", gameId, player.id(), storyIndex, roundIndex, likers.size());
+        log.info("Game {}: Player {} reacted {} on drawing {}/{}", gameId, player.id(), reaction, storyIndex, roundIndex);
         storeState();
         updateStateForAllPlayers();
         updateStateForSpectators();

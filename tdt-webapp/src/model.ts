@@ -20,7 +20,7 @@ export interface StoryElement {
   content: string;
   player: PlayerInfo;
   replayUrl?: string;
-  likeCount?: number;
+  reactions?: Record<string, number>;
 }
 
 export interface StoryContent {

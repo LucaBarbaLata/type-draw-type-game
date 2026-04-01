@@ -145,9 +145,8 @@ interface TeamStrokeMessage extends RemoteStroke {
 function isFinalState(newPlayerState: PlayerState) {
   return (
     newPlayerState.state === "unknownGame" ||
-    newPlayerState.state === "alreadyStartedGame" ||
-    isStoriesState(newPlayerState)
-    // note: "spectator" is NOT final — keep socket open to receive StoriesState when game ends
+    newPlayerState.state === "alreadyStartedGame"
+    // note: storiesState and spectator are NOT final — keep socket open to receive reactions/state updates
   );
 }
 
@@ -490,8 +489,8 @@ const Game = () => {
         />
       );
     } else if (isStoriesState(playerState)) {
-      const handleLikeDrawing = (storyIndex: number, elementIndex: number) => {
-        send({ action: "rateDrawing", content: { storyIndex, roundIndex: elementIndex } });
+      const handleLikeDrawing = (storyIndex: number, elementIndex: number, reaction: string) => {
+        send({ action: "rateDrawing", content: { storyIndex, roundIndex: elementIndex, reaction } });
       };
       return (
         <GameFinished
@@ -603,7 +602,7 @@ const GameFinished = ({
   onReveal?: () => void;
   onFanfare?: () => void;
   onExplosion?: () => void;
-  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
+  onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
 }) => {
   const [showStories, setShowStories] = React.useState(false);
 
