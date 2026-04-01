@@ -46,7 +46,12 @@ public class Controller {
     public void getImage(HttpServletResponse response, @PathVariable String gameId, @PathVariable String imageId)
             throws IOException {
         response.setContentType(MediaType.IMAGE_PNG_VALUE);
-        Path imagePath = gameManager.getGameDir(gameId).resolve(imageId + ".png");
+        Path gameDir = gameManager.getGameDir(gameId);
+        Path imagePath = gameDir.resolve(imageId + ".png").normalize();
+        if (!imagePath.startsWith(gameDir)) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
         try (InputStream in = Files.newInputStream(imagePath)) {
             StreamUtils.copy(in, response.getOutputStream());
         }
@@ -56,7 +61,12 @@ public class Controller {
     public void getReplay(HttpServletResponse response, @PathVariable String gameId, @PathVariable String replayId)
             throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        Path replayPath = gameManager.getGameDir(gameId).resolve(replayId + ".replay.json");
+        Path gameDir = gameManager.getGameDir(gameId);
+        Path replayPath = gameDir.resolve(replayId + ".replay.json").normalize();
+        if (!replayPath.startsWith(gameDir)) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
         try (InputStream in = Files.newInputStream(replayPath)) {
             StreamUtils.copy(in, response.getOutputStream());
         }
