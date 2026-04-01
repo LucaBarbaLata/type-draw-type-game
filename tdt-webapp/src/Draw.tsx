@@ -35,7 +35,6 @@ const Draw = ({
   rounds,
   roundTimerSeconds,
   gameMode,
-  teamPartner,
   handleDone,
   onSubmit,
   onUrgentStart,
@@ -55,7 +54,6 @@ const Draw = ({
   rounds: number;
   roundTimerSeconds: number;
   gameMode: GameMode;
-  teamPartner?: PlayerInfo;
   handleDone: (image: Blob) => void;
   onSubmit?: () => void;
   onUrgentStart?: () => void;

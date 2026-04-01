@@ -449,7 +449,6 @@ const Game = () => {
           rounds={playerState.rounds}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           gameMode={playerState.gameMode ?? "CLASSIC"}
-          teamPartner={isTeam ? playerState.teamPartner : undefined}
           handleDone={handleDrawDone}
           onSubmit={playSubmitSuccess}
           onUrgentStart={playUrgentStart}
