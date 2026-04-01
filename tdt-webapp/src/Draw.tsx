@@ -1,5 +1,4 @@
 import React from "react";
-import styled from "styled-components";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
@@ -7,7 +6,6 @@ import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
-import Face from "./Face";
 import RoundTimer from "./RoundTimer";
 import WaitingMessage from "./WaitingMessage";
 
@@ -193,12 +191,6 @@ const Draw = ({
           toggleToFullscreenAndLandscapeOnMobile();
         }}
       />
-      {teamPartner && (
-        <TeamPartnerBadge>
-          <Face face={teamPartner.face} small={true} />
-          <span>Drawing with <strong>{teamPartner.name}</strong></span>
-        </TeamPartnerBadge>
-      )}
       <DrawTools
         color={color}
         brushes={brushes}
@@ -235,28 +227,3 @@ const Draw = ({
 
 export default Draw;
 
-const TeamPartnerBadge = styled.div`
-  position: fixed;
-  top: 1.5vmin;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 1vmin;
-  padding: 0.6vmin 1.5vmin;
-  background: rgba(8, 8, 24, 0.88);
-  border: 1.5px solid rgba(255, 160, 0, 0.5);
-  border-radius: 2vmin;
-  color: #ffa000;
-  font-size: 1.6vmin;
-  text-shadow: 0 0 6px rgba(255, 160, 0, 0.5);
-  box-shadow: 0 0 10px rgba(255, 160, 0, 0.15);
-  pointer-events: none;
-  z-index: 50;
-  white-space: nowrap;
-
-  strong {
-    color: #ffb830;
-    text-shadow: 0 0 8px rgba(255, 184, 48, 0.6);
-  }
-`;

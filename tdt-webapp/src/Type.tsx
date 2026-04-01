@@ -109,14 +109,9 @@ const Type = ({
             maxLength={2000}
           />
         )}
-        {first && teamPartner && (
-          <div className="small" style={{ color: "#ffa000" }}>
-            Your teammate <strong>{teamPartner.name}</strong> will draw this with you.
-          </div>
-        )}
-        {first && !teamPartner && (
+        {first && (
           <div className="small">
-            The next player will have to draw your text.
+            {teamPartner ? "The next team will have to draw your text." : "The next player will have to draw your text."}
           </div>
         )}
         {!first && (
