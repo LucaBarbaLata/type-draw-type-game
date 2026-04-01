@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
@@ -6,6 +7,7 @@ import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
+import Face from "./Face";
 import RoundTimer from "./RoundTimer";
 import WaitingMessage from "./WaitingMessage";
 
@@ -35,6 +37,7 @@ const Draw = ({
   rounds,
   roundTimerSeconds,
   gameMode,
+  teamPartner,
   handleDone,
   onSubmit,
   onUrgentStart,
@@ -42,6 +45,7 @@ const Draw = ({
   onTimerExpire,
   onSendReplay,
   onStrokeSegment,
+  onTeamSync,
   cacheKey,
   initialImageUrl: initialImageUrlProp,
   partnerCursor,
@@ -53,6 +57,7 @@ const Draw = ({
   rounds: number;
   roundTimerSeconds: number;
   gameMode: GameMode;
+  teamPartner?: PlayerInfo;
   handleDone: (image: Blob) => void;
   onSubmit?: () => void;
   onUrgentStart?: () => void;
@@ -60,6 +65,7 @@ const Draw = ({
   onTimerExpire?: () => void;
   onSendReplay?: (round: number, frames: string[]) => void;
   onStrokeSegment?: (seg: StrokeSegment) => void;
+  onTeamSync?: () => void;
   cacheKey?: string;
   initialImageUrl?: string;
   partnerCursor?: { x: number; y: number; name: string } | null;
@@ -187,6 +193,12 @@ const Draw = ({
           toggleToFullscreenAndLandscapeOnMobile();
         }}
       />
+      {teamPartner && (
+        <TeamPartnerBadge>
+          <Face face={teamPartner.face} small={true} />
+          <span>Drawing with <strong>{teamPartner.name}</strong></span>
+        </TeamPartnerBadge>
+      )}
       <DrawTools
         color={color}
         brushes={brushes}
@@ -197,8 +209,8 @@ const Draw = ({
         onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
         onChangeColor={(c) => setColor(c)}
         onSetTool={setActiveTool}
-        onUndo={() => gameMode !== "TEAM" && imageProviderRef.current?.undo()}
-        onRedo={() => gameMode !== "TEAM" && imageProviderRef.current?.redo()}
+        onUndo={() => { imageProviderRef.current?.undo(); onTeamSync?.(); }}
+        onRedo={() => { imageProviderRef.current?.redo(); onTeamSync?.(); }}
         onDone={handleClickDone}
       />
       {roundTimerSeconds > 0 && (
@@ -222,3 +234,29 @@ const Draw = ({
 };
 
 export default Draw;
+
+const TeamPartnerBadge = styled.div`
+  position: fixed;
+  top: 1.5vmin;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  padding: 0.6vmin 1.5vmin;
+  background: rgba(8, 8, 24, 0.88);
+  border: 1.5px solid rgba(255, 160, 0, 0.5);
+  border-radius: 2vmin;
+  color: #ffa000;
+  font-size: 1.6vmin;
+  text-shadow: 0 0 6px rgba(255, 160, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 160, 0, 0.15);
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+
+  strong {
+    color: #ffb830;
+    text-shadow: 0 0 8px rgba(255, 184, 48, 0.6);
+  }
+`;

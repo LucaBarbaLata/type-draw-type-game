@@ -68,6 +68,7 @@ interface TypeState extends PlayerState {
   artist: PlayerInfo | null;
   roundTimerSeconds: number;
   gameMode: GameMode;
+  teamPartner?: PlayerInfo;
 }
 
 function isTypeState(playerState: PlayerState): playerState is TypeState {
@@ -82,6 +83,7 @@ interface DrawState extends PlayerState {
   rounds: number;
   roundTimerSeconds: number;
   gameMode: GameMode;
+  teamPartner?: PlayerInfo;
 }
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
@@ -429,6 +431,7 @@ const Game = () => {
           artist={playerState.artist}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           gameMode={playerState.gameMode ?? "CLASSIC"}
+          teamPartner={playerState.teamPartner}
           handleDone={handleTypeDone}
           onSubmit={playSubmitSuccess}
           onUrgentStart={playUrgentStart}
@@ -446,6 +449,7 @@ const Game = () => {
           rounds={playerState.rounds}
           roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
           gameMode={playerState.gameMode ?? "CLASSIC"}
+          teamPartner={isTeam ? playerState.teamPartner : undefined}
           handleDone={handleDrawDone}
           onSubmit={playSubmitSuccess}
           onUrgentStart={playUrgentStart}
@@ -453,6 +457,7 @@ const Game = () => {
           onTimerExpire={playTimerExpire}
           onSendReplay={handleSendReplay}
           onStrokeSegment={isTeam ? handleStrokeSegment : undefined}
+          onTeamSync={isTeam ? handleTeamCanvasRequest : undefined}
           cacheKey={`draw-${gameIdNotNull}-r${playerState.round}`}
           partnerCursor={isTeam ? partnerCursor : null}
           imageProviderRef={isTeam ? imageProviderRef : undefined}
@@ -486,12 +491,16 @@ const Game = () => {
         />
       );
     } else if (isStoriesState(playerState)) {
+      const handleLikeDrawing = (storyIndex: number, elementIndex: number) => {
+        send({ action: "rateDrawing", content: { storyIndex, roundIndex: elementIndex } });
+      };
       return (
         <GameFinished
           stories={playerState.stories}
           onReveal={playRevealPop}
           onFanfare={playFanfare}
           onExplosion={playExplosionPop}
+          onLikeDrawing={handleLikeDrawing}
         />
       );
     } else if (isSpectatorState(playerState)) {
@@ -589,11 +598,13 @@ const GameFinished = ({
   onReveal,
   onFanfare,
   onExplosion,
+  onLikeDrawing,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
   onFanfare?: () => void;
   onExplosion?: () => void;
+  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
 }) => {
   const [showStories, setShowStories] = React.useState(false);
 
@@ -610,6 +621,7 @@ const GameFinished = ({
       <Stories
         stories={stories}
         onReveal={onReveal}
+        onLikeDrawing={onLikeDrawing}
       />
     );
   }

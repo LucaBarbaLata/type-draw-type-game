@@ -385,7 +385,7 @@ public class Game {
                 int playerIndex = ArrayUtils.indexOf(gameState.hotPotatoMatrix[r], storyIndex);
                 Player player = gameState.players.get(playerIndex);
                 String content = getDrawingSrc(elements[r].content);
-                fe[idx++] = new FrontendStoryElement("image", content, mapPlayerToPlayerInfo(player), null);
+                fe[idx++] = new FrontendStoryElement("image", content, mapPlayerToPlayerInfo(player), null, 0);
             }
             result[storyIndex] = new FrontendStory(fe);
         }
@@ -420,8 +420,13 @@ public class Game {
             Player player = getPlayerForStoryInRound(storyIndex, roundNo);
             String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
             String replayUrl = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
+            int likeCount = 0;
+            if ("image".equals(e.type) && gameState.drawingLikes != null) {
+                java.util.Set<String> likers = gameState.drawingLikes.get(storyIndex + "_" + roundNo);
+                if (likers != null) likeCount = likers.size();
+            }
             frontendStory.elements()[roundNo] = new FrontendStoryElement(e.type, content,
-                    mapPlayerToPlayerInfo(player), replayUrl);
+                    mapPlayerToPlayerInfo(player), replayUrl, likeCount);
         }
         return frontendStory;
     }
@@ -436,6 +441,11 @@ public class Game {
 
         if (!hasPlayerFinishedCurrentRound(player)) {
             if (isTypeRound()) {
+                // In TEAM mode, only the primary (first) player in each pair chooses the topic.
+                // The secondary player waits while their partner types.
+                if (gameState.gameMode == GameMode.TEAM && isSecondaryTeamPlayer(player)) {
+                    return getWaitForRoundFinishedState();
+                }
                 return getTypeState(player);
             } else { // draw round
                 return getDrawState(player);
@@ -443,6 +453,17 @@ public class Game {
         } else {
             return getWaitForRoundFinishedState();
         }
+    }
+
+    /**
+     * Returns true if the player is the secondary (non-primary) member of their team pair.
+     * In TEAM mode, only the primary (pair[0]) member types during type rounds.
+     */
+    private boolean isSecondaryTeamPlayer(Player player) {
+        int playerIndex = gameState.players.indexOf(player);
+        int[] pair = getTeamPairForPlayer(playerIndex);
+        if (pair == null || pair.length < 2) return false;
+        return playerIndex != pair[0];
     }
 
     private PlayerState getHotPotatoState(Player player) {
@@ -495,22 +516,48 @@ public class Game {
         String text = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
         Player previousPlayer = getPreviousPlayerForStory(storyIndex);
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        PlayerInfo teamPartner = null;
+        if (mode == GameMode.TEAM) {
+            int playerIndex = gameState.players.indexOf(player);
+            int[] pair = getTeamPairForPlayer(playerIndex);
+            if (pair != null) {
+                for (int partnerIdx : pair) {
+                    if (partnerIdx != playerIndex) {
+                        teamPartner = mapPlayerToPlayerInfo(gameState.players.get(partnerIdx));
+                        break;
+                    }
+                }
+            }
+        }
         return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
-                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode);
+                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner);
     }
 
     private PlayerState getTypeState(Player player) {
         int roundOneBased = gameState.round + 1;
         int rounds = gameState.gameMatrix.length;
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        PlayerInfo teamPartner = null;
+        if (mode == GameMode.TEAM) {
+            int playerIndex = gameState.players.indexOf(player);
+            int[] pair = getTeamPairForPlayer(playerIndex);
+            if (pair != null) {
+                for (int partnerIdx : pair) {
+                    if (partnerIdx != playerIndex) {
+                        teamPartner = mapPlayerToPlayerInfo(gameState.players.get(partnerIdx));
+                        break;
+                    }
+                }
+            }
+        }
         if (gameState.round == 0) {
-            return new TypeState(roundOneBased, rounds, gameState.roundTimerSeconds, mode);
+            return new TypeState(roundOneBased, rounds, null, null, gameState.roundTimerSeconds, mode, teamPartner);
         } else {
             int storyIndex = getCurrentStoryIndexForPlayer(player);
             String imageFilename = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
             Player previousPlayer = getPreviousPlayerForStory(storyIndex);
             return new TypeState(roundOneBased, rounds, getDrawingSrc(imageFilename),
-                    mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode);
+                    mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner);
         }
     }
 
@@ -1057,6 +1104,46 @@ public class Game {
 
         storeState();
         updateStateForAllPlayers();
+    }
+
+    public void rateDrawing(Client client, net.czedik.hermann.tdt.actions.RateDrawingAction action) {
+        Player player = clientToPlayer.get(client);
+        if (player == null) {
+            log.warn("Game {}: Cannot rate drawing. Client {} is not a known player", gameId, client.getId());
+            return;
+        }
+        if (gameState.state != GameState.State.Finished) {
+            log.warn("Game {}: Ignoring rateDrawing in state {}", gameId, gameState.state);
+            return;
+        }
+        int storyIndex = action.storyIndex();
+        int roundIndex = action.roundIndex();
+        if (storyIndex < 0 || storyIndex >= gameState.stories.length) {
+            log.warn("Game {}: Invalid storyIndex {} for rateDrawing", gameId, storyIndex);
+            return;
+        }
+        Story story = gameState.stories[storyIndex];
+        if (roundIndex < 0 || roundIndex >= story.elements.length) {
+            log.warn("Game {}: Invalid roundIndex {} for rateDrawing", gameId, roundIndex);
+            return;
+        }
+        if (!"image".equals(story.elements[roundIndex].type)) {
+            log.warn("Game {}: rateDrawing called on non-image element", gameId);
+            return;
+        }
+        if (gameState.drawingLikes == null) {
+            gameState.drawingLikes = new java.util.HashMap<>();
+        }
+        String key = storyIndex + "_" + roundIndex;
+        java.util.Set<String> likers = gameState.drawingLikes.computeIfAbsent(key, k -> new java.util.HashSet<>());
+        // Toggle: add if not present, remove if already liked
+        if (!likers.remove(player.id())) {
+            likers.add(player.id());
+        }
+        log.info("Game {}: Player {} toggled like on drawing {}/{} (now {} likes)", gameId, player.id(), storyIndex, roundIndex, likers.size());
+        storeState();
+        updateStateForAllPlayers();
+        updateStateForSpectators();
     }
 
     private void checkAndHandleRoundFinished() {

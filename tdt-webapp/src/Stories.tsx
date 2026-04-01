@@ -11,9 +11,11 @@ import DrawingReplay from "./replay/DrawingReplay";
 const Stories = ({
   stories,
   onReveal,
+  onLikeDrawing,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
+  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
 }) => {
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
@@ -50,7 +52,9 @@ const Stories = ({
       </h1>
       <Story
         story={currentStory}
+        storyIndex={selectedStory}
         revealedCount={revealedCount}
+        onLikeDrawing={onLikeDrawing}
       />
       {!allRevealed && (
         <RevealControls>
@@ -297,21 +301,28 @@ const AnimatedElement = styled.div`
 
 const Story = ({
   story,
+  storyIndex,
   revealedCount,
+  onLikeDrawing,
 }: {
   story: StoryContent;
+  storyIndex: number;
   revealedCount: number;
+  onLikeDrawing?: (storyIndex: number, elementIndex: number) => void;
 }) => (
   <StyledStory>
     {story.elements.slice(0, revealedCount).map((e, index) => (
       <AnimatedElement key={index}>
-        <StoryElementComponent element={e} />
+        <StoryElementComponent
+          element={e}
+          onLike={e.type === "image" && onLikeDrawing ? () => onLikeDrawing(storyIndex, index) : undefined}
+        />
       </AnimatedElement>
     ))}
   </StyledStory>
 );
 
-const StoryElementComponent = ({ element }: { element: StoryElement }) => {
+const StoryElementComponent = ({ element, onLike }: { element: StoryElement; onLike?: () => void }) => {
   if (element.type === "text") {
     return (
       <TextStoryElement>
@@ -321,11 +332,23 @@ const StoryElementComponent = ({ element }: { element: StoryElement }) => {
     );
   }
 
+  const likeBar = (
+    <LikeRow>
+      <LikeButton onClick={onLike} title="Like this drawing">
+        👍
+      </LikeButton>
+      {(element.likeCount ?? 0) > 0 && (
+        <LikeCount>{element.likeCount}</LikeCount>
+      )}
+    </LikeRow>
+  );
+
   if (element.replayUrl) {
     return (
       <ImageStoryElement>
         <Player face={element.player.face}>{element.player.name} painted:</Player>
         <DrawingReplay replayUrl={element.replayUrl} staticFallback={element.content} />
+        {likeBar}
       </ImageStoryElement>
     );
   }
@@ -334,6 +357,7 @@ const StoryElementComponent = ({ element }: { element: StoryElement }) => {
     <ImageStoryElement>
       <Player face={element.player.face}>{element.player.name} painted:</Player>
       <img src={element.content} alt="Drawing" />
+      {likeBar}
     </ImageStoryElement>
   );
 };
@@ -359,6 +383,37 @@ const ImageStoryElement = styled.div`
     border-radius: 1vmin;
     box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
   }
+`;
+
+const LikeRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1vmin;
+  margin-top: 1.5vmin;
+`;
+
+const LikeButton = styled.button`
+  background: none;
+  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  border-radius: 2vmin;
+  color: var(--cyber-cyan);
+  font-size: 2.2vmin;
+  padding: 0.4vmin 1.2vmin;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    background: rgba(0, 245, 255, 0.1);
+    border-color: rgba(0, 245, 255, 0.7);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.25);
+  }
+`;
+
+const LikeCount = styled.span`
+  font-size: 1.8vmin;
+  color: var(--cyber-cyan);
+  text-shadow: 0 0 6px rgba(0, 245, 255, 0.5);
+  min-width: 2ch;
 `;
 
 const NavButtons = styled.div`

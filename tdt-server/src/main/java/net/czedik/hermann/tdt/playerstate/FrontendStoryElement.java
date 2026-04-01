@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import net.czedik.hermann.tdt.PlayerInfo;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record FrontendStoryElement(String type, String content, PlayerInfo player, String replayUrl) {
+public record FrontendStoryElement(String type, String content, PlayerInfo player, String replayUrl, int likeCount) {
 
     public FrontendStoryElement {
         Objects.requireNonNull(type);

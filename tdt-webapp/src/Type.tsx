@@ -17,6 +17,7 @@ const Type = ({
   artist,
   roundTimerSeconds,
   gameMode,
+  teamPartner,
   handleDone,
   onSubmit,
   onUrgentStart,
@@ -29,6 +30,7 @@ const Type = ({
   artist: PlayerInfo | null;
   roundTimerSeconds: number;
   gameMode: GameMode;
+  teamPartner?: PlayerInfo;
   handleDone: (text: string) => void;
   onSubmit?: () => void;
   onUrgentStart?: () => void;
@@ -107,7 +109,12 @@ const Type = ({
             maxLength={2000}
           />
         )}
-        {first && (
+        {first && teamPartner && (
+          <div className="small" style={{ color: "#ffa000" }}>
+            Your teammate <strong>{teamPartner.name}</strong> will draw this with you.
+          </div>
+        )}
+        {first && !teamPartner && (
           <div className="small">
             The next player will have to draw your text.
           </div>

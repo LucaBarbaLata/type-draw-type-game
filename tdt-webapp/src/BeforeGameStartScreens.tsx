@@ -408,7 +408,7 @@ const BeforeGameStartScreen = ({
   return (
     <div className="BeforeGameStartScreen">
       <div className="BeforeGameStartScreen-left">
-        <div className="Players-title">Players:</div>
+        <div className="Players-title">Players ({players.length}):</div>
         <div className="Players">
           {players.map((player, index) => (
             <PlayerRow key={index}>

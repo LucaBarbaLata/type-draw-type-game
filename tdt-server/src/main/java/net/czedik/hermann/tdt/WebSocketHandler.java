@@ -32,6 +32,7 @@ import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.RateDrawingAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 
 public class WebSocketHandler extends AbstractWebSocketHandler {
@@ -101,6 +102,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("vote".equals(action)) {
             VoteAction voteAction = JSONHelper.objectMapper.treeToValue(content, VoteAction.class);
             gameManager.handleVoteAction(client, voteAction);
+        } else if ("rateDrawing".equals(action)) {
+            RateDrawingAction rateDrawingAction = JSONHelper.objectMapper.treeToValue(content, RateDrawingAction.class);
+            gameManager.handleRateDrawingAction(client, rateDrawingAction);
         } else if ("type".equals(action)) {
             TypeAction typeAction = JSONHelper.objectMapper.treeToValue(content, TypeAction.class);
             gameManager.handleTypeAction(client, typeAction);

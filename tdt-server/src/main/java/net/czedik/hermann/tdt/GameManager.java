@@ -34,6 +34,7 @@ import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
+import net.czedik.hermann.tdt.actions.RateDrawingAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.UnknownGameState;
 
@@ -296,6 +297,17 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.vote(client, voteAction);
+        });
+    }
+
+    public void handleRateDrawingAction(Client client, RateDrawingAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle rateDrawing. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.rateDrawing(client, action);
         });
     }
 
