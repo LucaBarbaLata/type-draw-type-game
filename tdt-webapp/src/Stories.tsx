@@ -7,6 +7,7 @@ import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 import DrawingReplay from "./replay/DrawingReplay";
+import { EmojiCascade } from "./EmojiCascade";
 
 const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮"];
 
@@ -21,6 +22,10 @@ const Stories = ({
 }) => {
   // Track the current player's chosen reaction per element: key = "storyIdx_elemIdx" -> emoji | null
   const [myReactions, setMyReactions] = React.useState<Record<string, string | null>>({});
+  // Active emoji cascade effects: [{id, emoji}]
+  const [cascades, setCascades] = React.useState<Array<{ id: number; emoji: string }>>([]);
+  const nextCascadeId = React.useRef(0);
+
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
 
@@ -49,6 +54,7 @@ const Stories = ({
   const navigate = useNavigate();
 
   return (
+    <>
     <Scrollable ref={scrollableRef}>
       {navButtons}
       <h1>
@@ -61,11 +67,17 @@ const Stories = ({
         myReactions={myReactions}
         onReact={onLikeDrawing ? (elemIdx, reaction) => {
           const key = `${selectedStory}_${elemIdx}`;
+          const isAdding = myReactions[key] !== reaction;
           setMyReactions(prev => {
             const current = prev[key];
             return { ...prev, [key]: current === reaction ? null : reaction };
           });
           onLikeDrawing(selectedStory, elemIdx, reaction);
+          // Only cascade when adding (not removing) a reaction
+          if (isAdding) {
+            const id = nextCascadeId.current++;
+            setCascades(prev => [...prev, { id, emoji: reaction }]);
+          }
         } : undefined}
       />
       {!allRevealed && (
@@ -91,6 +103,14 @@ const Stories = ({
         Start a new game
       </StartNewButton>
     </Scrollable>
+    {cascades.map((c) => (
+      <EmojiCascade
+        key={c.id}
+        emoji={c.emoji}
+        onDone={() => setCascades((prev) => prev.filter((x) => x.id !== c.id))}
+      />
+    ))}
+    </>
   );
 };
 
