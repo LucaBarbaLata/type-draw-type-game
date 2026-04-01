@@ -6,7 +6,6 @@ import net.czedik.hermann.tdt.PlayerInfo;
 
 import java.util.Objects;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TypeState implements PlayerState {
 
     /**
@@ -42,6 +41,7 @@ public class TypeState implements PlayerState {
     /**
      * Team partner info. Only set in TEAM mode.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public final PlayerInfo teamPartner;
 
     public TypeState(int round, int rounds, int roundTimerSeconds, GameMode gameMode) {
