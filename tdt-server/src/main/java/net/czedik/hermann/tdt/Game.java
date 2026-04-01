@@ -331,7 +331,7 @@ public class Game {
                 Player player = getPlayerForStoryInRound(storyIndex, roundNo);
                 String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
                 String replayUrl1 = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
-                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1);
+                fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1, 0);
             }
             result[storyIndex] = new FrontendStory(fe);
         }
