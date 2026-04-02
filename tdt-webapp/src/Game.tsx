@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 
@@ -596,10 +597,27 @@ const Game = () => {
           {muted ? "🔇" : "🔊"}
         </MuteButton>
       )}
-      <ConnectionDot status={connectionStatus} title={
-        connectionStatus === "connected" ? "Connected" :
-        connectionStatus === "connecting" ? "Connecting..." : "Disconnected"
-      } />
+      {ReactDOM.createPortal(
+        <div
+          title={
+            connectionStatus === "connected" ? "Connected" :
+            connectionStatus === "connecting" ? "Connecting..." : "Disconnected"
+          }
+          style={{
+            position: "fixed",
+            top: 8,
+            right: 8,
+            width: 10,
+            height: 10,
+            borderRadius: "50%",
+            zIndex: 1000,
+            pointerEvents: "none",
+            background: connectionStatus === "connected" ? "#00ff88" : connectionStatus === "connecting" ? "#ffcc00" : "#ff4444",
+            boxShadow: connectionStatus === "connected" ? "0 0 6px #00ff88" : connectionStatus === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444",
+          }}
+        />,
+        document.body
+      )}
     </>
   );
 };
@@ -704,19 +722,3 @@ const LoadingGame = () => {
   return <div>Loading game...</div>;
 };
 
-const ConnectionDot = styled.div<{ status: "connecting" | "connected" | "disconnected" }>`
-  position: fixed;
-  top: 8px;
-  right: 8px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  z-index: 200;
-  pointer-events: none;
-  background: ${({ status }) =>
-    status === "connected" ? "#00ff88" :
-    status === "connecting" ? "#ffcc00" : "#ff4444"};
-  box-shadow: ${({ status }) =>
-    status === "connected" ? "0 0 6px #00ff88" :
-    status === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444"};
-`;
