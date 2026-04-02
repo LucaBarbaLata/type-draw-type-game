@@ -149,6 +149,9 @@ const DrawCanvas = ({
   const blindPathRef = React.useRef<{ x: number; y: number }[]>([]);
   const isPenDownRef = React.useRef(false);
 
+  // Palm rejection: true while any multi-touch event is active; blocks new strokes until all fingers lift
+  const isMultiTouchActiveRef = React.useRef(false);
+
   // Fog of War: overlay canvas ref
   const fogCanvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
@@ -445,7 +448,16 @@ const DrawCanvas = ({
   };
   const handleTouchStart = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
-    if (event.touches.length !== 1) return;
+    if (event.touches.length > 1) {
+      // Multi-touch detected: cancel any active stroke and lock out until all fingers lift
+      isMultiTouchActiveRef.current = true;
+      setCursorPos(null);
+      if (gameMode === "FOG_OF_WAR") updateFog(null, null);
+      handlePointerUp(event.currentTarget);
+      return;
+    }
+    // Single touch, but still locked out from a previous multi-touch event
+    if (isMultiTouchActiveRef.current) return;
     const touch = event.touches[0];
     setCursorPos({ x: touch.clientX, y: touch.clientY });
     const { x, y } = getPositionInCanvas(event.currentTarget, touch);
@@ -453,12 +465,14 @@ const DrawCanvas = ({
   };
   const handleTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
-    if (event.touches.length !== 1) {
+    if (event.touches.length > 1) {
+      isMultiTouchActiveRef.current = true;
       setCursorPos(null);
       if (gameMode === "FOG_OF_WAR") updateFog(null, null);
       handlePointerUp(event.currentTarget);
       return;
     }
+    if (isMultiTouchActiveRef.current) return;
     const touch = event.touches[0];
     setCursorPos({ x: touch.clientX, y: touch.clientY });
     if (gameMode === "FOG_OF_WAR") updateFog(touch.clientX, touch.clientY);
@@ -467,6 +481,11 @@ const DrawCanvas = ({
   };
   const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
+    // All fingers lifted: clear the multi-touch lock
+    if (event.touches.length === 0) {
+      isMultiTouchActiveRef.current = false;
+    }
+    if (isMultiTouchActiveRef.current) return;
     setCursorPos(null);
     const touch = event.changedTouches[0];
     if (touch) {

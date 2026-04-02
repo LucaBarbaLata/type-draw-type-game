@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
+import net.czedik.hermann.tdt.actions.RematchAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
@@ -52,6 +53,8 @@ import net.czedik.hermann.tdt.playerstate.TeamCanvasRequestEvent;
 import net.czedik.hermann.tdt.playerstate.TeamCanvasSyncEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
+import net.czedik.hermann.tdt.playerstate.RematchState;
+import net.czedik.hermann.tdt.playerstate.SpectatorCurrentDrawing;
 import net.czedik.hermann.tdt.playerstate.SpectatorState;
 import net.czedik.hermann.tdt.playerstate.StoriesState;
 import net.czedik.hermann.tdt.playerstate.TypeState;
@@ -122,6 +125,8 @@ public class Game {
                 log.info("Game {}: Client {} joining as spectator (game in progress)", gameId, client.getId());
                 spectatorClients.add(client);
                 client.send(buildSpectatorState());
+                // Refresh draw state for active players so they see the updated spectator count
+                updateStateForAllPlayers();
                 return true;
             case Finished:
                 log.info("Game {}: Client {} joining as spectator (game finished)", gameId, client.getId());
@@ -305,14 +310,35 @@ public class Game {
 
     private SpectatorState buildSpectatorState() {
         FrontendStory[] partialStories = mapPartialStories();
-        List<PlayerInfo> waitingFor = mapPlayersToPlayerInfos(getNotFinishedPlayers());
+        List<Player> notFinished = getNotFinishedPlayers();
+        List<PlayerInfo> waitingFor = mapPlayersToPlayerInfos(notFinished);
+        List<SpectatorCurrentDrawing> currentDrawings = buildCurrentDrawings(notFinished);
         return new SpectatorState(
                 gameState.round + 1,
                 gameState.gameMatrix.length,
                 mapPlayersToPlayerInfos(gameState.players),
                 waitingFor,
-                partialStories
+                partialStories,
+                currentDrawings
         );
+    }
+
+    private List<SpectatorCurrentDrawing> buildCurrentDrawings(List<Player> notFinishedPlayers) {
+        // Hot Potato mode doesn't have text prompts per drawing slot; skip live view
+        if (gameState.gameMode == GameMode.HOT_POTATO) {
+            return java.util.Collections.emptyList();
+        }
+        if (isTypeRound() || notFinishedPlayers.isEmpty() || gameState.gameMatrix == null) {
+            return java.util.Collections.emptyList();
+        }
+        List<SpectatorCurrentDrawing> result = new ArrayList<>();
+        for (Player player : notFinishedPlayers) {
+            int storyIndex = getCurrentStoryIndexForPlayer(player);
+            StoryElement prevElement = getStoryByIndex(storyIndex).elements[gameState.round - 1];
+            if (prevElement == null) continue;
+            result.add(new SpectatorCurrentDrawing(mapPlayerToPlayerInfo(player), prevElement.content));
+        }
+        return result;
     }
 
     private FrontendStory[] mapPartialStories() {
@@ -508,7 +534,8 @@ public class Game {
                 gameState.hotPotatoTotalRotations,
                 gameState.hotPotatoIntervalSeconds,
                 initialCanvasUrl,
-                mode
+                mode,
+                spectatorClients.size()
         );
     }
 
@@ -536,7 +563,8 @@ public class Game {
             }
         }
         return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
-                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner);
+                mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner,
+                spectatorClients.size());
     }
 
     private PlayerState getTypeState(Player player) {
@@ -666,11 +694,15 @@ public class Game {
     }
 
     public void clientDisconnected(Client client) {
-        spectatorClients.remove(client);
+        boolean wasSpectator = spectatorClients.remove(client);
 
         Player player = clientToPlayer.remove(client);
         if (player == null) {
             log.info("Game {}: Client {} disconnect. Not a player in this game.", gameId, client.getId());
+            // If a spectator left during an active draw round, refresh player states so spectator count updates
+            if (wasSpectator && gameState.state == GameState.State.Started && isDrawRound()) {
+                updateStateForAllPlayers();
+            }
             return;
         }
 
@@ -687,6 +719,69 @@ public class Game {
                 updateStateForAllPlayers();
             }
         }
+    }
+
+    // ---- Rematch ---------------------------------------------------------------
+
+    /**
+     * Data needed by GameManager to create the rematch game.
+     */
+    public record RematchData(
+            String creatorId, String creatorName, String creatorFace,
+            GameMode gameMode, int roundTimerSeconds, int maxPlayers,
+            boolean chatEnabled, boolean isPublic,
+            int hotPotatoIntervalSeconds, int hotPotatoTotalSeconds) {
+    }
+
+    /**
+     * Validates the rematch request and returns the data required to create a new game,
+     * or null if the rematch is not allowed (wrong state, unknown client, etc.).
+     */
+    public RematchData prepareRematch(Client client) {
+        if (gameState.state != GameState.State.Finished) {
+            log.warn("Game {}: Ignoring rematch in state {}", gameId, gameState.state);
+            return null;
+        }
+        Player requester = clientToPlayer.get(client);
+        if (requester == null) {
+            log.warn("Game {}: Unknown client {} tried to rematch", gameId, client.getId());
+            return null;
+        }
+        Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(requester);
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        return new RematchData(
+                creator.id(), creator.name(), creator.face(),
+                mode, gameState.roundTimerSeconds, gameState.maxPlayers,
+                gameState.chatEnabled, gameState.isPublic,
+                gameState.hotPotatoIntervalSeconds, gameState.hotPotatoTotalSeconds);
+    }
+
+    /**
+     * Sends a RematchState to all connected players and spectators so they redirect to the new game.
+     */
+    public void broadcastRematch(String newGameId) {
+        RematchState rematchState = new RematchState(newGameId);
+        for (Player player : gameState.players) {
+            for (Client client : playerToClients.getOrDefault(player, Collections.emptySet())) {
+                client.send(rematchState);
+            }
+        }
+        for (Client client : spectatorClients) {
+            client.send(rematchState);
+        }
+    }
+
+    /**
+     * Applies settings from a rematch onto a freshly-created game (called by GameManager before the game is opened).
+     */
+    public void applyRematchSettings(RematchData data) {
+        gameState.gameMode = data.gameMode();
+        gameState.roundTimerSeconds = data.roundTimerSeconds();
+        gameState.maxPlayers = data.maxPlayers();
+        gameState.chatEnabled = data.chatEnabled();
+        gameState.isPublic = data.isPublic();
+        gameState.hotPotatoIntervalSeconds = data.hotPotatoIntervalSeconds();
+        gameState.hotPotatoTotalSeconds = data.hotPotatoTotalSeconds();
     }
 
     public void start(Client client, StartAction startAction) {

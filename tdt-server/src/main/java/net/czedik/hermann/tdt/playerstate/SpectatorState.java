@@ -23,15 +23,23 @@ public class SpectatorState implements PlayerState {
     /** Partial stories — only completed elements are included. */
     public final FrontendStory[] stories;
 
+    /**
+     * For draw rounds: each player still drawing, with the text prompt they are drawing.
+     * Empty/null for type rounds.
+     */
+    public final List<SpectatorCurrentDrawing> currentDrawings;
+
     public SpectatorState(int round, int rounds,
                           List<PlayerInfo> players,
                           List<PlayerInfo> waitingForPlayers,
-                          FrontendStory[] stories) {
+                          FrontendStory[] stories,
+                          List<SpectatorCurrentDrawing> currentDrawings) {
         this.round = round;
         this.rounds = rounds;
         this.players = players;
         this.waitingForPlayers = waitingForPlayers;
         this.stories = stories;
+        this.currentDrawings = currentDrawings;
     }
 
     @Override

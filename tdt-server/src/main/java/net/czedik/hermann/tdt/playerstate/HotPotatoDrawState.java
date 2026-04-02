@@ -19,7 +19,8 @@ public record HotPotatoDrawState(
         int totalRotations,
         int intervalSeconds,
         String initialCanvasUrl,
-        GameMode gameMode
+        GameMode gameMode,
+        int spectatorCount
 ) implements PlayerState {
 
     @Override

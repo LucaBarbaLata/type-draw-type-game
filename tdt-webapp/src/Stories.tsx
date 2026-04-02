@@ -1,6 +1,5 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
-import { useNavigate } from "react-router-dom";
 
 import { StoryContent, StoryElement } from "./model";
 import Player from "./Player";
@@ -15,10 +14,12 @@ const Stories = ({
   stories,
   onReveal,
   onLikeDrawing,
+  onRematch,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
+  onRematch?: () => void;
 }) => {
   // Track the current player's chosen reaction per element: key = "storyIdx_elemIdx" -> emoji | null
   const [myReactions, setMyReactions] = React.useState<Record<string, string | null>>({});
@@ -85,8 +86,6 @@ const Stories = ({
     />
   );
 
-  const navigate = useNavigate();
-
   return (
     <>
     <Scrollable ref={scrollableRef}>
@@ -135,9 +134,11 @@ const Stories = ({
         </ExportButton>
       )}
       {navButtons}
-      <StartNewButton className="button button-red" onClick={() => navigate("/")}>
-        Start a new game
-      </StartNewButton>
+      {onRematch && (
+        <StartNewButton className="button button-red" onClick={onRematch}>
+          Play Again (same settings)
+        </StartNewButton>
+      )}
     </Scrollable>
     {cascades.map((c) => (
       <EmojiCascade

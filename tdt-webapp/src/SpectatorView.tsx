@@ -6,18 +6,25 @@ import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 
+interface SpectatorCurrentDrawing {
+  player: PlayerInfo;
+  prompt: string;
+}
+
 const SpectatorView = ({
   round,
   rounds,
   players,
   waitingForPlayers,
   stories,
+  currentDrawings,
 }: {
   round: number;
   rounds: number;
   players: PlayerInfo[];
   waitingForPlayers: PlayerInfo[];
   stories: StoryContent[];
+  currentDrawings?: SpectatorCurrentDrawing[];
 }) => {
   const [selectedStory, setSelectedStory] = React.useState(0);
   const scrollableRef = React.useRef<HTMLDivElement>(null);
@@ -52,6 +59,18 @@ const SpectatorView = ({
           ))}
         </PlayerRow>
       </Header>
+
+      {currentDrawings && currentDrawings.length > 0 && (
+        <CurrentDrawingsSection>
+          <CurrentDrawingsTitle>Currently drawing:</CurrentDrawingsTitle>
+          {currentDrawings.map((d, i) => (
+            <CurrentDrawingCard key={i}>
+              <Player face={d.player.face}>{d.player.name}</Player>
+              <DrawingPrompt>"{d.prompt}"</DrawingPrompt>
+            </CurrentDrawingCard>
+          ))}
+        </CurrentDrawingsSection>
+      )}
 
       {hasStories && (
         <>
@@ -205,4 +224,44 @@ const EmptyNote = styled.div`
   text-align: center;
   margin: 6vmin;
   letter-spacing: 0.06em;
+`;
+
+const CurrentDrawingsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vmin;
+  width: 100%;
+  padding: 3vmin;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  margin-bottom: 2vmin;
+`;
+
+const CurrentDrawingsTitle = styled.div`
+  font-size: 2vmin;
+  color: rgba(0, 245, 255, 0.6);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+`;
+
+const CurrentDrawingCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vmin;
+  background: rgba(0, 245, 255, 0.03);
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  border-radius: 1vmin;
+  padding: 2vmin 3vmin;
+  width: 60vw;
+  max-width: 500px;
+`;
+
+const DrawingPrompt = styled.div`
+  font-size: 2vmin;
+  color: #c8d8f0;
+  font-style: italic;
+  text-align: center;
+  margin-top: 0.5vmin;
 `;

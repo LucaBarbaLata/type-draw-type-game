@@ -69,7 +69,7 @@ const DrawTools = ({
     <div
       className={`tool-button tool-button-sm${isActive(t) ? " tool-button-active" : ""}${extraClass ? " " + extraClass : ""}`}
       onClick={() => onSetTool(t)}
-      title={title}
+      data-tooltip={title}
     >
       {label}
     </div>;
@@ -82,8 +82,8 @@ const DrawTools = ({
 
       {/* Undo / Redo */}
       <div className="tool-button-row">
-        <div className="tool-button tool-button-sm" onClick={onUndo} title="Undo">↩</div>
-        <div className="tool-button tool-button-sm" onClick={onRedo} title="Redo">↪</div>
+        <div className="tool-button tool-button-sm" onClick={onUndo} data-tooltip="Undo">↩</div>
+        <div className="tool-button tool-button-sm" onClick={onRedo} data-tooltip="Redo">↪</div>
       </div>
 
       {/* Pen / Eraser / Fill */}

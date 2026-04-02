@@ -25,7 +25,8 @@ public record DrawState(
         PlayerInfo textWriter,
         int roundTimerSeconds,
         GameMode gameMode,
-        PlayerInfo teamPartner) implements PlayerState {
+        PlayerInfo teamPartner,
+        int spectatorCount) implements PlayerState {
 
     public DrawState {
         if (round < 1)

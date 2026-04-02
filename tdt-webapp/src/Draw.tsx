@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
@@ -47,6 +48,7 @@ const Draw = ({
   initialImageUrl: initialImageUrlProp,
   partnerCursor,
   imageProviderRef: imageProviderRefProp,
+  spectatorCount,
 }: {
   text: string;
   textWriter: PlayerInfo;
@@ -66,6 +68,7 @@ const Draw = ({
   initialImageUrl?: string;
   partnerCursor?: { x: number; y: number; name: string } | null;
   imageProviderRef?: React.MutableRefObject<ImageProvider | undefined>;
+  spectatorCount?: number;
 }) => {
   const isHotPotato = gameMode === "HOT_POTATO";
   const [cachedImageUrl] = React.useState<string | undefined>(() =>
@@ -206,6 +209,9 @@ const Draw = ({
       {roundTimerSeconds > 0 && (
         <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
       )}
+      {spectatorCount != null && spectatorCount > 0 && (
+        <SpectatorBadge>👁 {spectatorCount} watching</SpectatorBadge>
+      )}
       <DrawCanvas
         color={color}
         brushPixelSize={selectedBrush.pixelSize}
@@ -224,4 +230,21 @@ const Draw = ({
 };
 
 export default Draw;
+
+const SpectatorBadge = styled.div`
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8, 8, 24, 0.85);
+  border: 1px solid rgba(0, 245, 255, 0.4);
+  color: rgba(0, 245, 255, 0.8);
+  font-size: 1.6vmin;
+  padding: 2px 10px;
+  border-radius: 20px;
+  z-index: 100;
+  pointer-events: none;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(4px);
+`;
 

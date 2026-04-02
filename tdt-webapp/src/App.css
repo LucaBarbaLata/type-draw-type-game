@@ -125,3 +125,29 @@
   border-radius: 1vmin;
   box-shadow: var(--cyber-glow);
 }
+
+/* Custom styled tooltips for drawing tools */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(8, 8, 24, 0.95);
+  color: #00f5ff;
+  border: 1px solid rgba(0, 245, 255, 0.6);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 1.4vmin;
+  min-font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 500;
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}

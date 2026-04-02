@@ -84,6 +84,7 @@ interface DrawState extends PlayerState {
   roundTimerSeconds: number;
   gameMode: GameMode;
   teamPartner?: PlayerInfo;
+  spectatorCount?: number;
 }
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
@@ -97,6 +98,7 @@ interface HotPotatoDrawState extends PlayerState {
   intervalSeconds: number;
   initialCanvasUrl: string | null;
   gameMode: GameMode;
+  spectatorCount?: number;
 }
 
 function isHotPotatoDrawState(playerState: PlayerState): playerState is HotPotatoDrawState {
@@ -125,6 +127,16 @@ function isStoriesState(playerState: PlayerState): playerState is StoriesState {
   return playerState.state === "stories";
 }
 
+interface RematchState extends PlayerState {
+  state: "rematch";
+  newGameId: string;
+}
+
+interface SpectatorCurrentDrawing {
+  player: PlayerInfo;
+  prompt: string;
+}
+
 interface SpectatorState extends PlayerState {
   state: "spectator";
   round: number;
@@ -132,6 +144,7 @@ interface SpectatorState extends PlayerState {
   players: PlayerInfo[];
   waitingForPlayers: PlayerInfo[];
   stories: StoryContent[];
+  currentDrawings?: SpectatorCurrentDrawing[];
 }
 
 function isSpectatorState(playerState: PlayerState): playerState is SpectatorState {
@@ -165,6 +178,7 @@ const Game = () => {
   const [playerState, setPlayerState] = React.useState<PlayerState>({ state: "loading" });
 
   const [connectionError, setConnectionError] = React.useState(false);
+  const [connectionStatus, setConnectionStatus] = React.useState<"connecting" | "connected" | "disconnected">("connecting");
 
   // Team mode: partner cursor position (canvas coordinates) and draw canvas ref
   const [partnerCursor, setPartnerCursor] = React.useState<{ x: number; y: number; name: string } | null>(null);
@@ -213,8 +227,11 @@ const Game = () => {
     socketRef.current = socket;
     let closed = false;
 
+    setConnectionStatus("connecting");
+
     socket.onopen = () => {
       console.log("Websocket opened. Sending access action.");
+      setConnectionStatus("connected");
 
       send({
         action: "access",
@@ -227,6 +244,11 @@ const Game = () => {
 
     socket.onmessage = (messageEvent) => {
       const msg: PlayerState = JSON.parse(messageEvent.data);
+      if (msg.state === "rematch") {
+        const rematch = msg as unknown as RematchState;
+        navigate("/g/" + rematch.newGameId);
+        return;
+      }
       if (msg.state === "teamStroke") {
         const seg = msg as unknown as TeamStrokeMessage;
         imageProviderRef.current?.applyRemoteStroke(seg);
@@ -253,12 +275,14 @@ const Game = () => {
     socket.onerror = (error) => {
       if (!closed) {
         console.log("Websocket error", error);
+        setConnectionStatus("disconnected");
         setConnectionError(true);
       }
     };
     socket.onclose = (closeEvent) => {
       if (!closed) {
         console.log("Websocket closed", closeEvent);
+        setConnectionStatus("disconnected");
         setConnectionError(true);
       }
     };
@@ -459,6 +483,7 @@ const Game = () => {
           cacheKey={`draw-${gameIdNotNull}-r${playerState.round}`}
           partnerCursor={isTeam ? partnerCursor : null}
           imageProviderRef={isTeam ? imageProviderRef : undefined}
+          spectatorCount={playerState.spectatorCount}
         />
       );
     } else if (isHotPotatoDrawState(playerState)) {
@@ -479,6 +504,7 @@ const Game = () => {
           onSendReplay={handleSendReplay}
           initialImageUrl={playerState.initialCanvasUrl ?? undefined}
           cacheKey={`hp-${gameIdNotNull}-r${playerState.rotationNumber}`}
+          spectatorCount={playerState.spectatorCount}
         />
       );
     } else if (isWaitForRoundFinishState(playerState)) {
@@ -492,6 +518,9 @@ const Game = () => {
       const handleLikeDrawing = (storyIndex: number, elementIndex: number, reaction: string) => {
         send({ action: "rateDrawing", content: { storyIndex, roundIndex: elementIndex, reaction } });
       };
+      const handleRematch = () => {
+        send({ action: "rematch" });
+      };
       return (
         <GameFinished
           stories={playerState.stories}
@@ -499,6 +528,7 @@ const Game = () => {
           onFanfare={playFanfare}
           onExplosion={playExplosionPop}
           onLikeDrawing={handleLikeDrawing}
+          onRematch={handleRematch}
         />
       );
     } else if (isSpectatorState(playerState)) {
@@ -509,6 +539,7 @@ const Game = () => {
           players={playerState.players}
           waitingForPlayers={playerState.waitingForPlayers}
           stories={playerState.stories}
+          currentDrawings={playerState.currentDrawings}
         />
       );
     } else if (playerState.state === "kicked") {
@@ -557,7 +588,7 @@ const Game = () => {
         handleReconnect={handleReconnect}
       />
       {getComponentForState()}
-{showMuteButton && (
+      {showMuteButton && (
         <MuteButton
           onClick={toggleMute}
           title={muted ? "Unmute sounds" : "Mute sounds"}
@@ -565,6 +596,10 @@ const Game = () => {
           {muted ? "🔇" : "🔊"}
         </MuteButton>
       )}
+      <ConnectionDot status={connectionStatus} title={
+        connectionStatus === "connected" ? "Connected" :
+        connectionStatus === "connecting" ? "Connecting..." : "Disconnected"
+      } />
     </>
   );
 };
@@ -597,12 +632,14 @@ const GameFinished = ({
   onFanfare,
   onExplosion,
   onLikeDrawing,
+  onRematch,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
   onFanfare?: () => void;
   onExplosion?: () => void;
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
+  onRematch?: () => void;
 }) => {
   const [showStories, setShowStories] = React.useState(false);
 
@@ -620,6 +657,7 @@ const GameFinished = ({
         stories={stories}
         onReveal={onReveal}
         onLikeDrawing={onLikeDrawing}
+        onRematch={onRematch}
       />
     );
   }
@@ -665,3 +703,20 @@ const KickedLink = styled.span`
 const LoadingGame = () => {
   return <div>Loading game...</div>;
 };
+
+const ConnectionDot = styled.div<{ status: "connecting" | "connected" | "disconnected" }>`
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 200;
+  pointer-events: none;
+  background: ${({ status }) =>
+    status === "connected" ? "#00ff88" :
+    status === "connecting" ? "#ffcc00" : "#ff4444"};
+  box-shadow: ${({ status }) =>
+    status === "connected" ? "0 0 6px #00ff88" :
+    status === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444"};
+`;

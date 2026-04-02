@@ -129,6 +129,8 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("teamCanvasSync".equals(action)) {
             TeamCanvasSyncAction teamCanvasSyncAction = JSONHelper.objectMapper.treeToValue(content, TeamCanvasSyncAction.class);
             gameManager.handleTeamCanvasSyncAction(client, teamCanvasSyncAction);
+        } else if ("rematch".equals(action)) {
+            gameManager.handleRematchAction(client);
         } else {
             throw new IllegalArgumentException("Unknown action: " + action);
         }

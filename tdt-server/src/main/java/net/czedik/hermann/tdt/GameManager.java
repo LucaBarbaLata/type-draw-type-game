@@ -404,6 +404,43 @@ public class GameManager {
         });
     }
 
+    public void handleRematchAction(Client client) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle rematch. Client {} unknown", client.getId());
+            return;
+        }
+
+        // Step 1: get rematch data from the finished game
+        Game.RematchData rematchData = gameRef.useGame(game -> game.prepareRematch(client));
+        if (rematchData == null) return;
+
+        // Step 2: create a new game with the same creator and settings
+        String newGameId;
+        try {
+            newGameId = generateAndReserveNewGameId();
+        } catch (IOException e) {
+            log.error("Failed to generate new game ID for rematch", e);
+            return;
+        }
+        Path newGameDir = getGameDir(newGameId);
+        Player creator = new Player(rematchData.creatorId(), rematchData.creatorName(), rematchData.creatorFace(), true);
+        Game newGame = new Game(newGameId, newGameDir, creator);
+        newGame.applyRematchSettings(rematchData);
+
+        GameRef newGameRef = getGameRef(newGameId);
+        try {
+            newGameRef.setNewGame(newGame);
+        } finally {
+            closeGameRef(newGameRef);
+        }
+
+        log.info("Rematch created: {} -> {}", gameRef.getGameId(), newGameId);
+
+        // Step 3: broadcast the new game ID to all connected clients of the old game
+        gameRef.useGame(game -> game.broadcastRematch(newGameId));
+    }
+
     public void handleReceiveDrawing(Client client, ByteBuffer image) {
         GameRef gameRef = getGameRefForClient(client);
         if (gameRef == null) {
