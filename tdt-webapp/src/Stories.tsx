@@ -357,10 +357,6 @@ const RematchVoteStatus = styled.div`
   margin-bottom: 2vmin;
 `;
 
-// kept for reference but replaced by EndButtons layout
-const StartNewButton = styled.button`
-  margin-bottom: 2vmin;
-`;
 
 const ExportButton = styled.button`
   background: none;
