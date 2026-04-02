@@ -413,7 +413,8 @@ public class GameManager {
         }
 
         // Step 1: get rematch data from the finished game
-        Game.RematchData rematchData = gameRef.<Game.RematchData>useGame(game -> game.prepareRematch(client));
+        Function<Game, Game.RematchData> rematchFn = game -> game.prepareRematch(client);
+        Game.RematchData rematchData = gameRef.useGame(rematchFn);
         if (rematchData == null) return;
 
         // Step 2: create a new game with the same creator and settings
