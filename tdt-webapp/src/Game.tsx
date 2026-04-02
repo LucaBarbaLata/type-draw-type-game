@@ -122,6 +122,8 @@ interface StoriesState extends PlayerState {
   state: "stories";
   stories: StoryContent[];
   votesByStory: number[];
+  rematchVoters?: PlayerInfo[];
+  totalPlayers?: number;
 }
 
 function isStoriesState(playerState: PlayerState): playerState is StoriesState {
@@ -136,6 +138,7 @@ interface RematchState extends PlayerState {
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
   prompt: string;
+  snapshotDataUrl?: string;
 }
 
 interface SpectatorState extends PlayerState {
@@ -362,6 +365,13 @@ const Game = () => {
     }));
   }, []);
 
+  const handleSpectatorSnapshot = React.useCallback((dataUrl: string) => {
+    socketRef.current?.send(JSON.stringify({
+      action: "spectatorSnapshot",
+      content: { round: currentDrawRoundRef.current, imageDataUrl: dataUrl },
+    }));
+  }, []);
+
   const handleSettingsChange = React.useCallback((settings: GameSettings) => {
     send({
       action: "settings",
@@ -485,6 +495,7 @@ const Game = () => {
           partnerCursor={isTeam ? partnerCursor : null}
           imageProviderRef={isTeam ? imageProviderRef : undefined}
           spectatorCount={playerState.spectatorCount}
+          onSpectatorSnapshot={playerState.spectatorCount ? handleSpectatorSnapshot : undefined}
         />
       );
     } else if (isHotPotatoDrawState(playerState)) {
@@ -530,6 +541,9 @@ const Game = () => {
           onExplosion={playExplosionPop}
           onLikeDrawing={handleLikeDrawing}
           onRematch={handleRematch}
+          onMainMenu={() => navigate("/")}
+          rematchVoters={playerState.rematchVoters}
+          totalPlayers={playerState.totalPlayers}
         />
       );
     } else if (isSpectatorState(playerState)) {
@@ -651,6 +665,9 @@ const GameFinished = ({
   onExplosion,
   onLikeDrawing,
   onRematch,
+  onMainMenu,
+  rematchVoters,
+  totalPlayers,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
@@ -658,6 +675,9 @@ const GameFinished = ({
   onExplosion?: () => void;
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
   onRematch?: () => void;
+  onMainMenu?: () => void;
+  rematchVoters?: PlayerInfo[];
+  totalPlayers?: number;
 }) => {
   const [showStories, setShowStories] = React.useState(false);
 
@@ -676,6 +696,9 @@ const GameFinished = ({
         onReveal={onReveal}
         onLikeDrawing={onLikeDrawing}
         onRematch={onRematch}
+        onMainMenu={onMainMenu}
+        rematchVoters={rematchVoters}
+        totalPlayers={totalPlayers}
       />
     );
   }

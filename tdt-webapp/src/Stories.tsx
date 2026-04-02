@@ -1,7 +1,7 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
 
-import { StoryContent, StoryElement } from "./model";
+import { PlayerInfo, StoryContent, StoryElement } from "./model";
 import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
@@ -15,12 +15,19 @@ const Stories = ({
   onReveal,
   onLikeDrawing,
   onRematch,
+  onMainMenu,
+  rematchVoters,
+  totalPlayers,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
   onRematch?: () => void;
+  onMainMenu?: () => void;
+  rematchVoters?: PlayerInfo[];
+  totalPlayers?: number;
 }) => {
+  const [hasVotedRematch, setHasVotedRematch] = React.useState(false);
   // Track the current player's chosen reaction per element: key = "storyIdx_elemIdx" -> emoji | null
   const [myReactions, setMyReactions] = React.useState<Record<string, string | null>>({});
   // Active emoji cascade effects: [{id, emoji}]
@@ -134,10 +141,29 @@ const Stories = ({
         </ExportButton>
       )}
       {navButtons}
-      {onRematch && (
-        <StartNewButton className="button button-red" onClick={onRematch}>
-          Play Again (same settings)
-        </StartNewButton>
+      <EndButtons>
+        {onMainMenu && (
+          <button className="button" onClick={onMainMenu}>
+            ⌂ Main Menu
+          </button>
+        )}
+        {onRematch && (
+          <PlayAgainButton
+            className="button button-red"
+            onClick={() => { if (!hasVotedRematch) { setHasVotedRematch(true); onRematch(); } }}
+            disabled={hasVotedRematch}
+          >
+            {hasVotedRematch ? "Waiting for others..." : "▶ Play Again"}
+          </PlayAgainButton>
+        )}
+      </EndButtons>
+      {onRematch && rematchVoters !== undefined && totalPlayers !== undefined && totalPlayers > 1 && (
+        <RematchVoteStatus>
+          {rematchVoters.length === 0
+            ? `0 / ${totalPlayers} want to play again`
+            : `${rematchVoters.map(p => p.name).join(", ")} want${rematchVoters.length === 1 ? "s" : ""} to play again (${rematchVoters.length}/${totalPlayers})`
+          }
+        </RematchVoteStatus>
       )}
     </Scrollable>
     {cascades.map((c) => (
@@ -308,6 +334,30 @@ const fadeIn = keyframes`
   to   { opacity: 1; transform: translateY(0); }
 `;
 
+const EndButtons = styled.div`
+  display: flex;
+  gap: 3vmin;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2vmin 0 1vmin;
+`;
+
+const PlayAgainButton = styled.button`
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`;
+
+const RematchVoteStatus = styled.div`
+  font-size: 1.8vmin;
+  color: #6688aa;
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin-bottom: 2vmin;
+`;
+
+// kept for reference but replaced by EndButtons layout
 const StartNewButton = styled.button`
   margin-bottom: 2vmin;
 `;

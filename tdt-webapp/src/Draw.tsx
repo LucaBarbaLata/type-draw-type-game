@@ -44,6 +44,7 @@ const Draw = ({
   onSendReplay,
   onStrokeSegment,
   onTeamSync,
+  onSpectatorSnapshot,
   cacheKey,
   initialImageUrl: initialImageUrlProp,
   partnerCursor,
@@ -64,6 +65,7 @@ const Draw = ({
   onSendReplay?: (round: number, frames: string[]) => void;
   onStrokeSegment?: (seg: StrokeSegment) => void;
   onTeamSync?: () => void;
+  onSpectatorSnapshot?: (dataUrl: string) => void;
   cacheKey?: string;
   initialImageUrl?: string;
   partnerCursor?: { x: number; y: number; name: string } | null;
@@ -99,6 +101,8 @@ const Draw = ({
 
   const replayFramesRef = React.useRef<string[]>([]);
   const lastSnapshotTimeRef = React.useRef<number>(0);
+  const lastSpectatorSnapshotTimeRef = React.useRef<number>(0);
+  const SPECTATOR_SNAPSHOT_THROTTLE_MS = 500;
 
   const captureFrame = React.useCallback(() => {
     const imageProvider = imageProviderRef.current;
@@ -112,11 +116,24 @@ const Draw = ({
 
   const handleStrokeEnd = React.useCallback(() => {
     const now = Date.now();
-    if (now - lastSnapshotTimeRef.current < REPLAY_THROTTLE_MS) return;
-    if (replayFramesRef.current.length >= REPLAY_MAX_FRAMES) return;
-    captureFrame();
-    lastSnapshotTimeRef.current = Date.now();
-  }, [captureFrame]);
+    // Replay frame capture (throttled separately)
+    if (now - lastSnapshotTimeRef.current >= REPLAY_THROTTLE_MS && replayFramesRef.current.length < REPLAY_MAX_FRAMES) {
+      captureFrame();
+      lastSnapshotTimeRef.current = now;
+    }
+    // Spectator snapshot (separate throttle)
+    if (onSpectatorSnapshot && now - lastSpectatorSnapshotTimeRef.current >= SPECTATOR_SNAPSHOT_THROTTLE_MS) {
+      const imageProvider = imageProviderRef.current;
+      if (imageProvider) {
+        const offscreen = document.createElement("canvas");
+        offscreen.width = REPLAY_THUMB_WIDTH;
+        offscreen.height = REPLAY_THUMB_HEIGHT;
+        offscreen.getContext("2d")!.drawImage(imageProvider.getCanvas(), 0, 0, REPLAY_THUMB_WIDTH, REPLAY_THUMB_HEIGHT);
+        onSpectatorSnapshot(offscreen.toDataURL("image/jpeg", REPLAY_JPEG_QUALITY));
+        lastSpectatorSnapshotTimeRef.current = now;
+      }
+    }
+  }, [captureFrame, onSpectatorSnapshot]);
 
   const handleStrokeComplete = React.useCallback(() => {
     if (!cacheKey) return;

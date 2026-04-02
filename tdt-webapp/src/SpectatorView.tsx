@@ -9,6 +9,7 @@ import NewlineToBreak from "./NewLineToBreak";
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
   prompt: string;
+  snapshotDataUrl?: string;
 }
 
 const SpectatorView = ({
@@ -63,12 +64,18 @@ const SpectatorView = ({
       {currentDrawings && currentDrawings.length > 0 && (
         <CurrentDrawingsSection>
           <CurrentDrawingsTitle>Currently drawing:</CurrentDrawingsTitle>
-          {currentDrawings.map((d, i) => (
-            <CurrentDrawingCard key={i}>
-              <Player face={d.player.face}>{d.player.name}</Player>
-              <DrawingPrompt>"{d.prompt}"</DrawingPrompt>
-            </CurrentDrawingCard>
-          ))}
+          <CurrentDrawingsGrid>
+            {currentDrawings.map((d, i) => (
+              <CurrentDrawingCard key={i}>
+                <Player face={d.player.face}>{d.player.name}</Player>
+                <DrawingPrompt>"{d.prompt}"</DrawingPrompt>
+                {d.snapshotDataUrl
+                  ? <LiveCanvas src={d.snapshotDataUrl} alt="Live drawing" />
+                  : <CanvasPlaceholder>drawing...</CanvasPlaceholder>
+                }
+              </CurrentDrawingCard>
+            ))}
+          </CurrentDrawingsGrid>
         </CurrentDrawingsSection>
       )}
 
@@ -238,6 +245,14 @@ const CurrentDrawingsSection = styled.div`
   margin-bottom: 2vmin;
 `;
 
+const CurrentDrawingsGrid = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2vmin;
+  width: 100%;
+`;
+
 const CurrentDrawingsTitle = styled.div`
   font-size: 2vmin;
   color: rgba(0, 245, 255, 0.6);
@@ -254,8 +269,8 @@ const CurrentDrawingCard = styled.div`
   border: 1px solid rgba(0, 245, 255, 0.15);
   border-radius: 1vmin;
   padding: 2vmin 3vmin;
-  width: 60vw;
-  max-width: 500px;
+  width: 70vw;
+  max-width: 420px;
 `;
 
 const DrawingPrompt = styled.div`
@@ -264,4 +279,21 @@ const DrawingPrompt = styled.div`
   font-style: italic;
   text-align: center;
   margin-top: 0.5vmin;
+`;
+
+const LiveCanvas = styled.img`
+  width: 100%;
+  max-width: 360px;
+  border-radius: 1vmin;
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  margin-top: 1vmin;
+  display: block;
+`;
+
+const CanvasPlaceholder = styled.div`
+  font-size: 1.8vmin;
+  color: #3d5570;
+  letter-spacing: 0.1em;
+  margin-top: 1vmin;
+  font-style: italic;
 `;

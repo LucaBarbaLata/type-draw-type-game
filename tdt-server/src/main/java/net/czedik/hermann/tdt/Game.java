@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.RematchAction;
+import net.czedik.hermann.tdt.actions.SpectatorSnapshotAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
@@ -84,6 +85,12 @@ public class Game {
     private final Map<Player, Set<Client>> playerToClients = new HashMap<>();
 
     private final Set<Client> spectatorClients = new HashSet<>();
+
+    // Runtime-only: tracks which player IDs have voted to play again (not persisted)
+    private final Set<String> rematchVoterIds = new HashSet<>();
+
+    // Runtime-only: latest canvas snapshot per player ID, used to show spectators live drawing progress
+    private final Map<String, String> latestSpectatorSnapshots = new HashMap<>();
 
     public Game(String gameId, Path gameDir, Player creator) {
         this(gameId, gameDir, new GameState());
@@ -336,7 +343,8 @@ public class Game {
             int storyIndex = getCurrentStoryIndexForPlayer(player);
             StoryElement prevElement = getStoryByIndex(storyIndex).elements[gameState.round - 1];
             if (prevElement == null) continue;
-            result.add(new SpectatorCurrentDrawing(mapPlayerToPlayerInfo(player), prevElement.content));
+            String snapshot = latestSpectatorSnapshots.get(player.id());
+            result.add(new SpectatorCurrentDrawing(mapPlayerToPlayerInfo(player), prevElement.content, snapshot));
         }
         return result;
     }
@@ -389,7 +397,11 @@ public class Game {
         FrontendStory[] frontendStories = gameState.gameMode == GameMode.HOT_POTATO
                 ? mapHotPotatoStoriesToFrontendStories()
                 : mapStoriesToFrontendStories();
-        return new StoriesState(frontendStories, votesByStory);
+        List<PlayerInfo> rematchVoters = gameState.players.stream()
+                .filter(p -> rematchVoterIds.contains(p.id()))
+                .map(Game::mapPlayerToPlayerInfo)
+                .collect(Collectors.toList());
+        return new StoriesState(frontendStories, votesByStory, rematchVoters, gameState.players.size());
     }
 
     private FrontendStory[] mapHotPotatoStoriesToFrontendStories() {
@@ -734,8 +746,8 @@ public class Game {
     }
 
     /**
-     * Validates the rematch request and returns the data required to create a new game,
-     * or null if the rematch is not allowed (wrong state, unknown client, etc.).
+     * Records a player's vote to play again. Broadcasts updated state to all clients.
+     * Returns RematchData when ALL connected players have voted; otherwise returns null.
      */
     public RematchData prepareRematch(Client client) {
         if (gameState.state != GameState.State.Finished) {
@@ -747,6 +759,23 @@ public class Game {
             log.warn("Game {}: Unknown client {} tried to rematch", gameId, client.getId());
             return null;
         }
+
+        rematchVoterIds.add(requester.id());
+        log.info("Game {}: Player {} voted to rematch ({} voters so far)", gameId, requester.id(), rematchVoterIds.size());
+
+        // Broadcast updated vote state to all players and spectators
+        updateStateForAllPlayers();
+
+        // Check if every currently-connected player has voted
+        Set<Player> connectedPlayers = new HashSet<>(clientToPlayer.values());
+        if (connectedPlayers.isEmpty()) {
+            return null;
+        }
+        boolean allVoted = connectedPlayers.stream().allMatch(p -> rematchVoterIds.contains(p.id()));
+        if (!allVoted) {
+            return null;
+        }
+
         Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(requester);
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         return new RematchData(
@@ -1255,8 +1284,21 @@ public class Game {
         updateStateForSpectators();
     }
 
+    public void spectatorSnapshot(Client client, SpectatorSnapshotAction action) {
+        if (gameState.state != GameState.State.Started || isTypeRound() || gameState.gameMode == GameMode.HOT_POTATO) {
+            return;
+        }
+        Player player = clientToPlayer.get(client);
+        if (player == null) return;
+        if (action.round() != gameState.round + 1) return; // stale snapshot
+        if (spectatorClients.isEmpty()) return;
+        latestSpectatorSnapshots.put(player.id(), action.imageDataUrl());
+        updateStateForSpectators();
+    }
+
     private void checkAndHandleRoundFinished() {
         if (isCurrentRoundFinished()) {
+            latestSpectatorSnapshots.clear();
             gameState.round++;
 
             if (isGameFinished()) {

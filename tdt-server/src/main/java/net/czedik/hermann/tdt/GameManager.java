@@ -31,6 +31,7 @@ import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.DrawingReplayAction;
+import net.czedik.hermann.tdt.actions.SpectatorSnapshotAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
@@ -441,6 +442,16 @@ public class GameManager {
 
         // Step 3: broadcast the new game ID to all connected clients of the old game
         gameRef.useGame((Consumer<Game>) game -> game.broadcastRematch(newGameId));
+    }
+
+    public void handleSpectatorSnapshotAction(Client client, SpectatorSnapshotAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            return; // silently ignore — no log spam since this can happen normally
+        }
+        gameRef.useGame(game -> {
+            game.spectatorSnapshot(client, action);
+        });
     }
 
     public void handleReceiveDrawing(Client client, ByteBuffer image) {

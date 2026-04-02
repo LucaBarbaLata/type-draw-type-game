@@ -33,6 +33,7 @@ import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.RateDrawingAction;
+import net.czedik.hermann.tdt.actions.SpectatorSnapshotAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
 
 public class WebSocketHandler extends AbstractWebSocketHandler {
@@ -131,6 +132,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
             gameManager.handleTeamCanvasSyncAction(client, teamCanvasSyncAction);
         } else if ("rematch".equals(action)) {
             gameManager.handleRematchAction(client);
+        } else if ("spectatorSnapshot".equals(action)) {
+            SpectatorSnapshotAction snapshotAction = JSONHelper.objectMapper.treeToValue(content, SpectatorSnapshotAction.class);
+            gameManager.handleSpectatorSnapshotAction(client, snapshotAction);
         } else {
             throw new IllegalArgumentException("Unknown action: " + action);
         }
