@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.function.Consumer;
 import net.czedik.hermann.tdt.GameLoader.GameRef;
 import net.czedik.hermann.tdt.actions.AccessAction;
 import net.czedik.hermann.tdt.actions.BanAction;
@@ -412,7 +413,7 @@ public class GameManager {
         }
 
         // Step 1: get rematch data from the finished game
-        Game.RematchData rematchData = gameRef.useGame(game -> game.prepareRematch(client));
+        Game.RematchData rematchData = gameRef.<Game.RematchData>useGame(game -> game.prepareRematch(client));
         if (rematchData == null) return;
 
         // Step 2: create a new game with the same creator and settings
@@ -438,7 +439,7 @@ public class GameManager {
         log.info("Rematch created: {} -> {}", gameRef.getGameId(), newGameId);
 
         // Step 3: broadcast the new game ID to all connected clients of the old game
-        gameRef.useGame(game -> game.broadcastRematch(newGameId));
+        gameRef.useGame((Consumer<Game>) game -> game.broadcastRematch(newGameId));
     }
 
     public void handleReceiveDrawing(Client client, ByteBuffer image) {
