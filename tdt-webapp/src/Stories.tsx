@@ -25,6 +25,40 @@ const Stories = ({
   // Active emoji cascade effects: [{id, emoji}]
   const [cascades, setCascades] = React.useState<Array<{ id: number; emoji: string }>>([]);
   const nextCascadeId = React.useRef(0);
+  // Track previous reaction counts to detect incoming reactions from other players
+  const prevReactionsRef = React.useRef<Record<string, Record<string, number>> | null>(null);
+  // Keys of local reactions already cascaded — suppress the server-echo for those
+  const suppressNextCascadeRef = React.useRef<Set<string>>(new Set());
+
+  // Detect reaction count increases pushed by the server and cascade them for all viewers
+  React.useEffect(() => {
+    const newReactions: Record<string, Record<string, number>> = {};
+    stories.forEach((story, storyIdx) => {
+      story.elements.forEach((element, elemIdx) => {
+        newReactions[`${storyIdx}_${elemIdx}`] = element.reactions ?? {};
+      });
+    });
+
+    const prev = prevReactionsRef.current;
+    if (prev !== null) {
+      for (const [key, elementReactions] of Object.entries(newReactions)) {
+        const prevElementReactions = prev[key] ?? {};
+        for (const [emoji, count] of Object.entries(elementReactions)) {
+          if (count > (prevElementReactions[emoji] ?? 0)) {
+            const suppressKey = `${key}_${emoji}`;
+            if (suppressNextCascadeRef.current.has(suppressKey)) {
+              suppressNextCascadeRef.current.delete(suppressKey);
+            } else {
+              const id = nextCascadeId.current++;
+              setCascades(c => [...c, { id, emoji }]);
+            }
+          }
+        }
+      }
+    }
+
+    prevReactionsRef.current = newReactions;
+  }, [stories]);
 
   const [selectedStory, setSelectedStory] = React.useState(0);
   const [revealedCount, setRevealedCount] = React.useState(1);
@@ -77,6 +111,8 @@ const Stories = ({
           if (isAdding) {
             const id = nextCascadeId.current++;
             setCascades(prev => [...prev, { id, emoji: reaction }]);
+            // Suppress the server-echo cascade for this same reaction (we already showed it)
+            suppressNextCascadeRef.current.add(`${key}_${reaction}`);
           }
         } : undefined}
       />
