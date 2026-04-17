@@ -139,11 +139,9 @@ const Draw = ({
     if (!cacheKey) return;
     const canvas = imageProviderRef.current?.getCanvas();
     if (!canvas) return;
-    setTimeout(() => {
-      try {
-        sessionStorage.setItem(cacheKey, canvas.toDataURL("image/jpeg", 0.9));
-      } catch { /* quota exceeded */ }
-    }, 0);
+    try {
+      sessionStorage.setItem(cacheKey, canvas.toDataURL("image/jpeg", 0.9));
+    } catch { /* quota exceeded */ }
   }, [cacheKey]);
 
   const submitDrawing = React.useCallback(() => {
@@ -156,11 +154,10 @@ const Draw = ({
       captureFrame();
       onSendReplay?.(round, replayFramesRef.current);
     }
-    const imageProvider = imageProviderRef.current!;
-    window
-      .fetch(imageProvider.getImageDataURL())
-      .then((res) => res.blob())
-      .then((image) => handleDone(image));
+    const imageProvider = imageProviderRef.current;
+    if (!imageProvider) return;
+    imageProvider.clearHistory();
+    imageProvider.getCanvas().toBlob((blob) => { if (blob) handleDone(blob); }, "image/png");
   }, [handleDone, onSubmit, onSendReplay, round, captureFrame, cacheKey]);
 
   const handleClickDone = () => {

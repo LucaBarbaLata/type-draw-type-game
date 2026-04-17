@@ -9,6 +9,7 @@ export interface ImageProvider {
   getImageDataURL: () => string;
   undo: () => void;
   redo: () => void;
+  clearHistory: () => void;
   applyRemoteStroke: (seg: RemoteStroke) => void;
   loadImageDataURL: (dataUrl: string) => void;
 }
@@ -181,6 +182,10 @@ const DrawCanvas = ({
             historyRef.current.push(current);
             const snapshot = redo.pop()!;
             ctx.putImageData(snapshot, 0, 0);
+          },
+          clearHistory: () => {
+            historyRef.current = [];
+            redoHistoryRef.current = [];
           },
           applyRemoteStroke: (seg: RemoteStroke) => {
             const ctx = getCanvas2DContext(canvasElement);
@@ -481,8 +486,8 @@ const DrawCanvas = ({
   };
   const handleTouchEnd = (event: React.TouchEvent<HTMLCanvasElement>) => {
     event.preventDefault();
-    // All fingers lifted: clear the multi-touch lock
-    if (event.touches.length === 0) {
+    // Clear multi-touch lock once only one (or zero) fingers remain
+    if (event.touches.length <= 1) {
       isMultiTouchActiveRef.current = false;
     }
     if (isMultiTouchActiveRef.current) return;

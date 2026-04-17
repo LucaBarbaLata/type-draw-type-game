@@ -62,6 +62,12 @@ a {
   text-shadow: var(--cyber-glow);
 }
 
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--cyber-cyan);
+  outline-offset: 3px;
+}
+
 h1 {
   font-size: calc(16px + 4vmin);
   font-weight: bold;

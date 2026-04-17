@@ -21,7 +21,7 @@ export function useAudio() {
 
   useEffect(() => {
     setMuted(muted);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [muted]);
 
   const toggleMute = useCallback(() => {
     const newMuted = !muted;

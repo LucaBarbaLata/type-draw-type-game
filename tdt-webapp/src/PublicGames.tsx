@@ -17,21 +17,35 @@ const PublicGames = () => {
   const navigate = useNavigate();
   const [games, setGames] = React.useState<PublicGameInfo[] | null>(null);
   const [error, setError] = React.useState(false);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const fetchGames = React.useCallback(() => {
-    fetch("/api/games")
-      .then((r) => r.json())
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    fetch("/api/games", { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data: PublicGameInfo[]) => {
         setGames(data);
         setError(false);
       })
-      .catch(() => setError(true));
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        console.error("Failed to load public games:", err);
+        setError(true);
+      });
   }, []);
 
   React.useEffect(() => {
     fetchGames();
     const interval = setInterval(fetchGames, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      abortControllerRef.current?.abort();
+    };
   }, [fetchGames]);
 
   const handleJoin = (gameId: string) => {

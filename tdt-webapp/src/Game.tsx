@@ -219,7 +219,10 @@ const Game = () => {
   const socketRef = React.useRef<WebSocket>();
 
   const send = (action: Action) => {
-    socketRef.current!.send(JSON.stringify(action));
+    const socket = socketRef.current;
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(action));
+    }
   };
 
   React.useEffect(() => {
@@ -299,6 +302,7 @@ const Game = () => {
 
     return () => {
       closeSocket();
+      socketRef.current = undefined;
     };
   }, [gameIdNotNull, reconnectCount]);
 

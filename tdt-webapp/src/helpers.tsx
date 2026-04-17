@@ -118,7 +118,11 @@ export function useLocalStorageState(
   });
 
   const setValue = (value: string) => {
-    window.localStorage.setItem(key, value);
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (err) {
+      console.error("localStorage write failed:", err);
+    }
     setStoredValue(value);
   };
 
