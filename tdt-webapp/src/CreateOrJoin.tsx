@@ -37,13 +37,13 @@ export const Create = () => {
           playerFace: face,
         }),
       });
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const createdGame: CreatedGameResponse = await response.json();
       const gameId = createdGame.gameId;
 
       navigate(`/g/${gameId}`);
     } catch (e) {
-      console.log("Error creating game", e);
+      console.error("Error creating game", e);
       setError(true);
     }
   };

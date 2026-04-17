@@ -81,7 +81,8 @@ const Stories = ({
     }
   };
 
-  const currentStory = stories[selectedStory];
+  const currentStory = stories[selectedStory] ?? stories[0];
+  if (!currentStory) return null;
   const totalElements = currentStory.elements.length;
   const allRevealed = revealedCount >= totalElements;
 

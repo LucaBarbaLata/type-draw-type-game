@@ -114,10 +114,10 @@ const Type = ({
             {teamPartner ? "The next team will have to draw your text." : "The next player will have to draw your text."}
           </div>
         )}
-        {!first && (
+        {!first && drawingSrc && (
           <div>
-            Art by {artist!.name}:
-            <img src={drawingSrc!} className="Drawing" alt="Drawing" />
+            Art by {artist?.name}:
+            <img src={drawingSrc} className="Drawing" alt="Drawing" />
           </div>
         )}
         <button

@@ -21,13 +21,19 @@ const DrawingReplay = ({
 
   React.useEffect(() => {
     fetch(replayUrl)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         const f: string[] = data.frames;
         setFrames(f);
         if (f.length > 0) setPlayState("playing");
       })
-      .catch(() => setFrames([]));
+      .catch((err: unknown) => {
+        console.error("Failed to load replay:", err);
+        setFrames([]);
+      });
   }, [replayUrl]);
 
   // Animation loop — only active when playing
@@ -69,7 +75,7 @@ const DrawingReplay = ({
   };
 
   const hasReplay = frames !== null && frames.length > 0;
-  const src = playState !== "idle" && hasReplay ? frames![idx] : staticFallback;
+  const src = playState !== "idle" && hasReplay && frames ? frames[idx] : staticFallback;
 
   return (
     <ReplayContainer

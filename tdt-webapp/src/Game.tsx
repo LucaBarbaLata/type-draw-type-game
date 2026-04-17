@@ -229,7 +229,7 @@ const Game = () => {
     const wsProtocol =
       window.location.protocol === "https:" ? "wss://" : "ws://";
     const wsUrl = `${wsProtocol}${window.location.host}/api/websocket`;
-    console.log("Connecting to websocket " + wsUrl);
+    console.debug("Connecting to websocket " + wsUrl);
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
     let closed = false;
@@ -237,7 +237,7 @@ const Game = () => {
     setConnectionStatus("connecting");
 
     socket.onopen = () => {
-      console.log("Websocket opened. Sending access action.");
+      console.debug("Websocket opened. Sending access action.");
       setConnectionStatus("connected");
 
       send({
@@ -281,21 +281,21 @@ const Game = () => {
 
     socket.onerror = (error) => {
       if (!closed) {
-        console.log("Websocket error", error);
+        console.debug("Websocket error", error);
         setConnectionStatus("disconnected");
         setConnectionError(true);
       }
     };
     socket.onclose = (closeEvent) => {
       if (!closed) {
-        console.log("Websocket closed", closeEvent);
+        console.debug("Websocket closed", closeEvent);
         setConnectionStatus("disconnected");
         setConnectionError(true);
       }
     };
 
     const closeSocket = () => {
-      console.log("Disconnecting from websocket");
+      console.debug("Disconnecting from websocket");
       closed = true;
       socket.close();
     };

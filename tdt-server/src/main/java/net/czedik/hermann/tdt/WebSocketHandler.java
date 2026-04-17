@@ -17,7 +17,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import net.czedik.hermann.tdt.actions.AccessAction;
@@ -45,7 +44,11 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
     private final GameManager gameManager;
 
-    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "websocket-keepalive");
+        t.setDaemon(true);
+        return t;
+    });
 
     public WebSocketHandler(GameManager gameManager) {
         this.gameManager = gameManager;
@@ -79,13 +82,20 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws JsonProcessingException {
+    public void handleTextMessage(WebSocketSession session, TextMessage message) {
         Client client = Objects.requireNonNull(clients.get(session));
         String payload = message.getPayload();
         log.info("Client {} sent message: {}", client.getId(), payload);
-        JsonNode actionMessage = JSONHelper.stringToJsonNode(payload);
+        JsonNode actionMessage;
+        try {
+            actionMessage = JSONHelper.stringToJsonNode(payload);
+        } catch (IllegalArgumentException e) {
+            log.warn("Client {} sent invalid JSON, ignoring", client.getId());
+            return;
+        }
         String action = actionMessage.get("action").asText();
         JsonNode content = actionMessage.get("content");
+        try {
         if ("access".equals(action)) {
             AccessAction accessAction = JSONHelper.objectMapper.treeToValue(content, AccessAction.class);
             gameManager.handleAccessAction(client, accessAction);
@@ -136,7 +146,10 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
             SpectatorSnapshotAction snapshotAction = JSONHelper.objectMapper.treeToValue(content, SpectatorSnapshotAction.class);
             gameManager.handleSpectatorSnapshotAction(client, snapshotAction);
         } else {
-            throw new IllegalArgumentException("Unknown action: " + action);
+            log.warn("Client {} sent unknown action: {}, ignoring", client.getId(), action);
+        }
+        } catch (Exception e) {
+            log.warn("Client {} caused error processing action {}: {}", client.getId(), action, e.getMessage());
         }
     }
 

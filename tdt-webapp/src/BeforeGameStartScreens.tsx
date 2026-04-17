@@ -289,7 +289,7 @@ export const WaitForGameStartScreen = ({
   hotPotatoIntervalSeconds?: number;
   hotPotatoTotalSeconds?: number;
 }) => {
-  const creator = players.find((p) => p.isCreator)!;
+  const creator = players.find((p) => p.isCreator) ?? players[0];
   const modeOption = GAME_MODE_OPTIONS.find((o) => o.value === gameMode) ?? GAME_MODE_OPTIONS[0];
   const isHotPotato = gameMode === "HOT_POTATO";
 

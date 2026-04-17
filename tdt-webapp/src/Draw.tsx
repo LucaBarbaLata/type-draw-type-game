@@ -165,7 +165,9 @@ const Draw = ({
       submitDrawing();
       return;
     }
-    setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
+    const dataUrl = imageProviderRef.current?.getImageDataURL();
+    if (!dataUrl) return;
+    setDrawingDataUrl(dataUrl);
     setShowConfirmDialog(true);
   };
 

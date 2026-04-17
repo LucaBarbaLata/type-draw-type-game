@@ -47,10 +47,12 @@ const ServerBrowser = () => {
           playerFace: face,
         }),
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const { gameId } = await response.json();
       navigate(`/g/${gameId}`);
       toggleToFullscreenAndLandscapeOnMobile();
-    } catch {
+    } catch (e) {
+      console.error("Error creating game", e);
       setCreateError(true);
     }
   };
@@ -63,21 +65,35 @@ const ServerBrowser = () => {
   // --- Join Match ---
   const [games, setGames] = React.useState<PublicGameInfo[] | null>(null);
   const [gamesError, setGamesError] = React.useState(false);
+  const gamesAbortControllerRef = React.useRef<AbortController | null>(null);
 
   const fetchGames = React.useCallback(() => {
-    fetch("/api/games")
-      .then((r) => r.json())
+    gamesAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    gamesAbortControllerRef.current = controller;
+    fetch("/api/games", { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data: PublicGameInfo[]) => {
         setGames(data);
         setGamesError(false);
       })
-      .catch(() => setGamesError(true));
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        console.error("Failed to load public games:", err);
+        setGamesError(true);
+      });
   }, []);
 
   React.useEffect(() => {
     fetchGames();
     const interval = setInterval(fetchGames, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      gamesAbortControllerRef.current?.abort();
+    };
   }, [fetchGames]);
 
   const handleJoin = (gameId: string) => {

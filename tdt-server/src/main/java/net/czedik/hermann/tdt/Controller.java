@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -54,6 +55,8 @@ public class Controller {
         }
         try (InputStream in = Files.newInputStream(imagePath)) {
             StreamUtils.copy(in, response.getOutputStream());
+        } catch (NoSuchFileException e) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
@@ -69,6 +72,8 @@ public class Controller {
         }
         try (InputStream in = Files.newInputStream(replayPath)) {
             StreamUtils.copy(in, response.getOutputStream());
+        } catch (NoSuchFileException e) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }
