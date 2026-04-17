@@ -80,6 +80,8 @@ public class Game {
 
     private final List<ChatMessage> chatMessages = new ArrayList<>();
 
+    private final List<ChatMessage> roundChatMessages = new ArrayList<>();
+
     private final Map<Client, Player> clientToPlayer = new HashMap<>();
 
     private final Map<Player, Set<Client>> playerToClients = new HashMap<>();
@@ -198,6 +200,44 @@ public class Game {
             chatMessages.remove(0);
         }
         log.info("Game {}: Chat from {}: {}", gameId, player.name(), text.strip());
+        updateStateForAllPlayers();
+    }
+
+    public void roundChat(Client client, ChatAction chatAction) {
+        if (gameState.state != GameState.State.Started) {
+            log.warn("Game {}: Ignoring roundChat in state {}", gameId, gameState.state);
+            return;
+        }
+        if (!gameState.chatEnabled) {
+            log.warn("Game {}: Chat is disabled, ignoring roundChat from client {}", gameId, client.getId());
+            return;
+        }
+        Player player = clientToPlayer.get(client);
+        boolean isSpectator = spectatorClients.contains(client);
+        if (player == null && !isSpectator) {
+            log.warn("Game {}: Unknown client {} tried to roundChat", gameId, client.getId());
+            return;
+        }
+        if (player != null) {
+            PlayerState currentState = getStartedState(player);
+            if (!(currentState instanceof WaitForRoundFinishState)) {
+                log.warn("Game {}: Player {} tried to roundChat but is not waiting for round finish", gameId, player.id());
+                return;
+            }
+        }
+        String text = chatAction.text();
+        if (text == null || text.isBlank() || text.length() > MAX_CHAT_TEXT_LENGTH) {
+            return;
+        }
+        PlayerInfo sender = player != null
+                ? mapPlayerToPlayerInfo(player)
+                : new PlayerInfo("Spectator", "A", false);
+        ChatMessage message = new ChatMessage(sender, text.strip());
+        roundChatMessages.add(message);
+        if (roundChatMessages.size() > MAX_CHAT_MESSAGES) {
+            roundChatMessages.remove(0);
+        }
+        log.info("Game {}: RoundChat from {}: {}", gameId, sender.name(), text.strip());
         updateStateForAllPlayers();
     }
 
@@ -326,7 +366,9 @@ public class Game {
                 mapPlayersToPlayerInfos(gameState.players),
                 waitingFor,
                 partialStories,
-                currentDrawings
+                currentDrawings,
+                List.copyOf(roundChatMessages),
+                gameState.chatEnabled
         );
     }
 
@@ -525,7 +567,7 @@ public class Game {
             List<Player> waitingFor = gameState.players.stream()
                     .filter(p -> !gameState.hotPotatoSubmitted.contains(p.id()))
                     .collect(Collectors.toList());
-            return new WaitForRoundFinishState(mapPlayersToPlayerInfos(waitingFor), false);
+            return new WaitForRoundFinishState(mapPlayersToPlayerInfos(waitingFor), false, List.copyOf(roundChatMessages), gameState.chatEnabled);
         }
 
         int storyIndex = gameState.hotPotatoMatrix[rotation][playerIndex];
@@ -553,7 +595,7 @@ public class Game {
 
     private PlayerState getWaitForRoundFinishedState() {
         List<Player> playersNotFinished = getNotFinishedPlayers();
-        return new WaitForRoundFinishState(mapPlayersToPlayerInfos(playersNotFinished), isTypeRound());
+        return new WaitForRoundFinishState(mapPlayersToPlayerInfos(playersNotFinished), isTypeRound(), List.copyOf(roundChatMessages), gameState.chatEnabled);
     }
 
     private PlayerState getDrawState(Player player) {
@@ -909,6 +951,7 @@ public class Game {
 
         gameState.hotPotatoCurrentRotation++;
         gameState.hotPotatoSubmitted = new HashSet<>();
+        roundChatMessages.clear();
 
         log.info("Game {}: Hot Potato tick — advancing to rotation {}/{}",
                 gameId, gameState.hotPotatoCurrentRotation, gameState.hotPotatoTotalRotations);
@@ -1299,6 +1342,7 @@ public class Game {
     private void checkAndHandleRoundFinished() {
         if (isCurrentRoundFinished()) {
             latestSpectatorSnapshots.clear();
+            roundChatMessages.clear();
             gameState.round++;
 
             if (isGameFinished()) {

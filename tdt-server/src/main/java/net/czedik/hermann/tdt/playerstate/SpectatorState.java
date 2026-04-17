@@ -1,5 +1,6 @@
 package net.czedik.hermann.tdt.playerstate;
 
+import net.czedik.hermann.tdt.ChatMessage;
 import net.czedik.hermann.tdt.PlayerInfo;
 
 import java.util.List;
@@ -29,17 +30,26 @@ public class SpectatorState implements PlayerState {
      */
     public final List<SpectatorCurrentDrawing> currentDrawings;
 
+    /** Round chat messages visible to spectators and waiting players. Cleared each round. */
+    public final List<ChatMessage> roundChatMessages;
+
+    public final boolean chatEnabled;
+
     public SpectatorState(int round, int rounds,
                           List<PlayerInfo> players,
                           List<PlayerInfo> waitingForPlayers,
                           FrontendStory[] stories,
-                          List<SpectatorCurrentDrawing> currentDrawings) {
+                          List<SpectatorCurrentDrawing> currentDrawings,
+                          List<ChatMessage> roundChatMessages,
+                          boolean chatEnabled) {
         this.round = round;
         this.rounds = rounds;
         this.players = players;
         this.waitingForPlayers = waitingForPlayers;
         this.stories = stories;
         this.currentDrawings = currentDrawings;
+        this.roundChatMessages = roundChatMessages;
+        this.chatEnabled = chatEnabled;
     }
 
     @Override

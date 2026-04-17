@@ -350,6 +350,17 @@ public class GameManager {
         });
     }
 
+    public void handleRoundChatAction(Client client, ChatAction chatAction) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle roundChat. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.roundChat(client, chatAction);
+        });
+    }
+
     public void handleKickAction(Client client, KickAction kickAction) {
         GameRef gameRef = getGameRefForClient(client);
         if (gameRef == null) {

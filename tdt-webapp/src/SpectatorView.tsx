@@ -5,6 +5,7 @@ import { PlayerInfo, StoryContent, StoryElement } from "./model";
 import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
+import Chat, { ChatMessage } from "./Chat";
 
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
@@ -19,6 +20,9 @@ const SpectatorView = ({
   waitingForPlayers,
   stories,
   currentDrawings,
+  roundChatMessages,
+  chatEnabled,
+  onSendRoundChat,
 }: {
   round: number;
   rounds: number;
@@ -26,6 +30,9 @@ const SpectatorView = ({
   waitingForPlayers: PlayerInfo[];
   stories: StoryContent[];
   currentDrawings?: SpectatorCurrentDrawing[];
+  roundChatMessages?: ChatMessage[];
+  chatEnabled?: boolean;
+  onSendRoundChat?: (text: string) => void;
 }) => {
   const [selectedStory, setSelectedStory] = React.useState(0);
   const scrollableRef = React.useRef<HTMLDivElement>(null);
@@ -60,6 +67,16 @@ const SpectatorView = ({
           ))}
         </PlayerRow>
       </Header>
+
+      {roundChatMessages !== undefined && onSendRoundChat && (
+        <SpectatorChatContainer>
+          <Chat
+            enabled={chatEnabled ?? true}
+            messages={roundChatMessages}
+            onSend={onSendRoundChat}
+          />
+        </SpectatorChatContainer>
+      )}
 
       {currentDrawings && currentDrawings.length > 0 && (
         <CurrentDrawingsSection>
@@ -231,6 +248,12 @@ const EmptyNote = styled.div`
   text-align: center;
   margin: 6vmin;
   letter-spacing: 0.06em;
+`;
+
+const SpectatorChatContainer = styled.div`
+  width: min(560px, 90vw);
+  align-self: center;
+  margin: 0 auto 2vmin;
 `;
 
 const CurrentDrawingsSection = styled.div`

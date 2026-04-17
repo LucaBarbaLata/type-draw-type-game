@@ -19,14 +19,10 @@ import SpectatorView from "./SpectatorView";
 import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 import { useAudio } from "./audio/useAudio";
+import Chat, { ChatMessage } from "./Chat";
 
 interface PlayerState {
   state: string;
-}
-
-interface ChatMessage {
-  sender: PlayerInfo;
-  text: string;
 }
 
 interface WaitForPlayersState extends PlayerState {
@@ -110,6 +106,8 @@ interface WaitForRoundFinishState extends PlayerState {
   state: "waitForRoundFinish";
   waitingForPlayers: PlayerInfo[];
   isTypeRound: boolean;
+  roundChatMessages?: ChatMessage[];
+  chatEnabled?: boolean;
 }
 
 function isWaitForRoundFinishState(
@@ -149,6 +147,8 @@ interface SpectatorState extends PlayerState {
   waitingForPlayers: PlayerInfo[];
   stories: StoryContent[];
   currentDrawings?: SpectatorCurrentDrawing[];
+  roundChatMessages?: ChatMessage[];
+  chatEnabled?: boolean;
 }
 
 function isSpectatorState(playerState: PlayerState): playerState is SpectatorState {
@@ -391,6 +391,10 @@ const Game = () => {
     send({ action: "chat", content: { text } });
   }, []);
 
+  const sendRoundChat = React.useCallback((text: string) => {
+    send({ action: "roundChat", content: { text } });
+  }, []);
+
   const sendKick = React.useCallback((playerName: string) => {
     send({ action: "kick", content: { playerName } });
   }, []);
@@ -524,6 +528,9 @@ const Game = () => {
         <WaitForRoundFinished
           isTypeRound={playerState.isTypeRound}
           waitingForPlayers={playerState.waitingForPlayers}
+          roundChatMessages={playerState.roundChatMessages ?? []}
+          chatEnabled={playerState.chatEnabled ?? true}
+          onSendRoundChat={sendRoundChat}
         />
       );
     } else if (isStoriesState(playerState)) {
@@ -555,6 +562,9 @@ const Game = () => {
           waitingForPlayers={playerState.waitingForPlayers}
           stories={playerState.stories}
           currentDrawings={playerState.currentDrawings}
+          roundChatMessages={playerState.roundChatMessages ?? []}
+          chatEnabled={playerState.chatEnabled ?? true}
+          onSendRoundChat={sendRoundChat}
         />
       );
     } else if (playerState.state === "kicked") {
@@ -641,22 +651,41 @@ export default Game;
 const WaitForRoundFinished = ({
   isTypeRound,
   waitingForPlayers,
+  roundChatMessages,
+  chatEnabled,
+  onSendRoundChat,
 }: {
   isTypeRound: boolean;
   waitingForPlayers: PlayerInfo[];
+  roundChatMessages: ChatMessage[];
+  chatEnabled: boolean;
+  onSendRoundChat: (text: string) => void;
 }) => {
   const roundAction = isTypeRound ? "typing" : "drawing";
-
   const waitingForPlayersText = waitingForPlayers.map((p) => p.name).join(", ");
 
   return (
-    <Message>
-      {`Waiting for other players to finish ${roundAction}:`}
-      <br />
-      {waitingForPlayersText}
-    </Message>
+    <BigLogoScreen>
+      <WaitMessage>
+        {`Waiting for other players to finish ${roundAction}:`}
+        <br />
+        {waitingForPlayersText}
+      </WaitMessage>
+      <WaitChatContainer>
+        <Chat enabled={chatEnabled} messages={roundChatMessages} onSend={onSendRoundChat} />
+      </WaitChatContainer>
+    </BigLogoScreen>
   );
 };
+
+const WaitMessage = styled.div`
+  margin-bottom: 2vmin;
+`;
+
+const WaitChatContainer = styled.div`
+  width: min(480px, 90vw);
+  align-self: center;
+`;
 
 const GameFinished = ({
   stories,

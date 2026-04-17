@@ -115,6 +115,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("chat".equals(action)) {
             ChatAction chatAction = JSONHelper.objectMapper.treeToValue(content, ChatAction.class);
             gameManager.handleChatAction(client, chatAction);
+        } else if ("roundChat".equals(action)) {
+            ChatAction chatAction = JSONHelper.objectMapper.treeToValue(content, ChatAction.class);
+            gameManager.handleRoundChatAction(client, chatAction);
         } else if ("kick".equals(action)) {
             KickAction kickAction = JSONHelper.objectMapper.treeToValue(content, KickAction.class);
             gameManager.handleKickAction(client, kickAction);
