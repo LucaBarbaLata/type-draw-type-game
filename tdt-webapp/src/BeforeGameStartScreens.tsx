@@ -5,8 +5,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { GameMode, PlayerInfo } from "./model";
 import Player from "./Player";
 import Logo from "./Logo";
-import Chat from "./Chat";
-export type { ChatMessage } from "./Chat";
+import Chat, { type ChatMessage } from "./Chat";
+export type { ChatMessage };
 
 import "./BeforeGameStartScreens.css";
 
@@ -368,6 +368,11 @@ const BeforeGameStartScreen = ({
     </div>
   );
 };
+
+const CrownIcon = styled.span`
+  display: inline-block;
+  line-height: 1;
+`;
 
 const PlayerRow = styled.div`
   display: flex;
