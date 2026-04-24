@@ -134,7 +134,7 @@ export const WaitForPlayersScreen = ({
     rrect(0, 0, W, H, R);
     ctx.clip();
     const shapeTypes = ['tri', 'x', 'circle', 'box'];
-    for (let i = 0; i < 1024; i++) {
+    for (let i = 0; i < 5120; i++) {
       const sx = Math.random() * W;
       const sy = Math.random() * H;
       const angle = Math.random() * Math.PI * 2;
@@ -247,6 +247,14 @@ export const WaitForPlayersScreen = ({
     ctx.moveTo(24, footerSepY);
     ctx.lineTo(W - 24, footerSepY);
     ctx.stroke();
+
+    // Dark overlay on footer so text stays legible over the shapes
+    ctx.save();
+    rrect(0, 0, W, H, R);
+    ctx.clip();
+    ctx.fillStyle = "rgba(5,10,28,0.82)";
+    ctx.fillRect(0, footerSepY, W, H - footerSepY);
+    ctx.restore();
 
     // Footer stats
     const footerY = footerSepY + sepH;
