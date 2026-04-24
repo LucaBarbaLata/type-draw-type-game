@@ -60,7 +60,7 @@ export const WaitForPlayersScreen = ({
   const [localGameMode, setLocalGameMode] = React.useState<GameMode>("CLASSIC");
   const [hpInterval, setHpInterval] = React.useState(30);
   const [hpTotal, setHpTotal] = React.useState(180);
-  const qrWrapperRef = React.useRef<HTMLDivElement>(null);
+  const qrCanvasRef = React.useRef<HTMLDivElement>(null);
 
   const buildSettings = (
     timerSecs: number, maxP: number, chat: boolean, pub: boolean,
@@ -80,7 +80,7 @@ export const WaitForPlayersScreen = ({
   const link = window.location.toString();
 
   const handleDownloadQR = () => {
-    const canvas = qrWrapperRef.current?.querySelector("canvas");
+    const canvas = qrCanvasRef.current?.querySelector("canvas");
     if (!canvas) return;
     const url = canvas.toDataURL("image/png");
     const a = document.createElement("a");
@@ -88,6 +88,9 @@ export const WaitForPlayersScreen = ({
     a.download = `tdt-${gameId}.png`;
     a.click();
   };
+
+  const creatorName = players.find((p) => p.isCreator)?.name ?? "";
+  const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
   return (
     <BeforeGameStartScreen
@@ -99,31 +102,42 @@ export const WaitForPlayersScreen = ({
       onBanPlayer={onBanPlayer}
     >
       <RightContent>
-        <Logo />
-
-        <InviteSection>
-          <InviteFields>
-            <FieldBlock>
-              <div className="field-label">Game Code</div>
-              <div className="field code-field">{gameId}</div>
-            </FieldBlock>
-            <FieldBlock>
-              <div className="field-label">Link</div>
-              <div className="field link-field">{link}</div>
-            </FieldBlock>
-          </InviteFields>
-
-          <QRBlock ref={qrWrapperRef} onClick={handleDownloadQR} title="Click to download QR code">
-            <QRCodeCanvas
-              value={link}
-              size={130}
-              bgColor="#080818"
-              fgColor="#00f5ff"
-              level="M"
-            />
-            <QRHint>↓ save</QRHint>
-          </QRBlock>
-        </InviteSection>
+        <ShareCard onClick={handleDownloadQR} title="Click to download QR code">
+          <ShareCardHeader>
+            <Logo />
+          </ShareCardHeader>
+          <ShareCardBody>
+            <div ref={qrCanvasRef}>
+              <QRCodeCanvas
+                value={link}
+                size={150}
+                bgColor="#050a1c"
+                fgColor="#00f5ff"
+                level="M"
+              />
+            </div>
+            <ShareCardCode>{gameId}</ShareCardCode>
+          </ShareCardBody>
+          <ShareCardFooter>
+            <ShareCardStat>
+              <ShareCardStatLabel>Host</ShareCardStatLabel>
+              <ShareCardStatValue>{creatorName}</ShareCardStatValue>
+            </ShareCardStat>
+            <ShareCardDivider />
+            <ShareCardStat>
+              <ShareCardStatLabel>Players</ShareCardStatLabel>
+              <ShareCardStatValue>
+                {players.length}{maxPlayers > 0 ? `/${maxPlayers}` : ""}
+              </ShareCardStatValue>
+            </ShareCardStat>
+            <ShareCardDivider />
+            <ShareCardStat>
+              <ShareCardStatLabel>Mode</ShareCardStatLabel>
+              <ShareCardStatValue>{modeLabel}</ShareCardStatValue>
+            </ShareCardStat>
+          </ShareCardFooter>
+          <ShareCardHint>↓ click to save</ShareCardHint>
+        </ShareCard>
 
         <BottomRow>
           <SettingsSection>
@@ -437,67 +451,105 @@ const RightContent = styled.div`
   box-sizing: border-box;
 `;
 
-const InviteSection = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 2.5vmin;
-  width: 100%;
-`;
-
-const InviteFields = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5vmin;
-  flex: 1;
-  min-width: 0;
-
-  .code-field {
-    font-size: 2.8vmin;
-    letter-spacing: 0.3em;
-    text-align: center;
-  }
-
-  .link-field {
-    font-size: 1.4vmin;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    user-select: all;
-  }
-`;
-
-const FieldBlock = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5vmin;
-`;
-
-const QRBlock = styled.div`
+const ShareCard = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.8vmin;
-  padding: 1vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
-  border-radius: 1vmin;
-  background: #080818;
-  box-shadow: 0 0 14px rgba(0, 245, 255, 0.12);
-  cursor: pointer;
+  border: 1.5px solid rgba(0, 245, 255, 0.45);
+  border-radius: 2vmin;
+  background: rgba(5, 10, 28, 0.97);
+  box-shadow: 0 0 24px rgba(0, 245, 255, 0.18), 0 4px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  width: 36vmin;
   flex-shrink: 0;
+  cursor: pointer;
   transition: box-shadow 0.15s, border-color 0.15s;
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.8);
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.25);
+    border-color: rgba(0, 245, 255, 0.75);
+    box-shadow: 0 0 32px rgba(0, 245, 255, 0.28), 0 4px 32px rgba(0, 0, 0, 0.5);
   }
 `;
 
-const QRHint = styled.div`
-  font-size: 1.2vmin;
-  color: rgba(0, 245, 255, 0.5);
+const ShareCardHeader = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.2vmin 2vmin;
+  background: rgba(0, 245, 255, 0.07);
+  border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+  box-sizing: border-box;
+
+  .Logo img {
+    width: 18vmin;
+    height: auto;
+  }
+`;
+
+const ShareCardBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vmin;
+  padding: 2vmin 2vmin 1.5vmin;
+`;
+
+const ShareCardCode = styled.div`
+  font-size: 3vmin;
+  letter-spacing: 0.5em;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.3), 0 0 4px rgba(0, 245, 255, 0.8);
+  font-weight: 700;
+`;
+
+const ShareCardFooter = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 1.2vmin 1.5vmin;
+  border-top: 1px solid rgba(0, 245, 255, 0.2);
+  background: rgba(0, 245, 255, 0.04);
+  box-sizing: border-box;
+`;
+
+const ShareCardStat = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vmin;
+`;
+
+const ShareCardStatLabel = styled.div`
+  font-size: 0.9vmin;
+  color: rgba(0, 245, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+`;
+
+const ShareCardStatValue = styled.div`
+  font-size: 1.5vmin;
+  color: var(--cyber-cyan);
+  font-weight: 600;
+  max-width: 10vmin;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const ShareCardDivider = styled.div`
+  width: 1px;
+  height: 3vmin;
+  background: rgba(0, 245, 255, 0.2);
+`;
+
+const ShareCardHint = styled.div`
+  font-size: 1vmin;
+  color: rgba(0, 245, 255, 0.35);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  padding: 0 0 0.8vmin;
 `;
 
 const BottomRow = styled.div`
