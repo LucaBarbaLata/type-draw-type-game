@@ -8,6 +8,7 @@ import Logo from "./Logo";
 import Chat, { type ChatMessage } from "./Chat";
 export type { ChatMessage };
 
+import logoImg from "./img/logo.svg";
 import "./BeforeGameStartScreens.css";
 
 const GAME_MODE_OPTIONS: { value: GameMode; label: string; description: string }[] = [
@@ -79,7 +80,7 @@ export const WaitForPlayersScreen = ({
   const buttonDisabled = players.length < minPlayers;
   const link = window.location.toString();
 
-  const handleDownloadCard = () => {
+  const handleDownloadCard = async () => {
     const qrCanvas = qrWrapperRef.current?.querySelector("canvas");
     if (!qrCanvas) return;
 
@@ -133,7 +134,7 @@ export const WaitForPlayersScreen = ({
     rrect(0, 0, W, H, R);
     ctx.clip();
     const shapeTypes = ['tri', 'x', 'circle', 'box'];
-    for (let i = 0; i < 320; i++) {
+    for (let i = 0; i < 1024; i++) {
       const sx = Math.random() * W;
       const sy = Math.random() * H;
       const angle = Math.random() * Math.PI * 2;
@@ -184,22 +185,20 @@ export const WaitForPlayersScreen = ({
     ctx.lineTo(W, headerH);
     ctx.stroke();
 
-    // Title
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 13px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(0,245,255,0.5)";
-    ctx.fillText("TYPE", W / 2, headerH * 0.22);
-    ctx.font = "bold 32px 'Courier New', monospace";
-    ctx.fillStyle = "#00f5ff";
-    ctx.shadowColor = "#00f5ff";
-    ctx.shadowBlur = 20;
-    ctx.fillText("DRAW", W / 2, headerH * 0.54);
-    ctx.shadowBlur = 0;
-    ctx.font = "bold 13px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(0,245,255,0.5)";
-    ctx.fillText("TYPE", W / 2, headerH * 0.84);
-    ctx.textBaseline = "alphabetic";
+    // Logo — fetch SVG, patch black text groups to white, render
+    const svgText = await fetch(logoImg as string).then((r) => r.text());
+    const fixedSvg = svgText
+      .replace('aria-label="DRAW"', 'aria-label="DRAW" fill="white"')
+      .replace(/aria-label="Type"/g, 'aria-label="Type" fill="white"');
+    const svgBlob = new Blob([fixedSvg], { type: "image/svg+xml" });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    const logo = new Image();
+    logo.src = svgUrl;
+    await new Promise<void>((resolve) => { logo.onload = () => resolve(); });
+    const logoH = 68;
+    const logoW = logoH * (logo.naturalWidth / logo.naturalHeight);
+    ctx.drawImage(logo, (W - logoW) / 2, (headerH - logoH) / 2, logoW, logoH);
+    URL.revokeObjectURL(svgUrl);
 
     // QR glowing box
     const qrX = (W - qrSize) / 2;
