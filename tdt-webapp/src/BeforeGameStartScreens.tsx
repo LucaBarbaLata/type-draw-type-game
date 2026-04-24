@@ -87,17 +87,17 @@ export const WaitForPlayersScreen = ({
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
     const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
-    const W = 480;
+    const W = 400;
     const dpr = 2;
 
-    // Layout constants
-    const headerH = 72;
+    // Layout constants — portrait card (~400×580)
+    const headerH = 104;
     const qrSize = 220;
-    const qrPadV = 24;
-    const codeH = 56;
+    const qrPadV = 30;
+    const codeH = 60;
     const sepH = 1;
-    const footerH = 76;
-    const taglineH = 32;
+    const footerH = 58;
+    const taglineH = 26;
     const H = headerH + qrPadV + qrSize + qrPadV + codeH + sepH + footerH + taglineH;
 
     const c = document.createElement("canvas");
@@ -149,7 +149,7 @@ export const WaitForPlayersScreen = ({
     const logo = new Image();
     logo.src = logoImg as string;
     await new Promise<void>((resolve) => { logo.onload = () => resolve(); });
-    const logoH = 44;
+    const logoH = 68;
     const logoW = logoH * (logo.naturalWidth / logo.naturalHeight);
     ctx.drawImage(logo, (W - logoW) / 2, (headerH - logoH) / 2, logoW, logoH);
 
@@ -192,10 +192,10 @@ export const WaitForPlayersScreen = ({
       ctx.textAlign = "center";
       ctx.font = "11px 'Courier New', monospace";
       ctx.fillStyle = "rgba(0,245,255,0.45)";
-      ctx.fillText(stat.label, x, footerY + 22);
-      ctx.font = "bold 16px 'Courier New', monospace";
+      ctx.fillText(stat.label, x, footerY + 16);
+      ctx.font = "bold 15px 'Courier New', monospace";
       ctx.fillStyle = "#00f5ff";
-      ctx.fillText(stat.value, x, footerY + 46);
+      ctx.fillText(stat.value, x, footerY + 36);
     });
 
     // Stat column dividers
@@ -203,8 +203,8 @@ export const WaitForPlayersScreen = ({
     ctx.lineWidth = 1;
     [W / 3, (W * 2) / 3].forEach((x) => {
       ctx.beginPath();
-      ctx.moveTo(x, footerY + 8);
-      ctx.lineTo(x, footerY + 58);
+      ctx.moveTo(x, footerY + 6);
+      ctx.lineTo(x, footerY + 46);
       ctx.stroke();
     });
 
@@ -213,7 +213,7 @@ export const WaitForPlayersScreen = ({
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
     ctx.fillStyle = "rgba(0,245,255,0.3)";
-    ctx.fillText("SCAN TO JOIN  ·  TYPE DRAW TYPE", W / 2, taglineY + 18);
+    ctx.fillText("SCAN TO JOIN  ·  TYPE DRAW TYPE", W / 2, taglineY + 14);
 
     const url = c.toDataURL("image/png");
     const a = document.createElement("a");
