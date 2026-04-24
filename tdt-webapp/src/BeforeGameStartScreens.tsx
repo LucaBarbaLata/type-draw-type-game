@@ -90,14 +90,14 @@ export const WaitForPlayersScreen = ({
     const W = 440;
     const dpr = 2;
 
-    // Layout constants — portrait card (~400×580)
-    const headerH = 104;
-    const qrSize = 220;
-    const qrPadV = 30;
-    const codeH = 60;
+    // Layout constants — portrait card (~440×720)
+    const headerH = 136;
+    const qrSize = 240;
+    const qrPadV = 48;
+    const codeH = 76;
     const sepH = 1;
-    const footerH = 58;
-    const taglineH = 26;
+    const footerH = 80;
+    const taglineH = 44;
     const H = headerH + qrPadV + qrSize + qrPadV + codeH + sepH + footerH + taglineH;
 
     const c = document.createElement("canvas");
