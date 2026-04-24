@@ -8,7 +8,6 @@ import Logo from "./Logo";
 import Chat, { type ChatMessage } from "./Chat";
 export type { ChatMessage };
 
-import logoImg from "./img/logo.svg";
 import "./BeforeGameStartScreens.css";
 
 const GAME_MODE_OPTIONS: { value: GameMode; label: string; description: string }[] = [
@@ -80,7 +79,7 @@ export const WaitForPlayersScreen = ({
   const buttonDisabled = players.length < minPlayers;
   const link = window.location.toString();
 
-  const handleDownloadCard = async () => {
+  const handleDownloadCard = () => {
     const qrCanvas = qrWrapperRef.current?.querySelector("canvas");
     if (!qrCanvas) return;
 
@@ -129,6 +128,44 @@ export const WaitForPlayersScreen = ({
     rrect(1, 1, W - 2, H - 2, R);
     ctx.stroke();
 
+    // Background decorative shapes (clipped to card boundary)
+    ctx.save();
+    rrect(0, 0, W, H, R);
+    ctx.clip();
+    const shapeTypes = ['tri', 'x', 'circle', 'box'];
+    for (let i = 0; i < 72; i++) {
+      const sx = Math.random() * W;
+      const sy = Math.random() * H;
+      const angle = Math.random() * Math.PI * 2;
+      const size = 5 + Math.random() * 9;
+      const alpha = (0.05 + Math.random() * 0.09).toFixed(2);
+      const shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(angle);
+      ctx.strokeStyle = `rgba(0,245,255,${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (shape === 'tri') {
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.866, size * 0.5);
+        ctx.lineTo(-size * 0.866, size * 0.5);
+        ctx.closePath();
+        ctx.stroke();
+      } else if (shape === 'x') {
+        ctx.moveTo(-size, -size); ctx.lineTo(size, size);
+        ctx.moveTo(size, -size); ctx.lineTo(-size, size);
+        ctx.stroke();
+      } else if (shape === 'circle') {
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(-size, -size, size * 2, size * 2);
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+
     // Header background (clipped to top corners)
     ctx.save();
     rrect(0, 0, W, H, R);
@@ -145,20 +182,51 @@ export const WaitForPlayersScreen = ({
     ctx.lineTo(W, headerH);
     ctx.stroke();
 
-    // Logo
-    const logo = new Image();
-    logo.src = logoImg as string;
-    await new Promise<void>((resolve) => { logo.onload = () => resolve(); });
-    const logoH = 68;
-    const logoW = logoH * (logo.naturalWidth / logo.naturalHeight);
-    ctx.drawImage(logo, (W - logoW) / 2, (headerH - logoH) / 2, logoW, logoH);
+    // Title
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillStyle = "rgba(0,245,255,0.5)";
+    ctx.fillText("TYPE", W / 2, headerH * 0.22);
+    ctx.font = "bold 32px 'Courier New', monospace";
+    ctx.fillStyle = "#00f5ff";
+    ctx.shadowColor = "#00f5ff";
+    ctx.shadowBlur = 20;
+    ctx.fillText("DRAW", W / 2, headerH * 0.54);
+    ctx.shadowBlur = 0;
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillStyle = "rgba(0,245,255,0.5)";
+    ctx.fillText("TYPE", W / 2, headerH * 0.84);
+    ctx.textBaseline = "alphabetic";
 
-    // QR code
+    // QR glowing box
     const qrX = (W - qrSize) / 2;
     const qrY = headerH + qrPadV;
+    const qrPad = 10;
+    const qrBoxX = qrX - qrPad;
+    const qrBoxY = qrY - qrPad;
+    const qrBoxW = qrSize + qrPad * 2;
+    const qrBoxH = qrSize + qrPad * 2;
+    const qrBoxR = 12;
+
     ctx.fillStyle = "#050a1c";
-    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
+    ctx.fill();
+
     ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+    ctx.save();
+    ctx.shadowColor = "#00f5ff";
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = "rgba(0,245,255,0.9)";
+    ctx.lineWidth = 2;
+    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
+    ctx.stroke();
+    ctx.shadowBlur = 36;
+    ctx.strokeStyle = "rgba(0,245,255,0.4)";
+    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
+    ctx.stroke();
+    ctx.restore();
 
     // Game code
     const codeY = qrY + qrSize + qrPadV;
