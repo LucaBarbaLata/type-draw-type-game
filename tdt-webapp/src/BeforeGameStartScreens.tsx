@@ -86,7 +86,7 @@ export const WaitForPlayersScreen = ({
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
     const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
-    const W = 400;
+    const W = 440;
     const dpr = 2;
 
     // Layout constants — portrait card (~400×580)
@@ -133,18 +133,20 @@ export const WaitForPlayersScreen = ({
     rrect(0, 0, W, H, R);
     ctx.clip();
     const shapeTypes = ['tri', 'x', 'circle', 'box'];
-    for (let i = 0; i < 72; i++) {
+    for (let i = 0; i < 320; i++) {
       const sx = Math.random() * W;
       const sy = Math.random() * H;
       const angle = Math.random() * Math.PI * 2;
-      const size = 5 + Math.random() * 9;
-      const alpha = (0.05 + Math.random() * 0.09).toFixed(2);
+      const size = 2 + Math.random() * 5;
+      const alpha = (0.07 + Math.random() * 0.11).toFixed(2);
       const shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
       ctx.save();
       ctx.translate(sx, sy);
       ctx.rotate(angle);
       ctx.strokeStyle = `rgba(0,245,255,${alpha})`;
-      ctx.lineWidth = 1;
+      ctx.shadowColor = `rgba(0,245,255,${alpha})`;
+      ctx.shadowBlur = 6 + Math.random() * 8;
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
       if (shape === 'tri') {
         ctx.moveTo(0, -size);
