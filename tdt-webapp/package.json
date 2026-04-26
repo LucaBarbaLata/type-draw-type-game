@@ -17,7 +17,7 @@
     "react-is": "^18.3.1",
     "react-router-dom": "^6.30.2",
     "styled-components": "^6.1.11",
-    "uuid": "^10.0.0"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
