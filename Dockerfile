@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 # first copy only dependency definitions, because these change less often and therefore allow docker to cache the build results better
 COPY tdt-webapp/package.json tdt-webapp/yarn.lock ./
 RUN corepack enable
-RUN yarn --network-timeout 100000
+RUN yarn --network-timeout 100000 --immutable
 
 COPY tdt-webapp/ ./
 RUN yarn run build
