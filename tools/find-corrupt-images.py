@@ -5,9 +5,13 @@ import sys
 
 from PIL import Image
 
-walk_dir = sys.argv[1]
+walk_dir = os.path.realpath(sys.argv[1])
 
-print('Directory: ' + os.path.abspath(walk_dir))
+if not os.path.isdir(walk_dir):
+    print('Error: not a valid directory: ' + walk_dir)
+    sys.exit(1)
+
+print('Directory: ' + walk_dir)
 
 count = 0
 
