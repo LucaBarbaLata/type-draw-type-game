@@ -66,9 +66,7 @@
   border-radius: 50%;
   box-shadow: var(--cyber-glow);
   cursor: pointer;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
+  outline: none;
   width: 12vmin;
   height: 12vmin;
   align-items: center;
@@ -82,17 +80,11 @@
   box-shadow: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.3);
 }
 
-.tool-button:focus-visible {
-  outline: 2px solid var(--cyber-cyan);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 4px rgba(0, 245, 255, 0.25), var(--cyber-glow);
-}
-
 /* Small tool buttons (secondary tools) */
 .tool-button-sm {
-  width: max(44px, 8vmin);
-  height: max(44px, 8vmin);
-  font-size: max(14px, 2.5vmin);
+  width: 8vmin;
+  height: 8vmin;
+  font-size: 2.5vmin;
   margin: 0;
 }
 
@@ -215,10 +207,6 @@
   border: 1.5px solid var(--cyber-cyan);
   box-shadow: var(--cyber-glow);
   cursor: pointer;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  background: none;
 }
 
 .tool-color .tool-color-selectedcolor {
@@ -262,14 +250,11 @@
 }
 
 .tool-noir-swatch {
-  width: max(36px, 7vmin);
-  height: max(36px, 7vmin);
+  width: 7vmin;
+  height: 7vmin;
   border-radius: 50%;
   border: 1.5px solid rgba(0, 245, 255, 0.4);
   cursor: pointer;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
   transition: transform 0.1s, box-shadow 0.1s;
 }
 
