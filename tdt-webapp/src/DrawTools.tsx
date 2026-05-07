@@ -13,14 +13,6 @@ import colorwheelImg from "./img/colorwheel.svg";
 
 const NOIR_SWATCHES = ["#000000", "#2a2a2a", "#555555", "#808080", "#aaaaaa", "#cccccc", "#e8e8e8", "#ffffff"];
 
-const keyActivate = (handler: () => void) =>
-  (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handler();
-    }
-  };
-
 const DrawTools = ({
   color,
   brushes,
@@ -73,58 +65,25 @@ const DrawTools = ({
 
   const isActive = (t: DrawTool) => activeTool === t;
 
-  const toolBtn = (t: DrawTool, label: string, title: string, extraClass = "") => (
+  const toolBtn = (t: DrawTool, label: string, title: string, extraClass = "") =>
     <div
       className={`tool-button tool-button-sm${isActive(t) ? " tool-button-active" : ""}${extraClass ? " " + extraClass : ""}`}
       onClick={() => onSetTool(t)}
-      role="button"
-      tabIndex={0}
-      aria-label={title}
-      aria-pressed={isActive(t)}
       data-tooltip={title}
-      onKeyDown={keyActivate(() => onSetTool(t))}
     >
       {label}
-    </div>
-  );
+    </div>;
 
   return (
     <div className="Draw-tools">
-      <div
-        className="tool-button tool-button-help"
-        onClick={triggerHelp}
-        role="button"
-        tabIndex={0}
-        aria-label="Help"
-        onKeyDown={keyActivate(triggerHelp)}
-      >
-        <img src={helpImg} alt="" />
+      <div className="tool-button tool-button-help" onClick={triggerHelp}>
+        <img src={helpImg} alt="Help" title="Help" />
       </div>
 
       {/* Undo / Redo */}
       <div className="tool-button-row">
-        <div
-          className="tool-button tool-button-sm"
-          onClick={onUndo}
-          role="button"
-          tabIndex={0}
-          aria-label="Undo"
-          data-tooltip="Undo"
-          onKeyDown={keyActivate(onUndo)}
-        >
-          ↩
-        </div>
-        <div
-          className="tool-button tool-button-sm"
-          onClick={onRedo}
-          role="button"
-          tabIndex={0}
-          aria-label="Redo"
-          data-tooltip="Redo"
-          onKeyDown={keyActivate(onRedo)}
-        >
-          ↪
-        </div>
+        <div className="tool-button tool-button-sm" onClick={onUndo} data-tooltip="Undo">↩</div>
+        <div className="tool-button tool-button-sm" onClick={onRedo} data-tooltip="Redo">↪</div>
       </div>
 
       {/* Pen / Eraser / Fill */}
@@ -146,14 +105,11 @@ const DrawTools = ({
         size={selectedBrush.displaySize}
         color={activeTool === "eraser" ? "#ffffff" : color}
         onClick={() => setShowBrushPopup(!showBrushPopup)}
-        aria-label="Brush size"
         ref={brushButton}
       />
       <div
         className={"tool-popup" + (showBrushPopup ? "" : " hidden")}
         ref={brushPopup}
-        role="listbox"
-        aria-label="Select brush size"
       >
         {brushes.map((brush, index) => (
           <BrushButton
@@ -161,14 +117,13 @@ const DrawTools = ({
             size={brush.displaySize}
             color={color}
             onClick={() => handleSelectBrush(index)}
-            aria-label={`Brush size ${brush.displaySize}`}
           />
         ))}
       </div>
 
       {/* Color picker — replaced by greyscale swatches in Telephone Noir mode */}
       {isNoir ? (
-        <div className="tool-noir-swatches" role="group" aria-label="Color swatches">
+        <div className="tool-noir-swatches">
           {NOIR_SWATCHES.map((swatch) => (
             <div
               key={swatch}
@@ -178,27 +133,15 @@ const DrawTools = ({
                 outline: color === swatch ? "2px solid var(--cyber-cyan)" : "none",
               }}
               onClick={() => onChangeColor(swatch)}
-              role="button"
-              tabIndex={0}
-              aria-label={`Color ${swatch}`}
-              aria-pressed={color === swatch}
-              onKeyDown={keyActivate(() => onChangeColor(swatch))}
               title={swatch}
             />
           ))}
         </div>
       ) : (
         <>
-          <div
-            className="tool-color"
-            onClick={() => setShowColorPicker(true)}
-            role="button"
-            tabIndex={0}
-            aria-label={`Current color: ${color}. Click to change`}
-            onKeyDown={keyActivate(() => setShowColorPicker(true))}
-          >
+          <div className="tool-color" onClick={() => setShowColorPicker(true)}>
             <div className="tool-color-selectedcolor" style={{ backgroundColor: color }} />
-            <img src={colorwheelImg} alt="" />
+            <img src={colorwheelImg} alt="Pick color" title="Pick color" />
           </div>
           <Dialog show={showColorPicker}>
             <ColorPicker handlePickColor={(c) => { onChangeColor(c); setShowColorPicker(false); }} />
@@ -206,15 +149,8 @@ const DrawTools = ({
         </>
       )}
 
-      <div
-        className="tool-button tool-button-done"
-        onClick={onDone}
-        role="button"
-        tabIndex={0}
-        aria-label="Done drawing"
-        onKeyDown={keyActivate(onDone)}
-      >
-        <img src={checkImg} alt="" />
+      <div className="tool-button tool-button-done" onClick={onDone}>
+        <img src={checkImg} alt="Done" title="Done" />
       </div>
     </div>
   );
@@ -224,27 +160,13 @@ export default DrawTools;
 
 const BrushButton = React.forwardRef(
   (
-    {
-      color,
-      size,
-      onClick,
-      "aria-label": ariaLabel,
-    }: {
-      color: string;
-      size: number;
-      onClick: () => void;
-      "aria-label"?: string;
-    },
+    { color, size, onClick }: { color: string; size: number; onClick: () => void },
     ref?: React.Ref<HTMLDivElement>
   ) => (
     <div
       className="tool-button tool-button-brush"
       onClick={onClick}
       ref={ref}
-      role="button"
-      tabIndex={0}
-      aria-label={ariaLabel}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       style={{ backgroundColor: color === "#FFF" || color === "#ffffff" ? "#333" : "rgba(0,0,20,0.8)" }}
     >
       <div style={{ width: size, height: size, backgroundColor: color, borderRadius: "50%" }} />

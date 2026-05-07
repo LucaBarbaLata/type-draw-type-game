@@ -66,20 +66,3 @@
 .Players .Player {
   margin-bottom: 2vmin;
 }
-
-@media (max-width: 640px) {
-  .BeforeGameStartScreen {
-    flex-direction: column;
-  }
-
-  .BeforeGameStartScreen-left,
-  .BeforeGameStartScreen-right {
-    width: 100%;
-    height: auto;
-  }
-
-  .Players {
-    margin-right: 2vmin;
-    max-height: 30vw;
-  }
-}

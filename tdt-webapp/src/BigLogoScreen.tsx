@@ -70,7 +70,7 @@ const Footer = styled.div`
   text-align: right;
   padding-right: 1vw;
   padding-bottom: 1vw;
-  color: var(--cyber-text-muted);
+  color: #3d5570;
   letter-spacing: 0.05em;
 `;
 
@@ -86,7 +86,7 @@ const Decoration = ({ chars }: { chars: string }) => {
   };
 
   return (
-    <div className="Decoration" aria-hidden="true" onClick={nextDecoration}>
+    <div className="Decoration " onClick={nextDecoration}>
       {decorationChar}
     </div>
   );

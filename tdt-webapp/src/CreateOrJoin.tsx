@@ -17,7 +17,6 @@ import "./CreateOrJoin.css";
 
 export const Create = () => {
   const [error, setError] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
 
   const navigate = useNavigate();
 
@@ -26,7 +25,6 @@ export const Create = () => {
       gameId: string;
     }
 
-    setIsLoading(true);
     try {
       const response = await window.fetch("/api/create", {
         method: "POST",
@@ -46,7 +44,6 @@ export const Create = () => {
       navigate(`/g/${gameId}`);
     } catch (e) {
       console.log("Error creating game", e);
-      setIsLoading(false);
       setError(true);
     }
   };
@@ -57,7 +54,7 @@ export const Create = () => {
         show={error}
         handleReconnect={() => setError(false)}
       />
-      <CreateOrJoin buttonLabel="Create game" handleDone={handleDone} isLoading={isLoading} />
+      <CreateOrJoin buttonLabel="Create game" handleDone={handleDone} />
     </>
   );
 };
@@ -73,11 +70,9 @@ export const Join = ({
 const CreateOrJoin = ({
   buttonLabel,
   handleDone,
-  isLoading = false,
 }: {
   buttonLabel: string;
   handleDone: (face: string, name: string) => void;
-  isLoading?: boolean;
 }) => {
   const faces = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -94,7 +89,7 @@ const CreateOrJoin = ({
       ? nameUnchecked.slice(0, nameMaxLength)
       : nameUnchecked;
 
-  const buttonDisabled = isBlank(name) || isLoading;
+  const buttonDisabled = isBlank(name);
 
   const handleChangeFace = (newFace: string) => setFace(newFace);
 
@@ -119,7 +114,7 @@ const CreateOrJoin = ({
         disabled={buttonDisabled}
         onClick={() => handleDone(face, name.trim())}
       >
-        {isLoading ? "Creating…" : buttonLabel}
+        {buttonLabel}
       </button>
     </LogoLeftScreen>
   );
@@ -152,19 +147,7 @@ const SelectFace = ({
   };
 
   return (
-    <div
-      className="SelectFace"
-      onClick={nextFace}
-      role="button"
-      tabIndex={0}
-      aria-label={`Avatar: ${face}. Click or press Enter to change`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          nextFace();
-        }
-      }}
-    >
+    <div className="SelectFace" onClick={nextFace}>
       <Face face={face} small={false} />
     </div>
   );
@@ -176,9 +159,8 @@ const codeRegex = new RegExp(codePattern);
 
 export const JoinWithCode = () => {
   const [code, setCode] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
 
-  const buttonDisabled = !codeRegex.test(code) || isLoading;
+  const buttonDisabled = !codeRegex.test(code);
 
   const handleChangeCode = (newCode: string) => {
     setCode(newCode.toLowerCase());
@@ -187,7 +169,6 @@ export const JoinWithCode = () => {
   const navigate = useNavigate();
 
   const handleJoin = () => {
-    setIsLoading(true);
     navigate(`/g/${code}`);
     toggleToFullscreenAndLandscapeOnMobile();
   };
@@ -206,7 +187,6 @@ export const JoinWithCode = () => {
         autoCapitalize="off"
         autoCorrect="off"
         autoComplete="off"
-        inputMode="text"
         spellCheck={false}
         value={code}
         onChange={(event) => handleChangeCode(event.target.value)}
@@ -216,9 +196,9 @@ export const JoinWithCode = () => {
         className="button"
         disabled={buttonDisabled}
         onClick={handleJoin}
-        title={buttonDisabled && !isLoading ? "Game code should have five characters" : ""}
+        title={buttonDisabled ? "Game code should have five characters" : ""}
       >
-        {isLoading ? "Joining…" : "Join game"}
+        Join game
       </button>
     </LogoLeftScreen>
   );
