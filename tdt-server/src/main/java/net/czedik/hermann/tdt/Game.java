@@ -766,10 +766,28 @@ public class Game {
         clientsOfPlayer.remove(client);
 
         if (gameState.state == GameState.State.WaitingForPlayers) {
-            if (!player.isCreator() && clientsOfPlayer.isEmpty()) {
+            if (clientsOfPlayer.isEmpty()) {
                 log.info("Game {}: Player {} has left the game", gameId, player.id());
                 gameState.players.remove(player);
                 playerToClients.remove(player);
+
+                if (player.isCreator()) {
+                    // Promote the first remaining connected player to creator
+                    Player next = gameState.players.stream()
+                            .filter(p -> !playerToClients.getOrDefault(p, Collections.emptySet()).isEmpty())
+                            .findFirst().orElse(null);
+                    if (next != null) {
+                        Player promoted = new Player(next.id(), next.name(), next.face(), true);
+                        gameState.players.set(gameState.players.indexOf(next), promoted);
+                        Set<Client> nextClients = playerToClients.remove(next);
+                        playerToClients.put(promoted, nextClients);
+                        for (Client c : nextClients) {
+                            clientToPlayer.put(c, promoted);
+                        }
+                        log.info("Game {}: Promoted player {} to creator", gameId, promoted.id());
+                    }
+                }
+
                 updateStateForAllPlayers();
             }
         }
@@ -819,6 +837,10 @@ public class Game {
         }
 
         Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(requester);
+        if (!connectedPlayers.contains(creator)) {
+            log.info("Game {}: Original creator {} is not connected, promoting {} to creator for rematch", gameId, creator.id(), requester.id());
+            creator = requester;
+        }
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         return new RematchData(
                 creator.id(), creator.name(), creator.face(),
