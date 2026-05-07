@@ -90,7 +90,6 @@ export const WaitForPlayersScreen = ({
     const W = 440;
     const dpr = 2;
 
-    // Layout constants — portrait card (~440×720)
     const headerH = 136;
     const qrSize = 240;
     const qrPadV = 48;
@@ -118,18 +117,15 @@ export const WaitForPlayersScreen = ({
       ctx.closePath();
     };
 
-    // Background
     ctx.fillStyle = "#050a1c";
     rrect(0, 0, W, H, R);
     ctx.fill();
 
-    // Card border
     ctx.strokeStyle = "rgba(0,245,255,0.5)";
     ctx.lineWidth = 2;
     rrect(1, 1, W - 2, H - 2, R);
     ctx.stroke();
 
-    // Background decorative shapes (clipped to card boundary)
     ctx.save();
     rrect(0, 0, W, H, R);
     ctx.clip();
@@ -169,7 +165,6 @@ export const WaitForPlayersScreen = ({
     }
     ctx.restore();
 
-    // Header background (clipped to top corners)
     ctx.save();
     rrect(0, 0, W, H, R);
     ctx.clip();
@@ -177,7 +172,6 @@ export const WaitForPlayersScreen = ({
     ctx.fillRect(0, 0, W, headerH);
     ctx.restore();
 
-    // Header separator
     ctx.strokeStyle = "rgba(0,245,255,0.22)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -185,7 +179,6 @@ export const WaitForPlayersScreen = ({
     ctx.lineTo(W, headerH);
     ctx.stroke();
 
-    // Logo — fetch SVG, patch black text groups to white, render
     const svgText = await fetch(logoImg as string).then((r) => r.text());
     const fixedSvg = svgText
       .replace('aria-label="DRAW"', 'aria-label="DRAW" fill="white"')
@@ -200,7 +193,6 @@ export const WaitForPlayersScreen = ({
     ctx.drawImage(logo, (W - logoW) / 2, (headerH - logoH) / 2, logoW, logoH);
     URL.revokeObjectURL(svgUrl);
 
-    // QR glowing box
     const qrX = (W - qrSize) / 2;
     const qrY = headerH + qrPadV;
     const qrPad = 10;
@@ -229,7 +221,6 @@ export const WaitForPlayersScreen = ({
     ctx.stroke();
     ctx.restore();
 
-    // Game code
     const codeY = qrY + qrSize + qrPadV;
     ctx.textAlign = "center";
     ctx.font = "bold 34px 'Courier New', monospace";
@@ -239,7 +230,6 @@ export const WaitForPlayersScreen = ({
     ctx.fillText(gameId.split("").join("  "), W / 2, codeY + 38);
     ctx.shadowBlur = 0;
 
-    // Footer separator
     const footerSepY = codeY + codeH;
     ctx.strokeStyle = "rgba(0,245,255,0.22)";
     ctx.lineWidth = 1;
@@ -248,7 +238,6 @@ export const WaitForPlayersScreen = ({
     ctx.lineTo(W - 24, footerSepY);
     ctx.stroke();
 
-    // Dark overlay on footer so text stays legible over the shapes
     ctx.save();
     rrect(0, 0, W, H, R);
     ctx.clip();
@@ -256,7 +245,6 @@ export const WaitForPlayersScreen = ({
     ctx.fillRect(0, footerSepY, W, H - footerSepY);
     ctx.restore();
 
-    // Footer stats
     const footerY = footerSepY + sepH;
     const stats = [
       { label: "HOST", value: creatorName },
@@ -275,7 +263,6 @@ export const WaitForPlayersScreen = ({
       ctx.fillText(stat.value, x, footerY + 36);
     });
 
-    // Stat column dividers
     ctx.strokeStyle = "rgba(0,245,255,0.2)";
     ctx.lineWidth = 1;
     [W / 3, (W * 2) / 3].forEach((x) => {
@@ -285,7 +272,6 @@ export const WaitForPlayersScreen = ({
       ctx.stroke();
     });
 
-    // Tagline
     const taglineY = footerY + footerH;
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
@@ -323,7 +309,15 @@ export const WaitForPlayersScreen = ({
             </FieldBlock>
           </InviteFields>
 
-          <QRBlock ref={qrWrapperRef} onClick={handleDownloadCard} title="Click to download share card">
+          <QRBlock
+            ref={qrWrapperRef}
+            onClick={handleDownloadCard}
+            role="button"
+            tabIndex={0}
+            aria-label="Download share card"
+            title="Click to download share card"
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleDownloadCard(); } }}
+          >
             <QRCodeCanvas
               value={link}
               size={130}
@@ -376,12 +370,10 @@ export const WaitForPlayersScreen = ({
             </SettingRow>
             <SettingRow>
               <label htmlFor="chat-toggle">Lobby Chat</label>
-              <ChatToggle
+              <ToggleSwitch
                 id="chat-toggle"
-                type="checkbox"
                 checked={localChatEnabled}
-                onChange={(e) => {
-                  const v = e.target.checked;
+                onChange={(v) => {
                   setLocalChatEnabled(v);
                   notifyChange(roundTimerSeconds, maxPlayers, v, localIsPublic, localGameMode);
                 }}
@@ -389,12 +381,10 @@ export const WaitForPlayersScreen = ({
             </SettingRow>
             <SettingRow>
               <label htmlFor="public-toggle">Public Lobby</label>
-              <ChatToggle
+              <ToggleSwitch
                 id="public-toggle"
-                type="checkbox"
                 checked={localIsPublic}
-                onChange={(e) => {
-                  const v = e.target.checked;
+                onChange={(v) => {
                   setLocalIsPublic(v);
                   notifyChange(roundTimerSeconds, maxPlayers, localChatEnabled, v, localGameMode);
                 }}
@@ -412,7 +402,7 @@ export const WaitForPlayersScreen = ({
                 }}
               >
                 {GAME_MODE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value} title={opt.description}>
+                  <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
@@ -454,11 +444,9 @@ export const WaitForPlayersScreen = ({
                 </SettingRow>
               </>
             )}
-            {localGameMode !== "CLASSIC" && localGameMode !== "HOT_POTATO" && (
-              <GameModeDescription>
-                {GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.description}
-              </GameModeDescription>
-            )}
+            <GameModeDescription>
+              {GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.description}
+            </GameModeDescription>
           </SettingsSection>
 
           <StartBlock>
@@ -524,7 +512,76 @@ export const WaitForGameStartScreen = ({
   );
 };
 
-// ── Layout ──────────────────────────────────────────────────────────────────
+// ── Toggle Switch ────────────────────────────────────────────────────────────
+
+const ToggleSwitch = ({ id, checked, onChange }: {
+  id: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) => (
+  <ToggleOuter>
+    <input
+      type="checkbox"
+      id={id}
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+    />
+    <ToggleTrack $on={checked} />
+  </ToggleOuter>
+);
+
+const ToggleOuter = styled.span`
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  min-width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  input {
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  &:focus-within span {
+    outline: 2px solid var(--cyber-cyan);
+    outline-offset: 2px;
+  }
+`;
+
+const ToggleTrack = styled.span<{ $on: boolean }>`
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: ${p => p.$on ? 'rgba(0, 245, 255, 0.18)' : 'rgba(0, 245, 255, 0.06)'};
+  border: 1.5px solid ${p => p.$on ? 'var(--cyber-cyan)' : 'rgba(0, 245, 255, 0.28)'};
+  box-shadow: ${p => p.$on ? 'var(--cyber-glow)' : 'none'};
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 50%;
+    left: ${p => p.$on ? 'calc(100% - 18px)' : '3px'};
+    transform: translateY(-50%);
+    background: ${p => p.$on ? 'var(--cyber-cyan)' : 'rgba(0, 245, 255, 0.4)'};
+    border-radius: 50%;
+    box-shadow: ${p => p.$on ? '0 0 8px #00f5ff' : 'none'};
+    transition: left 0.2s, background 0.2s, box-shadow 0.2s;
+  }
+`;
+
+// ── Layout ───────────────────────────────────────────────────────────────────
 
 const BeforeGameStartScreen = ({
   players,
@@ -543,6 +600,8 @@ const BeforeGameStartScreen = ({
   onBanPlayer?: (playerName: string) => void;
   children: React.ReactNode;
 }) => {
+  const [pendingAction, setPendingAction] = React.useState<{ name: string; type: "kick" | "ban" } | null>(null);
+
   return (
     <div className="BeforeGameStartScreen">
       <div className="BeforeGameStartScreen-left">
@@ -551,19 +610,53 @@ const BeforeGameStartScreen = ({
           {players.map((player, index) => (
             <PlayerRow key={index}>
               <Player face={player.face}>
-                {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
+                {player.isCreator ? (
+                  <><span aria-hidden="true">👑</span> {player.name}</>
+                ) : player.name}
               </Player>
               {!player.isCreator && (onKickPlayer || onBanPlayer) && (
                 <PlayerActions>
-                  {onKickPlayer && (
-                    <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player">
-                      ✕
-                    </KickBtn>
-                  )}
-                  {onBanPlayer && (
-                    <BanBtn onClick={() => onBanPlayer(player.name)} title="Ban player">
-                      ⊘
-                    </BanBtn>
+                  {pendingAction?.name === player.name ? (
+                    <>
+                      <ConfirmLabel>Sure?</ConfirmLabel>
+                      <ConfirmBtn
+                        onClick={() => {
+                          if (pendingAction.type === "kick") onKickPlayer?.(player.name);
+                          else onBanPlayer?.(player.name);
+                          setPendingAction(null);
+                        }}
+                        aria-label="Confirm"
+                      >
+                        ✓
+                      </ConfirmBtn>
+                      <CancelBtn
+                        onClick={() => setPendingAction(null)}
+                        aria-label="Cancel"
+                      >
+                        ✕
+                      </CancelBtn>
+                    </>
+                  ) : (
+                    <>
+                      {onKickPlayer && (
+                        <KickBtn
+                          onClick={() => setPendingAction({ name: player.name, type: "kick" })}
+                          aria-label={`Kick ${player.name}`}
+                          title={`Kick ${player.name}`}
+                        >
+                          ✕
+                        </KickBtn>
+                      )}
+                      {onBanPlayer && (
+                        <BanBtn
+                          onClick={() => setPendingAction({ name: player.name, type: "ban" })}
+                          aria-label={`Ban ${player.name}`}
+                          title={`Ban ${player.name}`}
+                        >
+                          ⊘
+                        </BanBtn>
+                      )}
+                    </>
                   )}
                 </PlayerActions>
               )}
@@ -579,62 +672,91 @@ const BeforeGameStartScreen = ({
   );
 };
 
-const CrownIcon = styled.span`
-  display: inline-block;
-  line-height: 1;
-`;
+// ── Styled components ────────────────────────────────────────────────────────
 
 const PlayerRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-right: 1vmin;
+  margin-bottom: 2vmin;
 `;
 
 const PlayerActions = styled.div`
   display: flex;
-  gap: 0.6vmin;
+  gap: 0.5vmin;
+  align-items: center;
+  flex-shrink: 0;
+`;
+
+const actionBtnBase = `
+  background: none;
+  border-radius: 50%;
+  width: max(3.5vmin, 32px);
+  height: max(3.5vmin, 32px);
+  min-width: 32px;
+  min-height: 32px;
+  font-size: max(1.5vmin, 11px);
+  line-height: 1;
+  cursor: pointer;
   flex-shrink: 0;
 `;
 
 const KickBtn = styled.button`
-  background: none;
-  border: 1.5px solid rgba(255, 32, 121, 0.5);
-  border-radius: 50%;
+  ${actionBtnBase}
+  border: 1.5px solid rgba(255, 32, 121, 0.45);
   color: var(--cyber-magenta);
-  width: 3.5vmin;
-  height: 3.5vmin;
-  font-size: 1.5vmin;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.1s, border-color 0.1s;
 
   &:hover {
     background: rgba(255, 32, 121, 0.15);
     border-color: var(--cyber-magenta);
     box-shadow: var(--cyber-glow-magenta);
   }
+  &:focus-visible {
+    outline: 2px solid var(--cyber-magenta);
+    outline-offset: 2px;
+  }
 `;
 
 const BanBtn = styled.button`
-  background: none;
-  border: 1.5px solid rgba(255, 160, 0, 0.5);
-  border-radius: 50%;
+  ${actionBtnBase}
+  border: 1.5px solid rgba(255, 160, 0, 0.45);
   color: #ffa000;
-  width: 3.5vmin;
-  height: 3.5vmin;
-  font-size: 1.5vmin;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.1s, border-color 0.1s;
 
   &:hover {
     background: rgba(255, 160, 0, 0.15);
     border-color: #ffa000;
     box-shadow: 0 0 8px #ffa000, 0 0 20px rgba(255, 160, 0, 0.2);
   }
+  &:focus-visible {
+    outline: 2px solid #ffa000;
+    outline-offset: 2px;
+  }
+`;
+
+const ConfirmLabel = styled.span`
+  font-size: max(1.3vmin, 10px);
+  color: var(--cyber-text-muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+`;
+
+const ConfirmBtn = styled.button`
+  ${actionBtnBase}
+  border: 1.5px solid rgba(57, 255, 20, 0.5);
+  color: var(--cyber-green);
+
+  &:hover { background: rgba(57, 255, 20, 0.12); }
+  &:focus-visible { outline: 2px solid var(--cyber-green); outline-offset: 2px; }
+`;
+
+const CancelBtn = styled.button`
+  ${actionBtnBase}
+  border: 1.5px solid rgba(200, 216, 240, 0.3);
+  color: var(--cyber-text-muted);
+
+  &:hover { background: rgba(200, 216, 240, 0.08); }
+  &:focus-visible { outline: 2px solid var(--cyber-cyan); outline-offset: 2px; }
 `;
 
 const RightContent = styled.div`
@@ -663,13 +785,13 @@ const InviteFields = styled.div`
   min-width: 0;
 
   .code-field {
-    font-size: 2.8vmin;
+    font-size: max(2.8vmin, 18px);
     letter-spacing: 0.3em;
     text-align: center;
   }
 
   .link-field {
-    font-size: 1.4vmin;
+    font-size: max(1.4vmin, 11px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -689,22 +811,26 @@ const QRBlock = styled.div`
   align-items: center;
   gap: 0.8vmin;
   padding: 1vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border: 1.5px solid rgba(0, 245, 255, 0.35);
   border-radius: 1vmin;
   background: #080818;
-  box-shadow: 0 0 14px rgba(0, 245, 255, 0.12);
+  box-shadow: 0 0 14px rgba(0, 245, 255, 0.1);
   cursor: pointer;
   flex-shrink: 0;
   transition: box-shadow 0.15s, border-color 0.15s;
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.8);
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.25);
+    border-color: rgba(0, 245, 255, 0.75);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.22);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--cyber-cyan);
+    outline-offset: 3px;
   }
 `;
 
 const QRHint = styled.div`
-  font-size: 1.2vmin;
+  font-size: max(1.2vmin, 10px);
   color: rgba(0, 245, 255, 0.5);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -727,14 +853,14 @@ const StartBlock = styled.div`
 `;
 
 const StartNote = styled.div`
-  font-size: 1.3vmin;
-  color: #3d5570;
+  font-size: max(1.3vmin, 10px);
+  color: var(--cyber-text-muted);
   text-align: center;
   letter-spacing: 0.05em;
 `;
 
 const WaitText = styled.div`
-  font-size: 2vmin;
+  font-size: max(2vmin, 14px);
   color: #6688aa;
   text-align: center;
   letter-spacing: 0.05em;
@@ -750,20 +876,21 @@ const WaitText = styled.div`
 const SettingsSection = styled.div`
   flex: 1;
   padding: 1.5vmin 2vmin;
-  background: rgba(0, 245, 255, 0.03);
-  border: 1.5px solid rgba(0, 245, 255, 0.25);
+  background: rgba(0, 245, 255, 0.04);
+  border: 1.5px solid rgba(0, 245, 255, 0.22);
+  border-top: 2px solid rgba(0, 245, 255, 0.5);
   border-radius: 1vmin;
-  box-shadow: 0 0 10px rgba(0, 245, 255, 0.06);
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.06), inset 0 1px 0 rgba(0, 245, 255, 0.08);
 `;
 
 const SettingsTitle = styled.div`
   font-weight: bold;
   margin-bottom: 1.2vmin;
-  font-size: 1.6vmin;
-  color: #00f5ff;
+  font-size: max(1.6vmin, 12px);
+  color: var(--cyber-cyan);
   text-shadow: 0 0 8px #00f5ff;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
 `;
 
 const SettingRow = styled.div`
@@ -771,26 +898,42 @@ const SettingRow = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: 2vmin;
-  margin-bottom: 0.8vmin;
+  margin-bottom: 0.9vmin;
 
   label {
-    font-size: 1.5vmin;
+    font-size: max(1.5vmin, 11px);
     white-space: nowrap;
-    color: #6688aa;
+    color: var(--cyber-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
 
   select {
-    font-size: 1.5vmin;
-    padding: 0.4vmin 0.8vmin;
-    border-radius: 0.5vmin;
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: max(1.5vmin, 11px);
+    padding: max(0.4vmin, 4px) max(1.8vmin, 22px) max(0.4vmin, 4px) max(0.8vmin, 8px);
+    border-radius: 4px;
     border: 1.5px solid rgba(0, 245, 255, 0.4);
-    background: rgba(0, 245, 255, 0.06);
-    color: #00f5ff;
+    background-color: rgba(0, 245, 255, 0.06);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2300f5ff'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 7px center;
+    background-size: 8px 5px;
+    color: var(--cyber-cyan);
     cursor: pointer;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 245, 255, 0.12);
+    box-shadow: 0 0 5px rgba(0, 245, 255, 0.1);
+    min-height: 28px;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  select:focus-visible {
+    outline: 2px solid var(--cyber-cyan);
+    outline-offset: 2px;
+    border-color: var(--cyber-cyan);
+    box-shadow: var(--cyber-glow);
   }
 
   select option {
@@ -799,23 +942,16 @@ const SettingRow = styled.div`
   }
 `;
 
-const ChatToggle = styled.input`
-  width: 2vmin;
-  height: 2vmin;
-  cursor: pointer;
-  accent-color: #00f5ff;
-`;
-
 const LobbyChatWrapper = styled.div`
   margin-right: 5vmin;
 `;
 
 const GameModeDescription = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(1.3vmin, 10px);
   color: rgba(0, 245, 255, 0.6);
   font-style: italic;
-  margin-top: 0.4vmin;
-  line-height: 1.4;
+  margin-top: 0.6vmin;
+  line-height: 1.5;
 `;
 
 const GameModeBadge = styled.div`
@@ -824,24 +960,25 @@ const GameModeBadge = styled.div`
   align-items: center;
   gap: 0.5vmin;
   padding: 1.5vmin 2.5vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border: 1.5px solid rgba(0, 245, 255, 0.28);
+  border-top: 2px solid rgba(0, 245, 255, 0.5);
   border-radius: 2vmin;
-  background: rgba(0, 245, 255, 0.05);
-  box-shadow: 0 0 10px rgba(0, 245, 255, 0.08);
+  background: rgba(0, 245, 255, 0.04);
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.07), inset 0 1px 0 rgba(0, 245, 255, 0.08);
   max-width: 48vmin;
   width: 100%;
   box-sizing: border-box;
 `;
 
 const GameModeBadgeLabel = styled.div`
-  font-size: 1.1vmin;
+  font-size: max(1.1vmin, 10px);
   color: var(--cyber-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
 `;
 
 const GameModeBadgeName = styled.div`
-  font-size: 1.8vmin;
+  font-size: max(1.8vmin, 14px);
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
   font-weight: 600;
@@ -849,10 +986,11 @@ const GameModeBadgeName = styled.div`
 `;
 
 const GameModeBadgeDesc = styled.div`
-  font-size: 1.2vmin;
+  font-size: max(1.2vmin, 10px);
   color: var(--cyber-text-muted);
   text-align: center;
   max-width: 40vmin;
+  line-height: 1.5;
 `;
 
 export default WaitForPlayersScreen;

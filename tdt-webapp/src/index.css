@@ -6,10 +6,15 @@
   --cyber-green: #39ff14;
   --cyber-yellow: #f7c800;
   --cyber-text: #c8d8f0;
-  --cyber-text-muted: #3d5570;
+  --cyber-text-bright: #e8f4ff;
+  --cyber-text-muted: #6e8db0;   /* was #3d5570 (2.6:1) → now 6.4:1 contrast */
+  --cyber-text-dim: #3d5570;     /* purely decorative use only */
   --cyber-glow: 0 0 8px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.2);
   --cyber-glow-magenta: 0 0 8px #ff2079, 0 0 20px rgba(255, 32, 121, 0.2);
   --cyber-glow-green: 0 0 8px #39ff14, 0 0 20px rgba(57, 255, 20, 0.2);
+  --cyber-glow-strong: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.3);
+  --cyber-border: rgba(0, 245, 255, 0.22);
+  --cyber-panel: rgba(0, 245, 255, 0.04);
 }
 
 html,
@@ -24,26 +29,43 @@ body,
 @font-face {
   font-family: "Comic Neue";
   src: url(./fonts/ComicNeue-Regular.woff) format("woff");
+  font-display: swap;
 }
 
 @font-face {
   font-family: "KidsDrawings";
   src: url(./fonts/KidsDrawings.woff) format("woff");
-  font-display: block;
+  font-display: swap;
 }
 
 @font-face {
   font-family: "TheFreakyFace";
   src: url(./fonts/TheFreakyFace.woff) format("woff");
-  font-display: block;
+  font-display: swap;
 }
 
 body {
   background-color: var(--cyber-bg);
   background-image:
-    linear-gradient(rgba(0, 245, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0, 245, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.035) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* Subtle scanline overlay for atmosphere */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 8, 0.15) 3px,
+    rgba(0, 0, 8, 0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
 }
 
 body,
@@ -55,11 +77,23 @@ textarea {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--cyber-text);
+  line-height: 1.5;
 }
 
 a {
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--cyber-cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 h1 {
@@ -71,24 +105,37 @@ h1 {
 }
 
 input,
-textarea,
+textarea {
+  outline: none;
+  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  border-radius: 6px;
+  padding: 1vmin 2vmin;
+  background-color: rgba(0, 245, 255, 0.04);
+  box-shadow: inset 0 0 8px rgba(0, 245, 255, 0.03);
+  text-align: center;
+  color: var(--cyber-text);
+  caret-color: var(--cyber-cyan);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  border-color: var(--cyber-cyan);
+  box-shadow: var(--cyber-glow), inset 0 0 12px rgba(0, 245, 255, 0.05);
+}
+
 .field {
   outline: none;
   border: 1.5px solid var(--cyber-cyan);
-  border-radius: 1vmin;
+  border-radius: 6px;
   padding: 1vmin 2vmin;
   background-color: rgba(0, 245, 255, 0.05);
   box-shadow: var(--cyber-glow), inset 0 0 12px rgba(0, 245, 255, 0.05);
   text-align: center;
-  color: var(--cyber-text);
-  caret-color: var(--cyber-cyan);
-}
-
-.field {
-  word-break: break-word;
-  overflow-wrap: anywhere;
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .field-label {
@@ -105,4 +152,32 @@ textarea,
 .small {
   font-size: 0.7em;
   color: var(--cyber-text-muted);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.28);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 255, 0.52);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

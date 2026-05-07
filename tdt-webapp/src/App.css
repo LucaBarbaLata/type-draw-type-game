@@ -35,6 +35,7 @@
   box-shadow: var(--cyber-glow-magenta), inset 0 0 14px rgba(255, 32, 121, 0.08);
   text-align: center;
   overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .Face-small {
@@ -56,98 +57,163 @@
   margin: 1vmin;
 }
 
+/* ── Button base ─────────────────────────────────────────────────────────── */
+
 .button {
-  background: linear-gradient(135deg, rgba(0, 245, 255, 0.12) 0%, rgba(0, 245, 255, 0.05) 100%);
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.10) 0%,
+    rgba(0, 245, 255, 0.03) 100%
+  );
   border: 1.5px solid var(--cyber-cyan);
   color: var(--cyber-cyan);
   padding: 2vmin 5vmin;
+  min-height: 44px;
   text-align: center;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 100px;
   font-size: 1em;
   font-weight: 600;
-  box-shadow: var(--cyber-glow);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   cursor: pointer;
   outline: none;
   text-shadow: 0 0 8px #00f5ff;
-  letter-spacing: 0.06em;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  letter-spacing: 0.08em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.12s, border-color 0.2s;
+  overflow: hidden;
 }
 
-.button:hover {
-  background: linear-gradient(135deg, rgba(0, 245, 255, 0.22) 0%, rgba(0, 245, 255, 0.1) 100%);
-  box-shadow: 0 0 18px #00f5ff, 0 0 50px rgba(0, 245, 255, 0.3);
-  transform: translateY(-1px);
+/* shimmer sweep on hover */
+.button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 70%
+  );
+  transform: translateX(-110%);
+  transition: transform 0.45s;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
-.button:active {
-  transform: translateY(0);
+.button:not(:disabled):hover::after {
+  transform: translateX(110%);
 }
 
-.button-red {
-  background: linear-gradient(135deg, rgba(255, 32, 121, 0.12) 0%, rgba(255, 32, 121, 0.05) 100%);
-  border-color: var(--cyber-magenta);
-  color: var(--cyber-magenta);
-  box-shadow: var(--cyber-glow-magenta);
-  text-shadow: 0 0 8px #ff2079;
+.button:not(:disabled):hover {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.18) 0%,
+    rgba(0, 245, 255, 0.08) 100%
+  );
+  box-shadow: 0 0 18px #00f5ff, 0 0 50px rgba(0, 245, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+  border-color: rgba(0, 245, 255, 0.9);
 }
 
-.button-red:hover {
-  background: linear-gradient(135deg, rgba(255, 32, 121, 0.22) 0%, rgba(255, 32, 121, 0.1) 100%);
-  box-shadow: 0 0 18px #ff2079, 0 0 50px rgba(255, 32, 121, 0.3);
+.button:not(:disabled):active {
+  transform: translateY(0px) scale(0.97);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.28);
+  transition-duration: 0.05s;
 }
 
-.button-blue {
-  background: linear-gradient(135deg, rgba(0, 245, 255, 0.12) 0%, rgba(0, 245, 255, 0.05) 100%);
-  border-color: var(--cyber-cyan);
-  color: var(--cyber-cyan);
-  box-shadow: var(--cyber-glow);
-  text-shadow: 0 0 8px #00f5ff;
+.button:focus-visible {
+  outline: 2px solid var(--cyber-cyan);
+  outline-offset: 3px;
 }
 
 .button:disabled {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: #1e2c3a;
-  color: #1e2c3a;
-  box-shadow: none;
-  text-shadow: none;
+  opacity: 0.32;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
+  text-shadow: none;
 }
+
+/* ── Button variants ─────────────────────────────────────────────────────── */
+
+.button-red {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 32, 121, 0.10) 0%,
+    rgba(255, 32, 121, 0.03) 100%
+  );
+  border-color: var(--cyber-magenta);
+  color: var(--cyber-magenta);
+  box-shadow: 0 0 8px rgba(255, 32, 121, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0 0 8px #ff2079;
+}
+
+.button-red:not(:disabled):hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 32, 121, 0.20) 0%,
+    rgba(255, 32, 121, 0.08) 100%
+  );
+  box-shadow: 0 0 18px #ff2079, 0 0 50px rgba(255, 32, 121, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 32, 121, 0.9);
+}
+
+.button-red:focus-visible {
+  outline-color: var(--cyber-magenta);
+}
+
+.button-blue {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.10) 0%,
+    rgba(0, 245, 255, 0.03) 100%
+  );
+  border-color: var(--cyber-cyan);
+  color: var(--cyber-cyan);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0 0 8px #00f5ff;
+}
+
+/* ── Drawing display ─────────────────────────────────────────────────────── */
 
 .Drawing {
   display: block;
   margin: 2vmin 0;
   max-height: 100vh;
   max-width: 90vw;
-  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  border: 1.5px solid rgba(0, 245, 255, 0.45);
   border-radius: 1vmin;
   box-shadow: var(--cyber-glow);
 }
 
-/* Custom styled tooltips for drawing tools */
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+
 [data-tooltip] {
   position: relative;
 }
 
-[data-tooltip]:hover::after {
+/* Show on hover OR keyboard focus */
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(8, 8, 24, 0.95);
+  background: rgba(6, 6, 22, 0.96);
   color: #00f5ff;
-  border: 1px solid rgba(0, 245, 255, 0.6);
-  padding: 3px 8px;
+  border: 1px solid rgba(0, 245, 255, 0.5);
+  padding: 4px 10px;
   border-radius: 4px;
-  font-size: 1.4vmin;
-  min-font-size: 10px;
+  font-size: max(1.4vmin, 10px);
   white-space: nowrap;
   pointer-events: none;
   z-index: 500;
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.25);
   font-family: monospace;
   letter-spacing: 0.05em;
 }

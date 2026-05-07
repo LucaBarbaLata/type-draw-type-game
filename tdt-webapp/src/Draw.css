@@ -82,9 +82,11 @@
 
 /* Small tool buttons (secondary tools) */
 .tool-button-sm {
-  width: 8vmin;
-  height: 8vmin;
-  font-size: 2.5vmin;
+  width: max(8vmin, 44px);
+  height: max(8vmin, 44px);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: max(2.5vmin, 16px);
   margin: 0;
 }
 

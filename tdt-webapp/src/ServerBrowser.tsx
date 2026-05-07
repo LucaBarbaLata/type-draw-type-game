@@ -104,7 +104,14 @@ const ServerBrowser = () => {
           <Panel>
             <PanelHeading>Create Match</PanelHeading>
 
-            <FacePickerWrapper onClick={nextFace} title="Click to change avatar">
+            <FacePickerWrapper
+              onClick={nextFace}
+              role="button"
+              tabIndex={0}
+              aria-label={`Avatar: ${face}. Click to change`}
+              title="Click to change avatar"
+              onKeyDown={(e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nextFace(); } }}
+            >
               <Face face={face} small={false} />
               <FaceHint>click to change</FaceHint>
             </FacePickerWrapper>
