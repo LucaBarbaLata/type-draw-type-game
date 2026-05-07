@@ -1,7 +1,27 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(2vmin); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
+const muteIn = keyframes`
+  from { opacity: 0; transform: scale(0.4) translateY(3vmin); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+`;
+
+const connPulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+`;
+
+const scanPulse = keyframes`
+  0%, 100% { opacity: 0.35; letter-spacing: 0.32em; }
+  50%       { opacity: 1;    letter-spacing: 0.42em; }
+`;
 
 import { GameMode, PlayerInfo, StoryContent, StrokeSegment, RemoteStroke } from "./model";
 import { getPlayerId } from "./helpers";
@@ -622,23 +642,12 @@ const Game = () => {
         </MuteButton>
       )}
       {ReactDOM.createPortal(
-        <div
+        <ConnDot
+          $status={connectionStatus}
           title={
             connectionStatus === "connected" ? "Connected" :
-            connectionStatus === "connecting" ? "Connecting..." : "Disconnected"
+            connectionStatus === "connecting" ? "Connecting…" : "Disconnected"
           }
-          style={{
-            position: "fixed",
-            top: 8,
-            right: 8,
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            zIndex: 1000,
-            pointerEvents: "none",
-            background: connectionStatus === "connected" ? "#00ff88" : connectionStatus === "connecting" ? "#ffcc00" : "#ff4444",
-            boxShadow: connectionStatus === "connected" ? "0 0 6px #00ff88" : connectionStatus === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444",
-          }}
         />,
         document.body
       )}
@@ -680,6 +689,7 @@ const WaitForRoundFinished = ({
 
 const WaitMessage = styled.div`
   margin-bottom: 2vmin;
+  animation: ${fadeUp} 0.4s ease-out;
 `;
 
 const WaitChatContainer = styled.div`
@@ -752,11 +762,17 @@ const MuteButton = styled.button`
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  animation: ${muteIn} 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &:hover {
     border-color: #00f5ff;
     box-shadow: 0 0 10px rgba(0, 245, 255, 0.4);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 `;
 
@@ -770,7 +786,38 @@ const KickedLink = styled.span`
   cursor: pointer;
 `;
 
-const LoadingGame = () => {
-  return <div>Loading game...</div>;
-};
+const LoadingText = styled.div`
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  font-size: 2.5vmin;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  animation: ${scanPulse} 1.5s ease-in-out infinite;
+`;
+
+const LoadingGame = () => (
+  <BigLogoScreen>
+    <LoadingText>Connecting…</LoadingText>
+  </BigLogoScreen>
+);
+
+const ConnDot = styled.div<{ $status: "connecting" | "connected" | "disconnected" }>`
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 1000;
+  pointer-events: none;
+  background: ${({ $status }) =>
+    $status === "connected" ? "#00ff88" :
+    $status === "connecting" ? "#ffcc00" : "#ff4444"};
+  box-shadow: ${({ $status }) =>
+    $status === "connected" ? "0 0 6px #00ff88" :
+    $status === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444"};
+  ${({ $status }) => $status !== "connected" && css`
+    animation: ${connPulse} 0.75s ease-in-out infinite;
+  `}
+`;
 

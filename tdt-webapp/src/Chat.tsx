@@ -1,5 +1,15 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const msgEnter = keyframes`
+  from { opacity: 0; transform: translateX(-1.5vmin) translateY(0.4vmin); }
+  to   { opacity: 1; transform: translateX(0) translateY(0); }
+`;
+
+const chatBoxEnter = keyframes`
+  from { opacity: 0; transform: translateY(1.5vmin); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 import { PlayerInfo } from "./model";
 import Face from "./Face";
@@ -83,6 +93,7 @@ export const ChatBox = styled.div`
   border-top: 1.5px solid rgba(0, 245, 255, 0.2);
   flex: 0 0 auto;
   height: 28vh;
+  animation: ${chatBoxEnter} 0.35s ease-out;
 `;
 
 const ChatTitle = styled.div`
@@ -115,6 +126,7 @@ const ChatMsg = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 0.8vmin;
+  animation: ${msgEnter} 0.22s ease-out;
 `;
 
 const ChatFace = styled.span`
@@ -179,6 +191,7 @@ const ChatInput = styled.input`
   color: var(--cyber-text);
   outline: none;
   text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
 
   &:disabled {
     opacity: 0.4;
@@ -187,6 +200,7 @@ const ChatInput = styled.input`
 
   &:focus {
     border-color: rgba(0, 245, 255, 0.6);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
   }
 `;
 
@@ -198,11 +212,16 @@ const ChatSendBtn = styled.button`
   border-radius: 0.5vmin;
   color: var(--cyber-cyan);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.12s, box-shadow 0.12s, transform 0.1s;
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    background: rgba(0, 245, 255, 0.18);
+    background: rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.88);
   }
 
   &:disabled {

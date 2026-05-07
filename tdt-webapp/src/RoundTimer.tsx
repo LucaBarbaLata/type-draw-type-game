@@ -1,5 +1,15 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+
+const timerIn = keyframes`
+  from { opacity: 0; transform: translateY(-2vmin) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+`;
+
+const urgentBeat = keyframes`
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px #ff2079, 0 0 25px rgba(255,32,121,0.25); }
+  50%       { transform: scale(1.08); box-shadow: 0 0 26px #ff2079, 0 0 55px rgba(255,32,121,0.55), inset 0 0 10px rgba(255,32,121,0.1); }
+`;
 
 const RoundTimer = ({
   seconds,
@@ -75,7 +85,11 @@ const TimerContainer = styled.div<{ urgent: boolean }>`
   font-weight: bold;
   letter-spacing: 0.08em;
   z-index: 10;
-  transition: border-color 0.3s, color 0.3s, box-shadow 0.3s, text-shadow 0.3s;
+  transition: border-color 0.3s, color 0.3s, text-shadow 0.3s;
   pointer-events: none;
   backdrop-filter: blur(4px);
+  animation: ${timerIn} 0.4s ease-out;
+  ${({ urgent }) => urgent && css`
+    animation: ${timerIn} 0.4s ease-out, ${urgentBeat} 0.65s ease-in-out infinite;
+  `}
 `;

@@ -1,6 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(2vmin); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import BigLogoScreen from "./BigLogoScreen";
@@ -54,8 +59,8 @@ const PublicGames = () => {
 
         {games && games.length > 0 && (
           <GameList>
-            {games.map((g) => (
-              <GameCard key={g.gameId}>
+            {games.map((g, i) => (
+              <GameCard key={g.gameId} $i={i}>
                 <CardLeft>
                   <CreatorFace>{g.creatorFace}</CreatorFace>
                   <CardInfo>
@@ -92,6 +97,7 @@ const Content = styled.div`
   align-items: center;
   gap: 2vmin;
   width: min(90vw, 480px);
+  animation: ${fadeUp} 0.4s ease-out;
 `;
 
 const Title = styled.h2`
@@ -126,7 +132,7 @@ const GameList = styled.div`
   }
 `;
 
-const GameCard = styled.div`
+const GameCard = styled.div<{ $i?: number }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -135,6 +141,13 @@ const GameCard = styled.div`
   border-radius: 1vmin;
   background: rgba(0, 245, 255, 0.03);
   box-shadow: 0 0 8px rgba(0, 245, 255, 0.06);
+  animation: ${fadeUp} 0.32s ${({ $i }) => ($i ?? 0) * 0.07}s ease-out both;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: rgba(0, 245, 255, 0.6);
+    box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+  }
 `;
 
 const CardLeft = styled.div`

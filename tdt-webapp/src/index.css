@@ -82,6 +82,13 @@ textarea,
   text-align: center;
   color: var(--cyber-text);
   caret-color: var(--cyber-cyan);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+input:focus,
+textarea:focus {
+  box-shadow: 0 0 18px rgba(0, 245, 255, 0.4), inset 0 0 12px rgba(0, 245, 255, 0.08);
+  border-color: var(--cyber-cyan);
 }
 
 .field {

@@ -1,6 +1,21 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(2vmin); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
+
+const slideLeft = keyframes`
+  from { opacity: 0; transform: translateX(-3vmin); }
+  to   { opacity: 1; transform: translateX(0); }
+`;
+
+const slideRight = keyframes`
+  from { opacity: 0; transform: translateX(3vmin); }
+  to   { opacity: 1; transform: translateX(0); }
+`;
 
 import {
   toggleToFullscreenAndLandscapeOnMobile,
@@ -101,7 +116,7 @@ const ServerBrowser = () => {
 
         <Panels>
           {/* ── Create Match ─────────────────────────────── */}
-          <Panel>
+          <Panel $side="left">
             <PanelHeading>Create Match</PanelHeading>
 
             <FacePickerWrapper onClick={nextFace} title="Click to change avatar">
@@ -133,7 +148,7 @@ const ServerBrowser = () => {
           <PanelDivider />
 
           {/* ── Join Match ───────────────────────────────── */}
-          <Panel>
+          <Panel $side="right">
             <PanelHeading>Join Match</PanelHeading>
 
             {gamesError && <StatusMsg>Could not load lobbies.</StatusMsg>}
@@ -144,8 +159,8 @@ const ServerBrowser = () => {
 
             {games && games.length > 0 && (
               <GameList>
-                {games.map((g) => (
-                  <GameCard key={g.gameId}>
+                {games.map((g, i) => (
+                  <GameCard key={g.gameId} $i={i}>
                     <CardLeft>
                       <Face face={g.creatorFace} small={true} />
                       <CardInfo>
@@ -197,6 +212,7 @@ const TopBar = styled.div`
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2.5vmin;
+  animation: ${fadeUp} 0.35s ease-out;
 `;
 
 const BrowserTitle = styled.h1`
@@ -215,13 +231,14 @@ const Panels = styled.div`
   min-height: 0;
 `;
 
-const Panel = styled.div`
+const Panel = styled.div<{ $side?: "left" | "right" }>`
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 2vmin 3vmin;
   overflow-y: auto;
+  animation: ${({ $side }) => $side === "right" ? slideRight : slideLeft} 0.4s ease-out;
 `;
 
 const PanelDivider = styled.div`
@@ -304,7 +321,7 @@ const GameList = styled.div`
   }
 `;
 
-const GameCard = styled.div`
+const GameCard = styled.div<{ $i?: number }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -313,6 +330,13 @@ const GameCard = styled.div`
   border-radius: 1vmin;
   background: rgba(0, 245, 255, 0.03);
   box-shadow: 0 0 8px rgba(0, 245, 255, 0.06);
+  animation: ${fadeUp} 0.32s ${({ $i }) => ($i ?? 0) * 0.07}s ease-out both;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    border-color: rgba(0, 245, 255, 0.6);
+    box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+  }
 `;
 
 const CardLeft = styled.div`

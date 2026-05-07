@@ -1,4 +1,5 @@
 import React from "react";
+import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -132,6 +133,16 @@ const LogoLeftScreen = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+const facePop = keyframes`
+  0%   { transform: scale(0.7) rotate(-10deg); opacity: 0.5; }
+  65%  { transform: scale(1.1) rotate(4deg);   opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+`;
+
+const FaceWrapper = styled.div`
+  animation: ${facePop} 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+`;
+
 const SelectFace = ({
   face,
   faces,
@@ -141,14 +152,19 @@ const SelectFace = ({
   faces: string;
   handleChange: (face: string) => void;
 }) => {
+  const [flipKey, setFlipKey] = React.useState(0);
+
   const nextFace = () => {
     const newFace = faces.charAt((faces.indexOf(face) + 1) % faces.length);
     handleChange(newFace);
+    setFlipKey((k) => k + 1);
   };
 
   return (
-    <div className="SelectFace" onClick={nextFace}>
-      <Face face={face} small={false} />
+    <div className="SelectFace" onClick={nextFace} title="Click to change your character">
+      <FaceWrapper key={flipKey}>
+        <Face face={face} small={false} />
+      </FaceWrapper>
     </div>
   );
 };

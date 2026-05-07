@@ -35,6 +35,7 @@
   box-shadow: var(--cyber-glow-magenta), inset 0 0 14px rgba(255, 32, 121, 0.08);
   text-align: center;
   overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .Face-small {
@@ -82,7 +83,12 @@
 }
 
 .button:active {
-  transform: translateY(0);
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 0 6px #00f5ff;
+}
+
+.button-red:active {
+  box-shadow: 0 0 6px #ff2079;
 }
 
 .button-red {
@@ -127,6 +133,11 @@
 }
 
 /* Custom styled tooltips for drawing tools */
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 [data-tooltip] {
   position: relative;
 }
@@ -150,4 +161,5 @@
   box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
   font-family: monospace;
   letter-spacing: 0.05em;
+  animation: tooltipIn 0.15s ease-out;
 }

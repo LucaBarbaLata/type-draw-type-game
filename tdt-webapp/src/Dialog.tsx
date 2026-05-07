@@ -1,5 +1,10 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const dialogIn = keyframes`
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+`;
 
 const Dialog = ({
   show,
@@ -43,4 +48,5 @@ const DialogContent = styled.div`
   background-color: #08081a;
   box-shadow: 0 0 20px #00f5ff, 0 0 60px rgba(0, 245, 255, 0.15), inset 0 0 40px rgba(0, 245, 255, 0.02);
   overflow: hidden;
+  animation: ${dialogIn} 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 `;

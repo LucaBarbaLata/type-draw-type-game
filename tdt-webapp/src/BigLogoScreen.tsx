@@ -1,5 +1,10 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+
+const pageEnter = keyframes`
+  from { opacity: 0; transform: translateY(-2vmin); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 import { getRandomCharacterFromString } from "./helpers";
 import Logo from "./Logo";
@@ -48,6 +53,7 @@ const BigLogoScreenContent = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-around;
+  animation: ${pageEnter} 0.45s ease-out;
 `;
 
 const BigLogoScreenContentHeader = styled.div`

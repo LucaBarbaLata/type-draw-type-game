@@ -63,6 +63,12 @@
   overflow: auto;
 }
 
+@keyframes playerJoin {
+  from { opacity: 0; transform: translateX(-2vmin); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 .Players .Player {
   margin-bottom: 2vmin;
+  animation: playerJoin 0.35s ease-out both;
 }

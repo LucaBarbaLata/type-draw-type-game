@@ -1,3 +1,14 @@
+@keyframes decoFloat {
+  0%, 100% {
+    transform: translateY(0);
+    text-shadow: 0 0 12px #ff2079, 0 0 35px rgba(255, 32, 121, 0.4), 0 0 60px rgba(255, 32, 121, 0.15);
+  }
+  50% {
+    transform: translateY(-10px);
+    text-shadow: 0 0 24px #ff2079, 0 0 60px rgba(255, 32, 121, 0.65), 0 0 95px rgba(255, 32, 121, 0.28);
+  }
+}
+
 .Decoration {
   font-family: "KidsDrawings";
   font-size: calc(25px + 15vmin);
@@ -8,4 +19,9 @@
   text-shadow: 0 0 12px #ff2079, 0 0 35px rgba(255, 32, 121, 0.4), 0 0 60px rgba(255, 32, 121, 0.15);
   cursor: pointer;
   user-select: none;
+  animation: decoFloat 5s ease-in-out infinite;
+}
+
+.Decoration:last-of-type {
+  animation-delay: -2.5s;
 }
