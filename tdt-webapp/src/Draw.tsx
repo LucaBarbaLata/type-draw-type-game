@@ -227,7 +227,9 @@ const Draw = ({
         <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
       )}
       {spectatorCount != null && spectatorCount > 0 && (
-        <SpectatorBadge>👁 {spectatorCount} watching</SpectatorBadge>
+        <SpectatorBadge aria-label={`${spectatorCount} watching`}>
+          <span aria-hidden="true">👁</span> {spectatorCount} watching
+        </SpectatorBadge>
       )}
       <DrawCanvas
         color={color}
@@ -256,7 +258,7 @@ const SpectatorBadge = styled.div`
   background: rgba(8, 8, 24, 0.85);
   border: 1px solid rgba(0, 245, 255, 0.4);
   color: rgba(0, 245, 255, 0.8);
-  font-size: 1.6vmin;
+  font-size: max(12px, 1.6vmin);
   padding: 2px 10px;
   border-radius: 20px;
   z-index: 100;

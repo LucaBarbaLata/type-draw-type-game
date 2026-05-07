@@ -6,7 +6,7 @@
   --cyber-green: #39ff14;
   --cyber-yellow: #f7c800;
   --cyber-text: #c8d8f0;
-  --cyber-text-muted: #3d5570;
+  --cyber-text-muted: #7a9ab8;
   --cyber-glow: 0 0 8px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.2);
   --cyber-glow-magenta: 0 0 8px #ff2079, 0 0 20px rgba(255, 32, 121, 0.2);
   --cyber-glow-green: 0 0 8px #39ff14, 0 0 20px rgba(57, 255, 20, 0.2);
@@ -73,7 +73,6 @@ h1 {
 input,
 textarea,
 .field {
-  outline: none;
   border: 1.5px solid var(--cyber-cyan);
   border-radius: 1vmin;
   padding: 1vmin 2vmin;
@@ -105,4 +104,18 @@ textarea,
 .small {
   font-size: 0.7em;
   color: var(--cyber-text-muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyber-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 245, 255, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

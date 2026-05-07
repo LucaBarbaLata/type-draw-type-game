@@ -551,7 +551,7 @@ const BeforeGameStartScreen = ({
           {players.map((player, index) => (
             <PlayerRow key={index}>
               <Player face={player.face}>
-                {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
+                {player.isCreator ? <><CrownIcon aria-hidden="true">👑</CrownIcon> {player.name}</> : player.name}
               </Player>
               {!player.isCreator && (onKickPlayer || onBanPlayer) && (
                 <PlayerActions>
@@ -602,12 +602,15 @@ const KickBtn = styled.button`
   border: 1.5px solid rgba(255, 32, 121, 0.5);
   border-radius: 50%;
   color: var(--cyber-magenta);
-  width: 3.5vmin;
-  height: 3.5vmin;
-  font-size: 1.5vmin;
+  width: max(44px, 3.5vmin);
+  height: max(44px, 3.5vmin);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: max(13px, 1.5vmin);
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
+  padding: 0;
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {
@@ -622,12 +625,15 @@ const BanBtn = styled.button`
   border: 1.5px solid rgba(255, 160, 0, 0.5);
   border-radius: 50%;
   color: #ffa000;
-  width: 3.5vmin;
-  height: 3.5vmin;
-  font-size: 1.5vmin;
+  width: max(44px, 3.5vmin);
+  height: max(44px, 3.5vmin);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: max(13px, 1.5vmin);
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
+  padding: 0;
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {
@@ -669,7 +675,7 @@ const InviteFields = styled.div`
   }
 
   .link-field {
-    font-size: 1.4vmin;
+    font-size: max(11px, 1.4vmin);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -704,7 +710,7 @@ const QRBlock = styled.div`
 `;
 
 const QRHint = styled.div`
-  font-size: 1.2vmin;
+  font-size: max(11px, 1.2vmin);
   color: rgba(0, 245, 255, 0.5);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -727,14 +733,14 @@ const StartBlock = styled.div`
 `;
 
 const StartNote = styled.div`
-  font-size: 1.3vmin;
-  color: #3d5570;
+  font-size: max(11px, 1.3vmin);
+  color: var(--cyber-text-muted);
   text-align: center;
   letter-spacing: 0.05em;
 `;
 
 const WaitText = styled.div`
-  font-size: 2vmin;
+  font-size: max(14px, 2vmin);
   color: #6688aa;
   text-align: center;
   letter-spacing: 0.05em;
@@ -759,7 +765,7 @@ const SettingsSection = styled.div`
 const SettingsTitle = styled.div`
   font-weight: bold;
   margin-bottom: 1.2vmin;
-  font-size: 1.6vmin;
+  font-size: max(13px, 1.6vmin);
   color: #00f5ff;
   text-shadow: 0 0 8px #00f5ff;
   text-transform: uppercase;
@@ -774,7 +780,7 @@ const SettingRow = styled.div`
   margin-bottom: 0.8vmin;
 
   label {
-    font-size: 1.5vmin;
+    font-size: max(12px, 1.5vmin);
     white-space: nowrap;
     color: #6688aa;
     text-transform: uppercase;
@@ -782,7 +788,7 @@ const SettingRow = styled.div`
   }
 
   select {
-    font-size: 1.5vmin;
+    font-size: max(12px, 1.5vmin);
     padding: 0.4vmin 0.8vmin;
     border-radius: 0.5vmin;
     border: 1.5px solid rgba(0, 245, 255, 0.4);
@@ -800,8 +806,10 @@ const SettingRow = styled.div`
 `;
 
 const ChatToggle = styled.input`
-  width: 2vmin;
-  height: 2vmin;
+  width: max(18px, 2vmin);
+  height: max(18px, 2vmin);
+  min-width: 18px;
+  min-height: 18px;
   cursor: pointer;
   accent-color: #00f5ff;
 `;
@@ -811,7 +819,7 @@ const LobbyChatWrapper = styled.div`
 `;
 
 const GameModeDescription = styled.div`
-  font-size: 1.3vmin;
+  font-size: max(11px, 1.3vmin);
   color: rgba(0, 245, 255, 0.6);
   font-style: italic;
   margin-top: 0.4vmin;
@@ -834,14 +842,14 @@ const GameModeBadge = styled.div`
 `;
 
 const GameModeBadgeLabel = styled.div`
-  font-size: 1.1vmin;
+  font-size: max(11px, 1.1vmin);
   color: var(--cyber-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 `;
 
 const GameModeBadgeName = styled.div`
-  font-size: 1.8vmin;
+  font-size: max(14px, 1.8vmin);
   color: var(--cyber-cyan);
   text-shadow: var(--cyber-glow);
   font-weight: 600;
@@ -849,7 +857,7 @@ const GameModeBadgeName = styled.div`
 `;
 
 const GameModeBadgeDesc = styled.div`
-  font-size: 1.2vmin;
+  font-size: max(11px, 1.2vmin);
   color: var(--cyber-text-muted);
   text-align: center;
   max-width: 40vmin;

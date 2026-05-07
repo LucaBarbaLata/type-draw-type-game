@@ -616,9 +616,10 @@ const Game = () => {
       {showMuteButton && (
         <MuteButton
           onClick={toggleMute}
+          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
           title={muted ? "Unmute sounds" : "Mute sounds"}
         >
-          {muted ? "🔇" : "🔊"}
+          <span aria-hidden="true">{muted ? "🔇" : "🔊"}</span>
         </MuteButton>
       )}
       {ReactDOM.createPortal(
@@ -742,17 +743,18 @@ const MuteButton = styled.button`
   border: 1.5px solid rgba(0, 245, 255, 0.4);
   color: #00f5ff;
   border-radius: 50%;
-  width: 6vmin;
-  height: 6vmin;
-  min-width: 36px;
-  min-height: 36px;
-  font-size: 3vmin;
+  width: max(44px, 6vmin);
+  height: max(44px, 6vmin);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: max(18px, 3vmin);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
   transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 0;
 
   &:hover {
     border-color: #00f5ff;
@@ -771,6 +773,23 @@ const KickedLink = styled.span`
 `;
 
 const LoadingGame = () => {
-  return <div>Loading game...</div>;
+  return (
+    <LoadingScreen>
+      <span>Loading game&hellip;</span>
+    </LoadingScreen>
+  );
 };
+
+const LoadingScreen = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 3.5vmin;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-glow);
+  background-color: var(--cyber-bg);
+  letter-spacing: 0.1em;
+`;
 

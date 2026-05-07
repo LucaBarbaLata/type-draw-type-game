@@ -41,7 +41,7 @@ const DrawTools = ({
   onDone: () => void;
 }) => {
   const isNoir = gameMode === "TELEPHONE_NOIR";
-  const brushButton = React.useRef<HTMLDivElement>(null);
+  const brushButton = React.useRef<HTMLButtonElement>(null);
   const brushPopup = React.useRef<HTMLDivElement>(null);
 
   const [showBrushPopup, setShowBrushPopup] = React.useState(false);
@@ -66,24 +66,27 @@ const DrawTools = ({
   const isActive = (t: DrawTool) => activeTool === t;
 
   const toolBtn = (t: DrawTool, label: string, title: string, extraClass = "") =>
-    <div
+    <button
+      type="button"
       className={`tool-button tool-button-sm${isActive(t) ? " tool-button-active" : ""}${extraClass ? " " + extraClass : ""}`}
       onClick={() => onSetTool(t)}
+      aria-label={title}
+      aria-pressed={isActive(t)}
       data-tooltip={title}
     >
-      {label}
-    </div>;
+      <span aria-hidden="true">{label}</span>
+    </button>;
 
   return (
     <div className="Draw-tools">
-      <div className="tool-button tool-button-help" onClick={triggerHelp}>
-        <img src={helpImg} alt="Help" title="Help" />
-      </div>
+      <button type="button" className="tool-button tool-button-help" onClick={triggerHelp} aria-label="Help">
+        <img src={helpImg} alt="" aria-hidden="true" />
+      </button>
 
       {/* Undo / Redo */}
       <div className="tool-button-row">
-        <div className="tool-button tool-button-sm" onClick={onUndo} data-tooltip="Undo">↩</div>
-        <div className="tool-button tool-button-sm" onClick={onRedo} data-tooltip="Redo">↪</div>
+        <button type="button" className="tool-button tool-button-sm" onClick={onUndo} aria-label="Undo" data-tooltip="Undo"><span aria-hidden="true">↩</span></button>
+        <button type="button" className="tool-button tool-button-sm" onClick={onRedo} aria-label="Redo" data-tooltip="Redo"><span aria-hidden="true">↪</span></button>
       </div>
 
       {/* Pen / Eraser / Fill */}
@@ -106,6 +109,8 @@ const DrawTools = ({
         color={activeTool === "eraser" ? "#ffffff" : color}
         onClick={() => setShowBrushPopup(!showBrushPopup)}
         ref={brushButton}
+        aria-label={`Brush size ${selectedBrush.displaySize}px`}
+        aria-expanded={showBrushPopup}
       />
       <div
         className={"tool-popup" + (showBrushPopup ? "" : " hidden")}
@@ -117,6 +122,7 @@ const DrawTools = ({
             size={brush.displaySize}
             color={color}
             onClick={() => handleSelectBrush(index)}
+            aria-label={`Brush size ${brush.displaySize}px`}
           />
         ))}
       </div>
@@ -125,33 +131,35 @@ const DrawTools = ({
       {isNoir ? (
         <div className="tool-noir-swatches">
           {NOIR_SWATCHES.map((swatch) => (
-            <div
+            <button
               key={swatch}
+              type="button"
               className="tool-noir-swatch"
               style={{
                 backgroundColor: swatch,
                 outline: color === swatch ? "2px solid var(--cyber-cyan)" : "none",
               }}
               onClick={() => onChangeColor(swatch)}
-              title={swatch}
+              aria-label={swatch}
+              aria-pressed={color === swatch}
             />
           ))}
         </div>
       ) : (
         <>
-          <div className="tool-color" onClick={() => setShowColorPicker(true)}>
+          <button type="button" className="tool-color" onClick={() => setShowColorPicker(true)} aria-label="Pick color">
             <div className="tool-color-selectedcolor" style={{ backgroundColor: color }} />
-            <img src={colorwheelImg} alt="Pick color" title="Pick color" />
-          </div>
+            <img src={colorwheelImg} alt="" aria-hidden="true" />
+          </button>
           <Dialog show={showColorPicker}>
             <ColorPicker handlePickColor={(c) => { onChangeColor(c); setShowColorPicker(false); }} />
           </Dialog>
         </>
       )}
 
-      <div className="tool-button tool-button-done" onClick={onDone}>
-        <img src={checkImg} alt="Done" title="Done" />
-      </div>
+      <button type="button" className="tool-button tool-button-done" onClick={onDone} aria-label="Done">
+        <img src={checkImg} alt="" aria-hidden="true" />
+      </button>
     </div>
   );
 };
@@ -160,16 +168,22 @@ export default DrawTools;
 
 const BrushButton = React.forwardRef(
   (
-    { color, size, onClick }: { color: string; size: number; onClick: () => void },
-    ref?: React.Ref<HTMLDivElement>
+    { color, size, onClick, "aria-label": ariaLabel, "aria-expanded": ariaExpanded }: {
+      color: string; size: number; onClick: () => void;
+      "aria-label"?: string; "aria-expanded"?: boolean;
+    },
+    ref?: React.Ref<HTMLButtonElement>
   ) => (
-    <div
+    <button
+      type="button"
       className="tool-button tool-button-brush"
       onClick={onClick}
       ref={ref}
+      aria-label={ariaLabel}
+      aria-expanded={ariaExpanded}
       style={{ backgroundColor: color === "#FFF" || color === "#ffffff" ? "#333" : "rgba(0,0,20,0.8)" }}
     >
       <div style={{ width: size, height: size, backgroundColor: color, borderRadius: "50%" }} />
-    </div>
+    </button>
   )
 );
