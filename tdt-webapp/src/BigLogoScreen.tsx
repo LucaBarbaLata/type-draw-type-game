@@ -25,14 +25,10 @@ const BigLogoScreen = ({ children }: { children: React.ReactNode }) => {
       <Footer>
         <div>
           <a href="https://github.com/LucaBarbaLata/type-draw-type-game">
-            Heavily modified fork
-          </a>{" "}
-          by{" "}
-          <a href="https://github.com/LucaBarbaLata">lucariki</a>
-          {" · "}
-          <a href="https://github.com/Bronkoknorb/type-draw-type-game">
-            original
+            type-draw-type-game
           </a>
+          {" by "}
+          <a href="https://github.com/LucaBarbaLata">lucariki</a>
         </div>
       </Footer>
     </StyledBigLogoScreen>
