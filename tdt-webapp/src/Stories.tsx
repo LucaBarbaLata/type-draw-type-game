@@ -8,7 +8,7 @@ import NewlineToBreak from "./NewLineToBreak";
 import DrawingReplay from "./replay/DrawingReplay";
 import { EmojiCascade } from "./EmojiCascade";
 
-const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮"];
+const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮", "🤯", "💕"];
 
 const Stories = ({
   stories,
