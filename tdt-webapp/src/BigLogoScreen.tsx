@@ -32,8 +32,7 @@ const BigLogoScreen = ({ children }: { children: React.ReactNode }) => {
           {" · "}
           <a href="https://github.com/Bronkoknorb/type-draw-type-game">
             original
-          </a>{" "}
-          by Hermann Czedik-Eysenberg
+          </a>
         </div>
       </Footer>
     </StyledBigLogoScreen>

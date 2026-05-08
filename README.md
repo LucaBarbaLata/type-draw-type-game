@@ -4,7 +4,7 @@
 
 A multiplayer party game in the spirit of Telephone Pictionary. Players alternate between typing sentences and drawing pictures, each only seeing the previous player's output. By the end, the original sentence has usually transformed into something completely different — and hilarious.
 
-This is a heavily modified fork of [Hermann Czedik-Eysenberg's original](https://github.com/Bronkoknorb/type-draw-type-game).
+This is a heavily modified fork of the [original Type Draw Type game](https://github.com/Bronkoknorb/type-draw-type-game).
 
 ---
 
@@ -162,7 +162,7 @@ Dev server runs at `http://localhost:5173` and proxies `/api` requests to the ba
 
 ## Credits
 
-Original game by **Hermann Czedik-Eysenberg** — [github.com/Bronkoknorb](https://github.com/Bronkoknorb)
+Original game — [github.com/Bronkoknorb](https://github.com/Bronkoknorb)
 
 Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI, full drawing toolset (fill, shapes, undo/redo), drawing timelapse replay, synthesized audio engine, QR code lobby, round timer, spectator mode, story PNG export, interactive how-to guide, auto-reconnect, canvas progress caching, and nine game modes (One-Word, Shaky Hands, Blind Draw, Telephone Noir, Opposite, Fog of War, Hot Canvas, Team Mode).
 
