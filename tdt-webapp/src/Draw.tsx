@@ -304,14 +304,19 @@ const SpectatorBadge = styled.div`
   backdrop-filter: blur(4px);
 `;
 
-const notifSlideIn = keyframes`
-  from { transform: translateX(calc(100% + 20px)); opacity: 0; }
-  to   { transform: translateX(0);                 opacity: 1; }
+const notifIn = keyframes`
+  from { transform: translateX(calc(100% + 24px)) scaleY(0.88); opacity: 0; }
+  to   { transform: translateX(0)                  scaleY(1);    opacity: 1; }
 `;
 
-const notifSlideOut = keyframes`
-  from { transform: translateX(0);                 opacity: 1; }
-  to   { transform: translateX(calc(100% + 20px)); opacity: 0; }
+const notifOut = keyframes`
+  from { transform: translateX(0)                  scaleY(1);    opacity: 1; }
+  to   { transform: translateX(calc(100% + 24px)) scaleY(0.88); opacity: 0; }
+`;
+
+const drainBar = keyframes`
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
 `;
 
 const NotifStack = styled.div`
@@ -327,35 +332,53 @@ const NotifStack = styled.div`
 `;
 
 const NotifCard = styled.div<{ $exiting: boolean }>`
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px 10px 10px;
-  background: rgba(14, 14, 32, 0.96);
-  border: 1px solid rgba(0, 245, 255, 0.22);
-  border-radius: 20px;
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.65), 0 0 14px rgba(0, 245, 255, 0.07);
-  backdrop-filter: blur(18px);
+  gap: 13px;
+  padding: 10px 16px 14px 11px;
+  width: 300px;
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(18, 14, 38, 0.98) 0%, rgba(10, 10, 24, 0.98) 100%);
+  border: 1px solid rgba(0, 245, 255, 0.28);
+  border-radius: 18px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.72),
+    0 0 0 0.5px rgba(0, 245, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 20px rgba(0, 245, 255, 0.05);
+  backdrop-filter: blur(24px);
   cursor: pointer;
   user-select: none;
-  width: 300px;
   animation: ${({ $exiting }) =>
     $exiting
-      ? css`${notifSlideOut} 0.3s ease-in forwards`
-      : css`${notifSlideIn} 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) forwards`};
+      ? css`${notifOut} 0.28s cubic-bezier(0.4, 0, 1, 1) forwards`
+      : css`${notifIn} 0.36s cubic-bezier(0.22, 1.4, 0.36, 1) forwards`};
+
+  &:hover {
+    border-color: rgba(0, 245, 255, 0.45);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.72),
+      0 0 0 0.5px rgba(0, 245, 255, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 28px rgba(0, 245, 255, 0.1);
+  }
 `;
 
-const NotifAvatar = styled.div`
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
-  background: rgba(0, 245, 255, 0.07);
-  border: 1px solid rgba(0, 245, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.7em;
+const NotifFace = styled.div`
+  font-family: "TheFreakyFace";
+  font-size: 30px;
+  border: 1.5px solid var(--cyber-magenta);
+  border-radius: 50%;
+  background-color: rgba(255, 32, 121, 0.07);
+  width: 42px;
+  height: 42px;
+  line-height: 37px;
+  text-align: center;
+  overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(255, 32, 121, 0.35), inset 0 0 8px rgba(255, 32, 121, 0.07);
+  color: var(--cyber-magenta);
 `;
 
 const NotifBody = styled.div`
@@ -364,20 +387,35 @@ const NotifBody = styled.div`
 `;
 
 const NotifName = styled.div`
-  color: #e8eaff;
+  color: #f0f0ff;
   font-weight: 700;
-  font-size: 0.95em;
+  font-size: 0.92em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.01em;
+  line-height: 1.2;
 `;
 
 const NotifSub = styled.div`
-  color: rgba(0, 245, 255, 0.7);
-  font-size: 0.82em;
+  color: rgba(0, 245, 255, 0.65);
+  font-size: 0.78em;
   margin-top: 3px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+`;
+
+const NotifBar = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--cyber-cyan), rgba(0, 245, 255, 0.4));
+  border-radius: 0 0 18px 18px;
+  transform-origin: left center;
+  animation: ${drainBar} 3s linear forwards;
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
 `;
 
 const FinishedNotification = ({
@@ -396,17 +434,18 @@ const FinishedNotification = ({
 
   React.useEffect(() => {
     if (!exiting) return;
-    const t = setTimeout(onDone, 310);
+    const t = setTimeout(onDone, 290);
     return () => clearTimeout(t);
   }, [exiting, onDone]);
 
   return (
     <NotifCard $exiting={exiting} onClick={() => !exiting && setExiting(true)}>
-      <NotifAvatar>{player.face}</NotifAvatar>
+      <NotifFace>{player.face}</NotifFace>
       <NotifBody>
         <NotifName>{player.name}</NotifName>
-        <NotifSub>✏️ finished drawing!</NotifSub>
+        <NotifSub>finished drawing ✓</NotifSub>
       </NotifBody>
+      {!exiting && <NotifBar />}
     </NotifCard>
   );
 };
