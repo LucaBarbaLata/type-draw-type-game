@@ -94,8 +94,8 @@ export const WaitForPlayersScreen = ({
       "Think you can out-draw me? Type Draw Type — join up!",
     ];
     const text = messages[Math.floor(Math.random() * messages.length)];
-    if ("share" in navigator) {
-      try { await (navigator as Navigator & { share: (d: object) => Promise<void> }).share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
+    if ((navigator as any).share) {
+      try { await (navigator as any).share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(link);
@@ -359,7 +359,7 @@ export const WaitForPlayersScreen = ({
             </QRBlock>
             <QRActions>
               <QRActionBtn onClick={handleShare}>
-                {copied ? "✓ Copied!" : ("share" in navigator ? "Share" : "Copy Link")}
+                {copied ? "✓ Copied!" : ((navigator as any).share ? "Share" : "Copy Link")}
               </QRActionBtn>
               <QRActionBtn onClick={handleDownloadCard}>↓ Card</QRActionBtn>
             </QRActions>
