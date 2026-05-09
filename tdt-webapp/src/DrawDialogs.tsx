@@ -82,7 +82,6 @@ export const DrawHelpDialog = ({
   gameMode?: GameMode;
   handleClose: () => void;
 }) => {
-  const isOpposite = gameMode === "OPPOSITE";
   return (
     <Dialog show={show}>
       <Scrollable>
@@ -94,14 +93,7 @@ export const DrawHelpDialog = ({
             <h1>
               <img src={drawImg} alt="Draw" />
             </h1>
-            {isOpposite ? (
-              <div>
-                <OppositeBadge>Draw the OPPOSITE of</OppositeBadge>
-                <div>... this text by {textWriter.name}:</div>
-              </div>
-            ) : (
-              <div>... this text by {textWriter.name}:</div>
-            )}
+            <div>... this text by {textWriter.name}:</div>
           </div>
           <Text>{NewlineToBreak(text)}</Text>
           <button className="button" onClick={handleClose}>
@@ -113,18 +105,6 @@ export const DrawHelpDialog = ({
   );
 };
 
-const OppositeBadge = styled.div`
-  display: inline-block;
-  color: var(--cyber-cyan);
-  text-shadow: var(--cyber-glow);
-  font-weight: 700;
-  font-size: 0.85em;
-  letter-spacing: 0.06em;
-  border: 1.5px solid var(--cyber-cyan);
-  border-radius: 100px;
-  padding: 0.2em 0.8em;
-  margin-bottom: 0.4em;
-`;
 
 const Text = styled.div`
   border-radius: 2vmin;

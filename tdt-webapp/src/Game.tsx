@@ -39,7 +39,7 @@ import SpectatorView from "./SpectatorView";
 import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 import { useAudio } from "./audio/useAudio";
-import Chat, { ChatMessage } from "./Chat";
+import { type ChatMessage } from "./Chat";
 
 interface PlayerState {
   state: string;
