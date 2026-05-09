@@ -94,8 +94,8 @@ export const WaitForPlayersScreen = ({
       "Think you can out-draw me? Type Draw Type — join up!",
     ];
     const text = messages[Math.floor(Math.random() * messages.length)];
-    if (navigator.share) {
-      try { await navigator.share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
+    if ("share" in navigator) {
+      try { await (navigator as Navigator & { share: (d: object) => Promise<void> }).share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(link);
@@ -137,6 +137,16 @@ export const WaitForPlayersScreen = ({
     c.height = H * dpr;
     const ctx = c.getContext("2d")!;
     ctx.scale(dpr, dpr);
+
+    const rrect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    };
 
     // ── LEFT PANEL (dark navy) ───────────────────────────────────
     ctx.fillStyle = "#060a1a";
@@ -349,7 +359,7 @@ export const WaitForPlayersScreen = ({
             </QRBlock>
             <QRActions>
               <QRActionBtn onClick={handleShare}>
-                {copied ? "✓ Copied!" : (navigator.share ? "Share" : "Copy Link")}
+                {copied ? "✓ Copied!" : ("share" in navigator ? "Share" : "Copy Link")}
               </QRActionBtn>
               <QRActionBtn onClick={handleDownloadCard}>↓ Card</QRActionBtn>
             </QRActions>
