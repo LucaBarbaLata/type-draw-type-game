@@ -336,8 +336,9 @@ const NotifCard = styled.div<{ $exiting: boolean }>`
   display: flex;
   align-items: center;
   gap: 13px;
-  padding: 10px 16px 14px 11px;
-  width: 300px;
+  padding: 10px 18px 14px 12px;
+  width: 370px;
+  font-size: 15px;
   overflow: hidden;
   background: linear-gradient(150deg, rgba(18, 14, 38, 0.98) 0%, rgba(10, 10, 24, 0.98) 100%);
   border: 1px solid rgba(0, 245, 255, 0.28);
@@ -367,13 +368,13 @@ const NotifCard = styled.div<{ $exiting: boolean }>`
 
 const NotifFace = styled.div`
   font-family: "TheFreakyFace";
-  font-size: 30px;
+  font-size: 50px;
   border: 1.5px solid var(--cyber-magenta);
   border-radius: 50%;
   background-color: rgba(255, 32, 121, 0.07);
-  width: 42px;
-  height: 42px;
-  line-height: 37px;
+  width: 40px;
+  height: 40px;
+  line-height: 35px;
   text-align: center;
   overflow: hidden;
   flex-shrink: 0;
@@ -389,20 +390,20 @@ const NotifBody = styled.div`
 const NotifName = styled.div`
   color: #f0f0ff;
   font-weight: 700;
-  font-size: 0.92em;
+  font-size: 1em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.01em;
-  line-height: 1.2;
+  line-height: 1.25;
 `;
 
 const NotifSub = styled.div`
   color: rgba(0, 245, 255, 0.65);
-  font-size: 0.78em;
+  font-size: 0.85em;
   margin-top: 3px;
   letter-spacing: 0.03em;
-  line-height: 1.2;
+  line-height: 1.25;
 `;
 
 const NotifBar = styled.div`
@@ -443,7 +444,7 @@ const FinishedNotification = ({
       <NotifFace>{player.face}</NotifFace>
       <NotifBody>
         <NotifName>{player.name}</NotifName>
-        <NotifSub>finished drawing ✓</NotifSub>
+        <NotifSub>finished drawing</NotifSub>
       </NotifBody>
       {!exiting && <NotifBar />}
     </NotifCard>
