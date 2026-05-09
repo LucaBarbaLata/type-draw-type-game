@@ -11,6 +11,13 @@ const urgentBeat = keyframes`
   50%       { transform: scale(1.08); box-shadow: 0 0 26px #ff2079, 0 0 55px rgba(255,32,121,0.55), inset 0 0 10px rgba(255,32,121,0.1); }
 `;
 
+const warnBeat = keyframes`
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px #f7c800, 0 0 25px rgba(247,200,0,0.25); }
+  50%       { transform: scale(1.04); box-shadow: 0 0 20px #f7c800, 0 0 40px rgba(247,200,0,0.4); }
+`;
+
+type TimerLevel = "normal" | "warn" | "urgent";
+
 const RoundTimer = ({
   seconds,
   onExpire,
@@ -53,10 +60,10 @@ const RoundTimer = ({
     return () => clearTimeout(id);
   }, [remaining]);
 
-  const urgent = remaining <= 10;
+  const level: TimerLevel = remaining <= 10 ? "urgent" : remaining <= 30 ? "warn" : "normal";
 
   return (
-    <TimerContainer urgent={urgent}>
+    <TimerContainer level={level}>
       ⏱ {remaining}s
     </TimerContainer>
   );
@@ -64,20 +71,26 @@ const RoundTimer = ({
 
 export default RoundTimer;
 
-const TimerContainer = styled.div<{ urgent: boolean }>`
+const TimerContainer = styled.div<{ level: TimerLevel }>`
   position: fixed;
   top: 2vmin;
   right: 2vmin;
   background: rgba(8, 8, 24, 0.9);
-  border: 1.5px solid ${({ urgent }) => (urgent ? "#ff2079" : "#00f5ff")};
-  color: ${({ urgent }) => (urgent ? "#ff2079" : "#00f5ff")};
-  text-shadow: ${({ urgent }) =>
-    urgent
+  border: 1.5px solid ${({ level }) =>
+    level === "urgent" ? "#ff2079" : level === "warn" ? "#f7c800" : "#00f5ff"};
+  color: ${({ level }) =>
+    level === "urgent" ? "#ff2079" : level === "warn" ? "#f7c800" : "#00f5ff"};
+  text-shadow: ${({ level }) =>
+    level === "urgent"
       ? "0 0 8px #ff2079, 0 0 20px rgba(255,32,121,0.4)"
+      : level === "warn"
+      ? "0 0 8px #f7c800, 0 0 20px rgba(247,200,0,0.4)"
       : "0 0 8px #00f5ff, 0 0 20px rgba(0,245,255,0.4)"};
-  box-shadow: ${({ urgent }) =>
-    urgent
+  box-shadow: ${({ level }) =>
+    level === "urgent"
       ? "0 0 10px #ff2079, 0 0 25px rgba(255,32,121,0.25)"
+      : level === "warn"
+      ? "0 0 10px #f7c800, 0 0 25px rgba(247,200,0,0.25)"
       : "0 0 10px #00f5ff, 0 0 25px rgba(0,245,255,0.25)"};
   padding: 1vmin 2vmin;
   border-radius: 0.6vmin;
@@ -89,7 +102,10 @@ const TimerContainer = styled.div<{ urgent: boolean }>`
   pointer-events: none;
   backdrop-filter: blur(4px);
   animation: ${timerIn} 0.4s ease-out;
-  ${({ urgent }) => urgent && css`
+  ${({ level }) => level === "urgent" && css`
     animation: ${timerIn} 0.4s ease-out, ${urgentBeat} 0.65s ease-in-out infinite;
+  `}
+  ${({ level }) => level === "warn" && css`
+    animation: ${timerIn} 0.4s ease-out, ${warnBeat} 1.2s ease-in-out infinite;
   `}
 `;

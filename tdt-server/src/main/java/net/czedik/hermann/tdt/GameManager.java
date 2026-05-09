@@ -219,6 +219,23 @@ public class GameManager {
         }
     }
 
+    public net.czedik.hermann.tdt.playerstate.FrontendStory[] getFinishedGameStories(String gameId) {
+        try {
+            validateGameId(gameId);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        GameRef gameRef = getGameRef(gameId);
+        try {
+            return gameRef.useGame(game -> {
+                if (game == null) return null;
+                return game.getFinishedStoriesForGallery();
+            });
+        } finally {
+            closeGameRef(gameRef);
+        }
+    }
+
     public void clientDisconnected(Client client) {
         GameRef gameRef;
         synchronized (this) {

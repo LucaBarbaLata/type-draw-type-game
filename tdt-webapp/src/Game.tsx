@@ -548,9 +548,6 @@ const Game = () => {
         <WaitForRoundFinished
           isTypeRound={playerState.isTypeRound}
           waitingForPlayers={playerState.waitingForPlayers}
-          roundChatMessages={playerState.roundChatMessages ?? []}
-          chatEnabled={playerState.chatEnabled ?? true}
-          onSendRoundChat={sendRoundChat}
         />
       );
     } else if (isStoriesState(playerState)) {
@@ -569,6 +566,7 @@ const Game = () => {
           onLikeDrawing={handleLikeDrawing}
           onRematch={handleRematch}
           onMainMenu={() => navigate("/")}
+          onViewGallery={() => navigate(`/g/${gameIdNotNull}/gallery`)}
           rematchVoters={playerState.rematchVoters}
           totalPlayers={playerState.totalPlayers}
         />
@@ -660,15 +658,9 @@ export default Game;
 const WaitForRoundFinished = ({
   isTypeRound,
   waitingForPlayers,
-  roundChatMessages,
-  chatEnabled,
-  onSendRoundChat,
 }: {
   isTypeRound: boolean;
   waitingForPlayers: PlayerInfo[];
-  roundChatMessages: ChatMessage[];
-  chatEnabled: boolean;
-  onSendRoundChat: (text: string) => void;
 }) => {
   const roundAction = isTypeRound ? "typing" : "drawing";
   const waitingForPlayersText = waitingForPlayers.map((p) => p.name).join(", ");
@@ -680,9 +672,6 @@ const WaitForRoundFinished = ({
         <br />
         {waitingForPlayersText}
       </WaitMessage>
-      <WaitChatContainer>
-        <Chat enabled={chatEnabled} messages={roundChatMessages} onSend={onSendRoundChat} />
-      </WaitChatContainer>
     </BigLogoScreen>
   );
 };
@@ -690,11 +679,6 @@ const WaitForRoundFinished = ({
 const WaitMessage = styled.div`
   margin-bottom: 2vmin;
   animation: ${fadeUp} 0.4s ease-out;
-`;
-
-const WaitChatContainer = styled.div`
-  width: min(480px, 90vw);
-  align-self: center;
 `;
 
 const GameFinished = ({
@@ -705,6 +689,7 @@ const GameFinished = ({
   onLikeDrawing,
   onRematch,
   onMainMenu,
+  onViewGallery,
   rematchVoters,
   totalPlayers,
 }: {
@@ -715,6 +700,7 @@ const GameFinished = ({
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
   onRematch?: () => void;
   onMainMenu?: () => void;
+  onViewGallery?: () => void;
   rematchVoters?: PlayerInfo[];
   totalPlayers?: number;
 }) => {
@@ -736,6 +722,7 @@ const GameFinished = ({
         onLikeDrawing={onLikeDrawing}
         onRematch={onRematch}
         onMainMenu={onMainMenu}
+        onViewGallery={onViewGallery}
         rematchVoters={rematchVoters}
         totalPlayers={totalPlayers}
       />

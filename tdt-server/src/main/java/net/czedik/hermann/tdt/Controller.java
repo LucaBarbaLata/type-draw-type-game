@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api")
@@ -55,6 +56,15 @@ public class Controller {
         try (InputStream in = Files.newInputStream(imagePath)) {
             StreamUtils.copy(in, response.getOutputStream());
         }
+    }
+
+    @GetMapping(path = "/stories/{gameId:\\w+}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<net.czedik.hermann.tdt.playerstate.FrontendStory[]> getStories(@PathVariable String gameId) {
+        var stories = gameManager.getFinishedGameStories(gameId);
+        if (stories == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(stories);
     }
 
     @GetMapping(path = "/replay/{gameId:\\w+}/{replayId:[\\w\\-]+}")

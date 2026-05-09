@@ -16,6 +16,7 @@ const Stories = ({
   onLikeDrawing,
   onRematch,
   onMainMenu,
+  onViewGallery,
   rematchVoters,
   totalPlayers,
 }: {
@@ -24,6 +25,7 @@ const Stories = ({
   onLikeDrawing?: (storyIndex: number, elementIndex: number, reaction: string) => void;
   onRematch?: () => void;
   onMainMenu?: () => void;
+  onViewGallery?: () => void;
   rematchVoters?: PlayerInfo[];
   totalPlayers?: number;
 }) => {
@@ -136,15 +138,25 @@ const Stories = ({
         </RevealControls>
       )}
       {allRevealed && (
-        <ExportButton onClick={() => exportStory(currentStory, selectedStory)}>
-          ↓ Download story as image
-        </ExportButton>
+        <ExportRow>
+          <ExportButton onClick={() => exportStory(currentStory, selectedStory)}>
+            ↓ Download story
+          </ExportButton>
+          <ExportButton onClick={() => exportStoryStrip(currentStory, selectedStory)}>
+            ↔ Share strip
+          </ExportButton>
+        </ExportRow>
       )}
       {navButtons}
       <EndButtons>
         {onMainMenu && (
           <button className="button" onClick={onMainMenu}>
             ⌂ Main Menu
+          </button>
+        )}
+        {onViewGallery && (
+          <button className="button" onClick={onViewGallery}>
+            📖 Gallery
           </button>
         )}
         {onRematch && (
@@ -329,6 +341,112 @@ async function exportStory(story: StoryContent, storyIndex: number) {
   }, "image/png");
 }
 
+async function exportStoryStrip(story: StoryContent, storyIndex: number) {
+  const PANEL_W = 400;
+  const PANEL_H = 500;
+  const PAD = 24;
+  const HEADER_H = 40;
+  const GAP = 2;
+
+  const imageMap = new Map<string, HTMLImageElement>();
+  await Promise.all(
+    story.elements
+      .filter((e) => e.type === "image")
+      .map(
+        (e) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => { imageMap.set(e.content, img); resolve(); };
+            img.onerror = () => resolve();
+            img.src = e.content;
+          })
+      )
+  );
+
+  const n = story.elements.length;
+  const W = n * PANEL_W + (n - 1) * GAP;
+  const H = PANEL_H;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.fillStyle = "#080818";
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < story.elements.length; i++) {
+    const e = story.elements[i];
+    const x = i * (PANEL_W + GAP);
+
+    // Panel background
+    ctx.fillStyle = i % 2 === 0 ? "rgba(0,245,255,0.04)" : "rgba(255,32,121,0.04)";
+    ctx.fillRect(x, 0, PANEL_W, H);
+
+    // Panel border
+    ctx.strokeStyle = i % 2 === 0 ? "rgba(0,245,255,0.35)" : "rgba(255,32,121,0.35)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, 0.5, PANEL_W - 1, H - 1);
+
+    // Player name
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillStyle = i % 2 === 0 ? "#00f5ff" : "#ff2079";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 6;
+    ctx.textAlign = "left";
+    ctx.fillText(
+      `${e.player.face} ${e.player.name} ${e.type === "text" ? "typed:" : "drew:"}`,
+      x + PAD, 28
+    );
+    ctx.shadowBlur = 0;
+
+    if (e.type === "image") {
+      const img = imageMap.get(e.content);
+      if (img) {
+        const drawH = H - HEADER_H - PAD;
+        const drawW = PANEL_W - PAD * 2;
+        const ratio = Math.min(drawW / img.width, drawH / img.height);
+        const rw = img.width * ratio;
+        const rh = img.height * ratio;
+        const ix = x + PAD + (drawW - rw) / 2;
+        const iy = HEADER_H + (drawH - rh) / 2;
+        ctx.drawImage(img, ix, iy, rw, rh);
+      }
+    } else {
+      ctx.font = "15px 'Courier New', monospace";
+      ctx.fillStyle = "#c8d8f0";
+      ctx.textAlign = "center";
+      const words = e.content.split(" ");
+      const maxW = PANEL_W - PAD * 2;
+      const lines: string[] = [];
+      let line = "";
+      for (const word of words) {
+        const test = line ? line + " " + word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      lines.push(line);
+      const totalTextH = lines.length * 22;
+      const startY = HEADER_H + (H - HEADER_H - totalTextH) / 2;
+      lines.forEach((l, li) => ctx.fillText(l, x + PANEL_W / 2, startY + li * 22 + 15));
+    }
+  }
+
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `story-${storyIndex + 1}-strip.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -357,6 +475,14 @@ const RematchVoteStatus = styled.div`
   margin-bottom: 2vmin;
 `;
 
+
+const ExportRow = styled.div`
+  display: flex;
+  gap: 1.5vmin;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2vmin 0;
+`;
 
 const ExportButton = styled.button`
   background: none;

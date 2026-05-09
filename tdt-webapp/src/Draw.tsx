@@ -25,9 +25,9 @@ function getBrushes(_scale: number): Brush[] {
 
 const REPLAY_MAX_FRAMES = 80;
 const REPLAY_THROTTLE_MS = 150;
-const REPLAY_THUMB_WIDTH = 360;
-const REPLAY_THUMB_HEIGHT = 270;
-const REPLAY_JPEG_QUALITY = 0.35;
+const REPLAY_THUMB_WIDTH = 540;
+const REPLAY_THUMB_HEIGHT = 405;
+const REPLAY_JPEG_QUALITY = 0.6;
 
 const Draw = ({
   text,

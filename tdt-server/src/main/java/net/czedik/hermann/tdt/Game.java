@@ -434,6 +434,13 @@ public class Game {
         }
     }
 
+    public FrontendStory[] getFinishedStoriesForGallery() {
+        if (gameState.state != GameState.State.Finished) return null;
+        return gameState.gameMode == GameMode.HOT_POTATO
+                ? mapHotPotatoStoriesToFrontendStories()
+                : mapStoriesToFrontendStories();
+    }
+
     private PlayerState getFinishedState() {
         int[] votesByStory = computeVotesByStory();
         FrontendStory[] frontendStories = gameState.gameMode == GameMode.HOT_POTATO

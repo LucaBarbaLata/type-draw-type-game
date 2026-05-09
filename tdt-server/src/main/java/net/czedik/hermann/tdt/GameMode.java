@@ -6,7 +6,6 @@ public enum GameMode {
     SHAKY_HANDS,
     BLIND_DRAW,
     TELEPHONE_NOIR,
-    OPPOSITE,
     FOG_OF_WAR,
     HOT_POTATO,
     TEAM

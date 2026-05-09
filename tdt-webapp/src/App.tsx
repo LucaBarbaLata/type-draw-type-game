@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import Home from "./Home";
 import Game from "./Game";
+import Gallery from "./Gallery";
 import ServerBrowser from "./ServerBrowser";
 import { Create, JoinWithCode } from "./CreateOrJoin";
 
@@ -30,6 +31,7 @@ const App = () => {
         <Route path="/join" element={<JoinWithCode />} />
         <Route path="/new" element={<Create />} />
         <Route path="/g/:gameId" element={<Game />} />
+        <Route path="/g/:gameId/gallery" element={<Gallery />} />
         <Route path="/server-browser" element={<ServerBrowser />} />
         <Route path="*" element={<Home />} />
       </Routes>
