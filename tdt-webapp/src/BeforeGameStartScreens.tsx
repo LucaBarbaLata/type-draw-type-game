@@ -77,10 +77,26 @@ export const WaitForPlayersScreen = ({
   };
 
   const [copied, setCopied] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
 
   const minPlayers = localGameMode === "TEAM" ? 4 : 2;
   const buttonDisabled = players.length < minPlayers;
   const link = window.location.toString();
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch { /* fall through to execCommand */ }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand("copy"); } catch { /* no-op */ }
+    document.body.removeChild(ta);
+  };
 
   const handleShare = async () => {
     const messages = [
@@ -97,15 +113,14 @@ export const WaitForPlayersScreen = ({
     if ((navigator as any).share) {
       try { await (navigator as any).share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
     } else {
-      try {
-        await navigator.clipboard.writeText(link);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch { /* no-op */ }
+      await copyToClipboard(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   const handleDownloadCard = async () => {
+    setDownloading(true);
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
     const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
@@ -114,7 +129,7 @@ export const WaitForPlayersScreen = ({
     tempEl.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
     document.body.appendChild(tempEl);
     const cardQr = new QRCodeStyling({
-      width: 260, height: 260, type: "canvas",
+      width: 240, height: 240, type: "canvas",
       data: link,
       qrOptions: { errorCorrectionLevel: "M" },
       dotsOptions: { color: "#00f5ff", type: "square" },
@@ -130,7 +145,7 @@ export const WaitForPlayersScreen = ({
     const W = 900;
     const H = 400;
     const dpr = 2;
-    const splitX = 576;   // dark panel | light panel
+    const splitX = 552;   // dark panel | light panel
 
     const c = document.createElement("canvas");
     c.width = W * dpr;
@@ -194,20 +209,20 @@ export const WaitForPlayersScreen = ({
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
     ctx.fillStyle = "rgba(0,245,255,0.4)";
-    ctx.fillText("GAME  CODE", splitX / 2, 114);
+    ctx.fillText("GAME  CODE", splitX / 2, 138);
 
     // Game code — large, glowing
-    ctx.font = "bold 54px 'Courier New', monospace";
+    ctx.font = "bold 44px 'Courier New', monospace";
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "#00f5ff";
-    ctx.shadowBlur = 24;
-    ctx.fillText(gameId.split("").join("  "), splitX / 2, 170);
+    ctx.shadowBlur = 20;
+    ctx.fillText(gameId.split("").join("  "), splitX / 2, 186);
     ctx.shadowBlur = 0;
 
     // Separator
     ctx.strokeStyle = "rgba(0,245,255,0.18)";
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(28, 196); ctx.lineTo(splitX - 28, 196); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(28, 214); ctx.lineTo(splitX - 28, 214); ctx.stroke();
 
     // Stats row (HOST / PLAYERS / MODE)
     const stats = [
@@ -221,31 +236,31 @@ export const WaitForPlayersScreen = ({
       ctx.textAlign = "center";
       ctx.font = "10px 'Courier New', monospace";
       ctx.fillStyle = "rgba(0,245,255,0.4)";
-      ctx.fillText(stat.label, x, 218);
+      ctx.fillText(stat.label, x, 238);
       ctx.font = "bold 13px 'Courier New', monospace";
       ctx.fillStyle = "#00f5ff";
-      ctx.fillText(stat.value, x, 236);
+      ctx.fillText(stat.value, x, 256);
     });
 
     // Stat column dividers
     ctx.strokeStyle = "rgba(0,245,255,0.15)";
     [colW, colW * 2].forEach((x) => {
       ctx.beginPath();
-      ctx.moveTo(x, 208);
-      ctx.lineTo(x, 242);
+      ctx.moveTo(x, 228);
+      ctx.lineTo(x, 262);
       ctx.stroke();
     });
 
     // Separator
     ctx.strokeStyle = "rgba(0,245,255,0.18)";
-    ctx.beginPath(); ctx.moveTo(28, 256); ctx.lineTo(splitX - 28, 256); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(28, 278); ctx.lineTo(splitX - 28, 278); ctx.stroke();
 
     // URL
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
     ctx.fillStyle = "rgba(100,136,170,0.6)";
     const urlText = link.length > 60 ? link.slice(0, 57) + "…" : link;
-    ctx.fillText(urlText, splitX / 2, 278);
+    ctx.fillText(urlText, splitX / 2, 302);
 
     // ── PERFORATED DIVIDER ───────────────────────────────────────
     ctx.setLineDash([3, 9]);
@@ -273,7 +288,7 @@ export const WaitForPlayersScreen = ({
 
     // QR dark container — centered in right panel, matches left-panel aesthetic
     const rightW = W - splitX;
-    const qrContainerSize = 280;
+    const qrContainerSize = 252;
     const qrContainerX = splitX + Math.round((rightW - qrContainerSize) / 2);
     const qrContainerY = Math.round((H - qrContainerSize) / 2) - 10;
     const qrContainerR = 14;
@@ -322,6 +337,7 @@ export const WaitForPlayersScreen = ({
     a.href = url;
     a.download = `tdt-${gameId}.png`;
     a.click();
+    setDownloading(false);
   };
 
   return (
@@ -361,7 +377,9 @@ export const WaitForPlayersScreen = ({
               <QRActionBtn onClick={handleShare}>
                 {copied ? "✓ Copied!" : ((navigator as any).share ? "Share" : "Copy Link")}
               </QRActionBtn>
-              <QRActionBtn onClick={handleDownloadCard}>↓ Card</QRActionBtn>
+              <QRActionBtn onClick={handleDownloadCard} disabled={downloading}>
+                {downloading ? "Building..." : "↓ Card"}
+              </QRActionBtn>
             </QRActions>
           </QRWrapper>
         </InviteSection>
@@ -751,10 +769,15 @@ const QRActionBtn = styled.button`
   font-family: inherit;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(0, 245, 255, 0.13);
     border-color: rgba(0, 245, 255, 0.75);
     box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 `;
 
