@@ -43,7 +43,7 @@ const CustomQRCode: React.FC<Props> = ({ value, size, bgColor, fgColor }) => {
     qrRef.current?.update({ data: value });
   }, [value]);
 
-  return <div ref={containerRef} />;
+  return <div ref={containerRef} style={{ display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 0 }} />;
 };
 
 export default CustomQRCode;
