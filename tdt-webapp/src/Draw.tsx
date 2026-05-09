@@ -329,26 +329,32 @@ const NotifStack = styled.div`
 const NotifCard = styled.div<{ $exiting: boolean }>`
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(8, 8, 24, 0.93);
-  border: 1.5px solid rgba(0, 245, 255, 0.45);
-  border-radius: 10px;
-  box-shadow: 0 0 18px rgba(0, 245, 255, 0.12), 0 4px 14px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(10px);
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  background: rgba(14, 14, 32, 0.96);
+  border: 1px solid rgba(0, 245, 255, 0.22);
+  border-radius: 20px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.65), 0 0 14px rgba(0, 245, 255, 0.07);
+  backdrop-filter: blur(18px);
   cursor: pointer;
   user-select: none;
-  min-width: 190px;
-  max-width: 270px;
+  width: 300px;
   animation: ${({ $exiting }) =>
     $exiting
       ? css`${notifSlideOut} 0.3s ease-in forwards`
       : css`${notifSlideIn} 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) forwards`};
 `;
 
-const NotifFace = styled.div`
-  font-size: 2em;
-  line-height: 1;
+const NotifAvatar = styled.div`
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: rgba(0, 245, 255, 0.07);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7em;
   flex-shrink: 0;
 `;
 
@@ -358,19 +364,20 @@ const NotifBody = styled.div`
 `;
 
 const NotifName = styled.div`
-  color: #00f5ff;
+  color: #e8eaff;
   font-weight: 700;
-  font-size: 1em;
-  text-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+  font-size: 0.95em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 `;
 
 const NotifSub = styled.div`
-  color: rgba(190, 190, 230, 0.8);
+  color: rgba(0, 245, 255, 0.7);
   font-size: 0.82em;
-  margin-top: 2px;
+  margin-top: 3px;
+  letter-spacing: 0.02em;
 `;
 
 const FinishedNotification = ({
@@ -395,10 +402,10 @@ const FinishedNotification = ({
 
   return (
     <NotifCard $exiting={exiting} onClick={() => !exiting && setExiting(true)}>
-      <NotifFace>{player.face}</NotifFace>
+      <NotifAvatar>{player.face}</NotifAvatar>
       <NotifBody>
         <NotifName>{player.name}</NotifName>
-        <NotifSub>finished drawing!</NotifSub>
+        <NotifSub>✏️ finished drawing!</NotifSub>
       </NotifBody>
     </NotifCard>
   );
