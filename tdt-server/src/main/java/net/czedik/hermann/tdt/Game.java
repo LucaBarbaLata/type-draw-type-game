@@ -623,9 +623,13 @@ public class Game {
                 }
             }
         }
+        List<PlayerInfo> finishedPlayers = gameState.players.stream()
+                .filter(p -> !p.equals(player) && getCurrentStoryForPlayer(p).elements[gameState.round] != null)
+                .map(Game::mapPlayerToPlayerInfo)
+                .collect(Collectors.toList());
         return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
                 mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner,
-                spectatorClients.size());
+                spectatorClients.size(), finishedPlayers);
     }
 
     private PlayerState getTypeState(Player player) {

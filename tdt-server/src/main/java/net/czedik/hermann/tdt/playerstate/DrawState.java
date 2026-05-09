@@ -1,5 +1,6 @@
 package net.czedik.hermann.tdt.playerstate;
 
+import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -16,6 +17,7 @@ import net.czedik.hermann.tdt.PlayerInfo;
  * @param roundTimerSeconds seconds allowed per round, 0 means no timer
  * @param gameMode          the active game mode
  * @param teamPartner       team partner info (only set in TEAM mode)
+ * @param finishedPlayers   players who have already submitted their drawing this round
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DrawState(
@@ -26,14 +28,15 @@ public record DrawState(
         int roundTimerSeconds,
         GameMode gameMode,
         PlayerInfo teamPartner,
-        int spectatorCount) implements PlayerState {
+        int spectatorCount,
+        List<PlayerInfo> finishedPlayers) implements PlayerState {
 
     public DrawState {
         if (round < 1)
             throw new IllegalArgumentException("Round must be positive number");
         Objects.requireNonNull(text);
         Objects.requireNonNull(textWriter);
-        // teamPartner is nullable
+        // teamPartner and finishedPlayers are nullable
     }
 
     @Override

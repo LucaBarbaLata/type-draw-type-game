@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
@@ -29,6 +29,11 @@ const REPLAY_THUMB_WIDTH = 540;
 const REPLAY_THUMB_HEIGHT = 405;
 const REPLAY_JPEG_QUALITY = 0.6;
 
+interface DrawNotif {
+  id: number;
+  player: PlayerInfo;
+}
+
 const Draw = ({
   text,
   textWriter,
@@ -50,6 +55,7 @@ const Draw = ({
   partnerCursor,
   imageProviderRef: imageProviderRefProp,
   spectatorCount,
+  finishedPlayers,
 }: {
   text: string;
   textWriter: PlayerInfo;
@@ -71,6 +77,7 @@ const Draw = ({
   partnerCursor?: { x: number; y: number; name: string } | null;
   imageProviderRef?: React.MutableRefObject<ImageProvider | undefined>;
   spectatorCount?: number;
+  finishedPlayers?: PlayerInfo[];
 }) => {
   const isHotPotato = gameMode === "HOT_POTATO";
   const [cachedImageUrl] = React.useState<string | undefined>(() =>
@@ -103,6 +110,30 @@ const Draw = ({
   const lastSnapshotTimeRef = React.useRef<number>(0);
   const lastSpectatorSnapshotTimeRef = React.useRef<number>(0);
   const SPECTATOR_SNAPSHOT_THROTTLE_MS = 500;
+
+  const [notifications, setNotifications] = React.useState<DrawNotif[]>([]);
+  const notifIdRef = React.useRef(0);
+  const seenFinishedRef = React.useRef(new Set<string>());
+
+  React.useEffect(() => {
+    seenFinishedRef.current = new Set();
+    setNotifications([]);
+  }, [round]);
+
+  React.useEffect(() => {
+    if (!finishedPlayers || submitted) return;
+    const newOnes = finishedPlayers.filter(p => !seenFinishedRef.current.has(p.name + p.face));
+    if (newOnes.length === 0) return;
+    newOnes.forEach(p => seenFinishedRef.current.add(p.name + p.face));
+    setNotifications(prev => [
+      ...prev,
+      ...newOnes.map(player => ({ id: ++notifIdRef.current, player })),
+    ]);
+  }, [finishedPlayers, submitted]);
+
+  const removeNotif = React.useCallback((id: number) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   const captureFrame = React.useCallback(() => {
     const imageProvider = imageProviderRef.current;
@@ -241,6 +272,15 @@ const Draw = ({
         initialImageUrl={resolvedInitialImageUrl}
         partnerCursor={partnerCursor}
       />
+      <NotifStack>
+        {notifications.map(n => (
+          <FinishedNotification
+            key={n.id}
+            player={n.player}
+            onDone={() => removeNotif(n.id)}
+          />
+        ))}
+      </NotifStack>
     </div>
   );
 };
@@ -263,4 +303,104 @@ const SpectatorBadge = styled.div`
   letter-spacing: 0.06em;
   backdrop-filter: blur(4px);
 `;
+
+const notifSlideIn = keyframes`
+  from { transform: translateX(calc(100% + 20px)); opacity: 0; }
+  to   { transform: translateX(0);                 opacity: 1; }
+`;
+
+const notifSlideOut = keyframes`
+  from { transform: translateX(0);                 opacity: 1; }
+  to   { transform: translateX(calc(100% + 20px)); opacity: 0; }
+`;
+
+const NotifStack = styled.div`
+  position: fixed;
+  top: 28px;
+  right: 12px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  > * { pointer-events: auto; }
+`;
+
+const NotifCard = styled.div<{ $exiting: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(8, 8, 24, 0.93);
+  border: 1.5px solid rgba(0, 245, 255, 0.45);
+  border-radius: 10px;
+  box-shadow: 0 0 18px rgba(0, 245, 255, 0.12), 0 4px 14px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  user-select: none;
+  min-width: 190px;
+  max-width: 270px;
+  animation: ${({ $exiting }) =>
+    $exiting
+      ? css`${notifSlideOut} 0.3s ease-in forwards`
+      : css`${notifSlideIn} 0.32s cubic-bezier(0.34, 1.15, 0.64, 1) forwards`};
+`;
+
+const NotifFace = styled.div`
+  font-size: 2em;
+  line-height: 1;
+  flex-shrink: 0;
+`;
+
+const NotifBody = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const NotifName = styled.div`
+  color: #00f5ff;
+  font-weight: 700;
+  font-size: 1em;
+  text-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const NotifSub = styled.div`
+  color: rgba(190, 190, 230, 0.8);
+  font-size: 0.82em;
+  margin-top: 2px;
+`;
+
+const FinishedNotification = ({
+  player,
+  onDone,
+}: {
+  player: PlayerInfo;
+  onDone: () => void;
+}) => {
+  const [exiting, setExiting] = React.useState(false);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setExiting(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  React.useEffect(() => {
+    if (!exiting) return;
+    const t = setTimeout(onDone, 310);
+    return () => clearTimeout(t);
+  }, [exiting, onDone]);
+
+  return (
+    <NotifCard $exiting={exiting} onClick={() => !exiting && setExiting(true)}>
+      <NotifFace>{player.face}</NotifFace>
+      <NotifBody>
+        <NotifName>{player.name}</NotifName>
+        <NotifSub>finished drawing!</NotifSub>
+      </NotifBody>
+    </NotifCard>
+  );
+};
 

@@ -102,6 +102,7 @@ interface DrawState extends PlayerState {
   gameMode: GameMode;
   teamPartner?: PlayerInfo;
   spectatorCount?: number;
+  finishedPlayers?: PlayerInfo[];
 }
 
 function isDrawState(playerState: PlayerState): playerState is DrawState {
@@ -520,6 +521,7 @@ const Game = () => {
           imageProviderRef={isTeam ? imageProviderRef : undefined}
           spectatorCount={playerState.spectatorCount}
           onSpectatorSnapshot={playerState.spectatorCount ? handleSpectatorSnapshot : undefined}
+          finishedPlayers={playerState.finishedPlayers}
         />
       );
     } else if (isHotPotatoDrawState(playerState)) {
