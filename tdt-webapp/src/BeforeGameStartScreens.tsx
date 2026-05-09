@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import QRCodeStyling from "qr-code-styling";
 import CustomQRCode from "./CustomQRCode";
 
 import { GameMode, PlayerInfo } from "./model";
@@ -80,24 +81,31 @@ export const WaitForPlayersScreen = ({
   const link = window.location.toString();
 
   const handleDownloadCard = async () => {
-    const qrCanvas = qrWrapperRef.current?.querySelector("canvas");
-    if (!qrCanvas) return;
-
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
     const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
-    const W = 440;
-    const dpr = 2;
+    // Render a fresh high-res QR (dark on off-white) off-screen
+    const tempEl = document.createElement("div");
+    tempEl.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
+    document.body.appendChild(tempEl);
+    const cardQr = new QRCodeStyling({
+      width: 260, height: 260, type: "canvas",
+      data: link,
+      qrOptions: { errorCorrectionLevel: "M" },
+      dotsOptions: { color: "#060a1a", type: "square" },
+      backgroundOptions: { color: "#f5f7fc" },
+      cornersSquareOptions: { type: "extra-rounded", color: "#060a1a" },
+      cornersDotOptions: { type: "dot", color: "#060a1a" },
+      margin: 2,
+    });
+    cardQr.append(tempEl);
+    const cardQrCanvas = tempEl.querySelector("canvas");
 
-    // Layout constants — portrait card (~440×720)
-    const headerH = 136;
-    const qrSize = 240;
-    const qrPadV = 48;
-    const codeH = 76;
-    const sepH = 1;
-    const footerH = 80;
-    const taglineH = 44;
-    const H = headerH + qrPadV + qrSize + qrPadV + codeH + sepH + footerH + taglineH;
+    // ── Landscape ticket: 900 × 400, 2× DPR ────────────────────
+    const W = 900;
+    const H = 400;
+    const dpr = 2;
+    const splitX = 576;   // dark panel | light panel
 
     const c = document.createElement("canvas");
     c.width = W * dpr;
@@ -105,86 +113,34 @@ export const WaitForPlayersScreen = ({
     const ctx = c.getContext("2d")!;
     ctx.scale(dpr, dpr);
 
-    const R = 18;
+    // ── LEFT PANEL (dark navy) ───────────────────────────────────
+    ctx.fillStyle = "#060a1a";
+    ctx.fillRect(0, 0, splitX, H);
 
-    const rrect = (x: number, y: number, w: number, h: number, r: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-    };
-
-    // Background
-    ctx.fillStyle = "#050a1c";
-    rrect(0, 0, W, H, R);
-    ctx.fill();
-
-    // Card border
-    ctx.strokeStyle = "rgba(0,245,255,0.5)";
-    ctx.lineWidth = 2;
-    rrect(1, 1, W - 2, H - 2, R);
-    ctx.stroke();
-
-    // Background decorative shapes (clipped to card boundary)
-    ctx.save();
-    rrect(0, 0, W, H, R);
-    ctx.clip();
-    const shapeTypes = ['tri', 'x', 'circle', 'box'];
-    for (let i = 0; i < 5120; i++) {
-      const sx = Math.random() * W;
-      const sy = Math.random() * H;
-      const angle = Math.random() * Math.PI * 2;
-      const size = 2 + Math.random() * 5;
-      const alpha = (0.07 + Math.random() * 0.11).toFixed(2);
-      const shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.rotate(angle);
-      ctx.strokeStyle = `rgba(0,245,255,${alpha})`;
-      ctx.shadowColor = `rgba(0,245,255,${alpha})`;
-      ctx.shadowBlur = 6 + Math.random() * 8;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      if (shape === 'tri') {
-        ctx.moveTo(0, -size);
-        ctx.lineTo(size * 0.866, size * 0.5);
-        ctx.lineTo(-size * 0.866, size * 0.5);
-        ctx.closePath();
-        ctx.stroke();
-      } else if (shape === 'x') {
-        ctx.moveTo(-size, -size); ctx.lineTo(size, size);
-        ctx.moveTo(size, -size); ctx.lineTo(-size, size);
-        ctx.stroke();
-      } else if (shape === 'circle') {
-        ctx.arc(0, 0, size, 0, Math.PI * 2);
-        ctx.stroke();
-      } else {
-        ctx.strokeRect(-size, -size, size * 2, size * 2);
+    // Dot-grid texture
+    ctx.fillStyle = "rgba(0,245,255,0.07)";
+    for (let gx = 11; gx < splitX; gx += 22) {
+      for (let gy = 11; gy < H; gy += 22) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 1, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.restore();
     }
-    ctx.restore();
 
-    // Header background (clipped to top corners)
-    ctx.save();
-    rrect(0, 0, W, H, R);
-    ctx.clip();
-    ctx.fillStyle = "rgba(0,245,255,0.08)";
-    ctx.fillRect(0, 0, W, headerH);
-    ctx.restore();
-
-    // Header separator
-    ctx.strokeStyle = "rgba(0,245,255,0.22)";
+    // Top accent lines
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, headerH);
-    ctx.lineTo(W, headerH);
-    ctx.stroke();
+    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(splitX, 14); ctx.stroke();
+    ctx.strokeStyle = "rgba(0,245,255,0.2)";
+    ctx.beginPath(); ctx.moveTo(28, 19); ctx.lineTo(splitX - 28, 19); ctx.stroke();
 
-    // Logo — fetch SVG, patch black text groups to white, render
+    // Bottom accent lines (mirrored)
+    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.beginPath(); ctx.moveTo(0, H - 14); ctx.lineTo(splitX, H - 14); ctx.stroke();
+    ctx.strokeStyle = "rgba(0,245,255,0.2)";
+    ctx.beginPath(); ctx.moveTo(28, H - 19); ctx.lineTo(splitX - 28, H - 19); ctx.stroke();
+
+    // Logo (centered in left panel)
     const svgText = await fetch(logoImg as string).then((r) => r.text());
     const fixedSvg = svgText
       .replace('aria-label="DRAW"', 'aria-label="DRAW" fill="white"')
@@ -194,103 +150,114 @@ export const WaitForPlayersScreen = ({
     const logo = new Image();
     logo.src = svgUrl;
     await new Promise<void>((resolve) => { logo.onload = () => resolve(); });
-    const logoH = 68;
+    const logoH = 48;
     const logoW = logoH * (logo.naturalWidth / logo.naturalHeight);
-    ctx.drawImage(logo, (W - logoW) / 2, (headerH - logoH) / 2, logoW, logoH);
+    ctx.drawImage(logo, (splitX - logoW) / 2, 32, logoW, logoH);
     URL.revokeObjectURL(svgUrl);
 
-    // QR glowing box
-    const qrX = (W - qrSize) / 2;
-    const qrY = headerH + qrPadV;
-    const qrPad = 10;
-    const qrBoxX = qrX - qrPad;
-    const qrBoxY = qrY - qrPad;
-    const qrBoxW = qrSize + qrPad * 2;
-    const qrBoxH = qrSize + qrPad * 2;
-    const qrBoxR = 12;
-
-    ctx.fillStyle = "#050a1c";
-    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
-    ctx.fill();
-
-    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-    ctx.save();
-    ctx.shadowColor = "#00f5ff";
-    ctx.shadowBlur = 20;
-    ctx.strokeStyle = "rgba(0,245,255,0.9)";
-    ctx.lineWidth = 2;
-    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
-    ctx.stroke();
-    ctx.shadowBlur = 36;
-    ctx.strokeStyle = "rgba(0,245,255,0.4)";
-    rrect(qrBoxX, qrBoxY, qrBoxW, qrBoxH, qrBoxR);
-    ctx.stroke();
-    ctx.restore();
-
-    // Game code
-    const codeY = qrY + qrSize + qrPadV;
+    // "GAME CODE" label
     ctx.textAlign = "center";
-    ctx.font = "bold 34px 'Courier New', monospace";
+    ctx.font = "10px 'Courier New', monospace";
+    ctx.fillStyle = "rgba(0,245,255,0.4)";
+    ctx.fillText("GAME  CODE", splitX / 2, 114);
+
+    // Game code — large, glowing
+    ctx.font = "bold 54px 'Courier New', monospace";
     ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(0,245,255,0.9)";
-    ctx.shadowBlur = 14;
-    ctx.fillText(gameId.split("").join("  "), W / 2, codeY + 38);
+    ctx.shadowColor = "#00f5ff";
+    ctx.shadowBlur = 24;
+    ctx.fillText(gameId.split("").join("  "), splitX / 2, 170);
     ctx.shadowBlur = 0;
 
-    // Footer separator
-    const footerSepY = codeY + codeH;
-    ctx.strokeStyle = "rgba(0,245,255,0.22)";
+    // Separator
+    ctx.strokeStyle = "rgba(0,245,255,0.18)";
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(24, footerSepY);
-    ctx.lineTo(W - 24, footerSepY);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(28, 196); ctx.lineTo(splitX - 28, 196); ctx.stroke();
 
-    // Dark overlay on footer so text stays legible over the shapes
-    ctx.save();
-    rrect(0, 0, W, H, R);
-    ctx.clip();
-    ctx.fillStyle = "rgba(5,10,28,0.82)";
-    ctx.fillRect(0, footerSepY, W, H - footerSepY);
-    ctx.restore();
-
-    // Footer stats
-    const footerY = footerSepY + sepH;
+    // Stats row (HOST / PLAYERS / MODE)
     const stats = [
       { label: "HOST", value: creatorName },
       { label: "PLAYERS", value: `${players.length}${maxPlayers > 0 ? `/${maxPlayers}` : ""}` },
       { label: "MODE", value: modeLabel },
     ];
-    const colW = W / 3;
+    const colW = splitX / 3;
     stats.forEach((stat, i) => {
       const x = colW * i + colW / 2;
       ctx.textAlign = "center";
-      ctx.font = "11px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(0,245,255,0.45)";
-      ctx.fillText(stat.label, x, footerY + 16);
-      ctx.font = "bold 15px 'Courier New', monospace";
+      ctx.font = "10px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(0,245,255,0.4)";
+      ctx.fillText(stat.label, x, 218);
+      ctx.font = "bold 13px 'Courier New', monospace";
       ctx.fillStyle = "#00f5ff";
-      ctx.fillText(stat.value, x, footerY + 36);
+      ctx.fillText(stat.value, x, 236);
     });
 
     // Stat column dividers
-    ctx.strokeStyle = "rgba(0,245,255,0.2)";
-    ctx.lineWidth = 1;
-    [W / 3, (W * 2) / 3].forEach((x) => {
+    ctx.strokeStyle = "rgba(0,245,255,0.15)";
+    [colW, colW * 2].forEach((x) => {
       ctx.beginPath();
-      ctx.moveTo(x, footerY + 6);
-      ctx.lineTo(x, footerY + 46);
+      ctx.moveTo(x, 208);
+      ctx.lineTo(x, 242);
       ctx.stroke();
     });
 
-    // Tagline
-    const taglineY = footerY + footerH;
+    // Separator
+    ctx.strokeStyle = "rgba(0,245,255,0.18)";
+    ctx.beginPath(); ctx.moveTo(28, 256); ctx.lineTo(splitX - 28, 256); ctx.stroke();
+
+    // URL
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(0,245,255,0.3)";
-    ctx.fillText("SCAN TO JOIN  ·  TYPE DRAW TYPE", W / 2, taglineY + 14);
+    ctx.fillStyle = "rgba(100,136,170,0.6)";
+    const urlText = link.length > 60 ? link.slice(0, 57) + "…" : link;
+    ctx.fillText(urlText, splitX / 2, 278);
 
+    // ── PERFORATED DIVIDER ───────────────────────────────────────
+    ctx.setLineDash([3, 9]);
+    ctx.strokeStyle = "rgba(0,245,255,0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(splitX, 0);
+    ctx.lineTo(splitX, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── RIGHT PANEL (off-white) ──────────────────────────────────
+    ctx.fillStyle = "#f5f7fc";
+    ctx.fillRect(splitX, 0, W - splitX, H);
+
+    // Very subtle dot grid on light panel
+    ctx.fillStyle = "rgba(0,80,100,0.055)";
+    for (let gx = splitX + 11; gx < W; gx += 22) {
+      for (let gy = 11; gy < H; gy += 22) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // QR code — centered in right panel with soft shadow
+    const rightW = W - splitX;
+    const qrSize = 260;
+    const qrX = splitX + Math.round((rightW - qrSize) / 2);
+    const qrY = Math.round((H - qrSize) / 2) - 14;
+
+    if (cardQrCanvas) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.14)";
+      ctx.shadowBlur = 14;
+      ctx.drawImage(cardQrCanvas, qrX, qrY, qrSize, qrSize);
+      ctx.restore();
+    }
+
+    // "SCAN TO JOIN" below QR
+    ctx.textAlign = "center";
+    ctx.font = "bold 10px 'Courier New', monospace";
+    ctx.fillStyle = "rgba(6,10,26,0.36)";
+    ctx.fillText("SCAN  TO  JOIN", splitX + rightW / 2, qrY + qrSize + 22);
+
+    // Cleanup and trigger download
+    document.body.removeChild(tempEl);
     const url = c.toDataURL("image/png");
     const a = document.createElement("a");
     a.href = url;
@@ -325,7 +292,7 @@ export const WaitForPlayersScreen = ({
           <QRBlock ref={qrWrapperRef} onClick={handleDownloadCard} title="Click to download share card">
             <CustomQRCode
               value={link}
-              size={130}
+              size={160}
               bgColor="#080818"
               fgColor="#00f5ff"
             />
