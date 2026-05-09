@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 import NewlineToBreak from "./NewLineToBreak";
-import { GameMode, PlayerInfo } from "./model";
+import { PlayerInfo } from "./model";
 import Dialog from "./Dialog";
 import Scrollable from "./Scrollable";
 
@@ -70,7 +70,6 @@ export const DrawHelpDialog = ({
   rounds,
   show,
   firstShow,
-  gameMode,
   handleClose,
 }: {
   text: string;
@@ -79,7 +78,6 @@ export const DrawHelpDialog = ({
   rounds: number;
   show: boolean;
   firstShow: boolean;
-  gameMode?: GameMode;
   handleClose: () => void;
 }) => {
   return (

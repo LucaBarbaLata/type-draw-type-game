@@ -202,7 +202,6 @@ const Draw = ({
         rounds={rounds}
         show={showHelpDialog}
         firstShow={firstTimeHelpDialog}
-        gameMode={gameMode}
         handleClose={() => {
           setShowHelpDialog(false);
           setFirstTimeHelpDialog(false);
