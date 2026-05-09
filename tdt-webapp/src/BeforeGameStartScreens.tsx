@@ -76,9 +76,34 @@ export const WaitForPlayersScreen = ({
     handleSettingsChange(buildSettings(timerSecs, maxP, chat, pub, mode, hpInt, hpTot));
   };
 
+  const [copied, setCopied] = React.useState(false);
+
   const minPlayers = localGameMode === "TEAM" ? 4 : 2;
   const buttonDisabled = players.length < minPlayers;
   const link = window.location.toString();
+
+  const handleShare = async () => {
+    const messages = [
+      "Come play Type Draw Type with me!",
+      "Join me for a round of Type Draw Type!",
+      "I'm starting a Type Draw Type game — want in?",
+      "Let's play Type Draw Type together!",
+      "You're invited to my Type Draw Type lobby!",
+      "Get in here, we're playing Type Draw Type!",
+      "My Type Draw Type game needs more players!",
+      "Think you can out-draw me? Type Draw Type — join up!",
+    ];
+    const text = messages[Math.floor(Math.random() * messages.length)];
+    if (navigator.share) {
+      try { await navigator.share({ title: "Type Draw Type", text, url: link }); } catch { /* cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch { /* no-op */ }
+    }
+  };
 
   const handleDownloadCard = async () => {
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
@@ -92,10 +117,10 @@ export const WaitForPlayersScreen = ({
       width: 260, height: 260, type: "canvas",
       data: link,
       qrOptions: { errorCorrectionLevel: "M" },
-      dotsOptions: { color: "#060a1a", type: "square" },
-      backgroundOptions: { color: "#f5f7fc" },
-      cornersSquareOptions: { type: "extra-rounded", color: "#060a1a" },
-      cornersDotOptions: { type: "dot", color: "#060a1a" },
+      dotsOptions: { color: "#00f5ff", type: "square" },
+      backgroundOptions: { color: "#060a1a" },
+      cornersSquareOptions: { type: "extra-rounded", color: "#00f5ff" },
+      cornersDotOptions: { type: "dot", color: "#00f5ff" },
       margin: 2,
     });
     cardQr.append(tempEl);
@@ -236,25 +261,49 @@ export const WaitForPlayersScreen = ({
       }
     }
 
-    // QR code — centered in right panel with soft shadow
+    // QR dark container — centered in right panel, matches left-panel aesthetic
     const rightW = W - splitX;
-    const qrSize = 260;
-    const qrX = splitX + Math.round((rightW - qrSize) / 2);
-    const qrY = Math.round((H - qrSize) / 2) - 14;
+    const qrContainerSize = 280;
+    const qrContainerX = splitX + Math.round((rightW - qrContainerSize) / 2);
+    const qrContainerY = Math.round((H - qrContainerSize) / 2) - 10;
+    const qrContainerR = 14;
 
+    // Outer cyan glow
+    ctx.save();
+    ctx.shadowColor = "#00f5ff";
+    ctx.shadowBlur = 22;
+    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.lineWidth = 1.5;
+    rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
+    ctx.stroke();
+    ctx.restore();
+
+    // Dark navy fill
+    ctx.fillStyle = "#060a1a";
+    rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
+    ctx.fill();
+
+    // QR canvas clipped inside container
     if (cardQrCanvas) {
       ctx.save();
-      ctx.shadowColor = "rgba(0,0,0,0.14)";
-      ctx.shadowBlur = 14;
-      ctx.drawImage(cardQrCanvas, qrX, qrY, qrSize, qrSize);
+      rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
+      ctx.clip();
+      const qrPad = 10;
+      ctx.drawImage(cardQrCanvas, qrContainerX + qrPad, qrContainerY + qrPad, qrContainerSize - qrPad * 2, qrContainerSize - qrPad * 2);
       ctx.restore();
     }
 
-    // "SCAN TO JOIN" below QR
+    // Thin border on top
+    ctx.strokeStyle = "rgba(0,245,255,0.4)";
+    ctx.lineWidth = 1;
+    rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
+    ctx.stroke();
+
+    // "SCAN TO JOIN" below container
     ctx.textAlign = "center";
     ctx.font = "bold 10px 'Courier New', monospace";
     ctx.fillStyle = "rgba(6,10,26,0.36)";
-    ctx.fillText("SCAN  TO  JOIN", splitX + rightW / 2, qrY + qrSize + 22);
+    ctx.fillText("SCAN  TO  JOIN", splitX + rightW / 2, qrContainerY + qrContainerSize + 22);
 
     // Cleanup and trigger download
     document.body.removeChild(tempEl);
@@ -289,15 +338,22 @@ export const WaitForPlayersScreen = ({
             </FieldBlock>
           </InviteFields>
 
-          <QRBlock ref={qrWrapperRef} onClick={handleDownloadCard} title="Click to download share card">
-            <CustomQRCode
-              value={link}
-              size={160}
-              bgColor="#080818"
-              fgColor="#00f5ff"
-            />
-            <QRHint>↓ share card</QRHint>
-          </QRBlock>
+          <QRWrapper>
+            <QRBlock ref={qrWrapperRef}>
+              <CustomQRCode
+                value={link}
+                size={160}
+                bgColor="#080818"
+                fgColor="#00f5ff"
+              />
+            </QRBlock>
+            <QRActions>
+              <QRActionBtn onClick={handleShare}>
+                {copied ? "✓ Copied!" : (navigator.share ? "Share" : "Copy Link")}
+              </QRActionBtn>
+              <QRActionBtn onClick={handleDownloadCard}>↓ Card</QRActionBtn>
+            </QRActions>
+          </QRWrapper>
         </InviteSection>
 
         <BottomRow>
@@ -648,31 +704,48 @@ const FieldBlock = styled.div`
   gap: 0.5vmin;
 `;
 
-const QRBlock = styled.div`
+const QRWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.8vmin;
+  flex-shrink: 0;
+`;
+
+const QRBlock = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 1vmin;
   border: 1.5px solid rgba(0, 245, 255, 0.4);
   border-radius: 1vmin;
   background: #080818;
   box-shadow: 0 0 14px rgba(0, 245, 255, 0.12);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: box-shadow 0.15s, border-color 0.15s;
-
-  &:hover {
-    border-color: rgba(0, 245, 255, 0.8);
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.25);
-  }
 `;
 
-const QRHint = styled.div`
-  font-size: 1.2vmin;
-  color: rgba(0, 245, 255, 0.5);
-  letter-spacing: 0.1em;
+const QRActions = styled.div`
+  display: flex;
+  gap: 0.7vmin;
+`;
+
+const QRActionBtn = styled.button`
+  background: rgba(0, 245, 255, 0.06);
+  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  border-radius: 0.5vmin;
+  color: #00f5ff;
+  font-size: 1.1vmin;
+  padding: 0.45vmin 1.1vmin;
+  cursor: pointer;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    background: rgba(0, 245, 255, 0.13);
+    border-color: rgba(0, 245, 255, 0.75);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+  }
 `;
 
 const BottomRow = styled.div`
