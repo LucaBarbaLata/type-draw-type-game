@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { QRCodeCanvas } from "qrcode.react";
+import CustomQRCode from "./CustomQRCode";
 
 import { GameMode, PlayerInfo } from "./model";
 import Player from "./Player";
@@ -323,12 +323,11 @@ export const WaitForPlayersScreen = ({
           </InviteFields>
 
           <QRBlock ref={qrWrapperRef} onClick={handleDownloadCard} title="Click to download share card">
-            <QRCodeCanvas
+            <CustomQRCode
               value={link}
               size={130}
               bgColor="#080818"
               fgColor="#00f5ff"
-              level="M"
             />
             <QRHint>↓ share card</QRHint>
           </QRBlock>
