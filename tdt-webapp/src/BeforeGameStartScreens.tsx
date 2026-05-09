@@ -272,12 +272,12 @@ export const WaitForPlayersScreen = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // ── RIGHT PANEL (off-white) ──────────────────────────────────
-    ctx.fillStyle = "#f5f7fc";
+    // ── RIGHT PANEL (dark, same as left) ────────────────────────
+    ctx.fillStyle = "#060a1a";
     ctx.fillRect(splitX, 0, W - splitX, H);
 
-    // Very subtle dot grid on light panel
-    ctx.fillStyle = "rgba(0,80,100,0.055)";
+    // Dot-grid texture (matches left panel)
+    ctx.fillStyle = "rgba(0,245,255,0.07)";
     for (let gx = splitX + 11; gx < W; gx += 22) {
       for (let gy = 11; gy < H; gy += 22) {
         ctx.beginPath();
@@ -327,7 +327,7 @@ export const WaitForPlayersScreen = ({
     // "SCAN TO JOIN" below container
     ctx.textAlign = "center";
     ctx.font = "bold 10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(6,10,26,0.36)";
+    ctx.fillStyle = "rgba(0,245,255,0.4)";
     ctx.fillText("SCAN  TO  JOIN", splitX + rightW / 2, qrContainerY + qrContainerSize + 22);
 
     // Cleanup and trigger download
