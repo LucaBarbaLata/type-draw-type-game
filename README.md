@@ -164,6 +164,6 @@ Dev server runs at `http://localhost:5173` and proxies `/api` requests to the ba
 
 Original game by **Hermann Czedik-Eysenberg** — [github.com/Bronkoknorb](https://github.com/Bronkoknorb)
 
-Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)** — cyberpunk UI, full drawing toolset (fill, shapes, undo/redo), drawing timelapse replay, synthesized audio engine, QR code lobby, round timer, spectator mode, story PNG export, interactive how-to guide, auto-reconnect, canvas progress caching, and nine game modes (One-Word, Shaky Hands, Blind Draw, Telephone Noir, Opposite, Fog of War, Hot Canvas, Team Mode).
+Forked and rewritten by **[lucariki](https://github.com/LucaBarbaLata)**
 
 License: [GNU Affero General Public License](LICENSE)
