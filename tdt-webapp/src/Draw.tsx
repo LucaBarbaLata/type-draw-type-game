@@ -5,6 +5,7 @@ import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
 
 import { ConfirmDrawingDialog, DrawHelpDialog } from "./DrawDialogs";
+import Dialog from "./Dialog";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
@@ -36,6 +37,7 @@ interface DrawNotif {
 
 const Draw = ({
   text,
+  referenceImageSrc,
   textWriter,
   round,
   rounds,
@@ -58,6 +60,8 @@ const Draw = ({
   finishedPlayers,
 }: {
   text: string;
+  /** Photo to redraw instead of a text (Picture Perfect mode); stays visible next to the canvas */
+  referenceImageSrc?: string;
   textWriter: PlayerInfo;
   round: number;
   rounds: number;
@@ -100,6 +104,7 @@ const Draw = ({
 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
   const [drawingDataUrl, setDrawingDataUrl] = React.useState<string | undefined>();
+  const [showReferenceLarge, setShowReferenceLarge] = React.useState(false);
 
   const [submitted, setSubmitted] = React.useState(false);
   const internalImageProviderRef = React.useRef<ImageProvider | undefined>();
@@ -221,6 +226,7 @@ const Draw = ({
     <div className="Draw">
       <ConfirmDrawingDialog
         text={text}
+        referenceImageSrc={referenceImageSrc}
         show={showConfirmDialog}
         drawingDataUrl={drawingDataUrl}
         handleDone={() => { submitDrawing(); setShowConfirmDialog(false); }}
@@ -228,6 +234,7 @@ const Draw = ({
       />
       <DrawHelpDialog
         text={text}
+        referenceImageSrc={referenceImageSrc}
         textWriter={textWriter}
         round={round}
         rounds={rounds}
@@ -272,6 +279,26 @@ const Draw = ({
         initialImageUrl={resolvedInitialImageUrl}
         partnerCursor={partnerCursor}
       />
+      {referenceImageSrc && (
+        <ReferencePanel>
+          <ReferenceCaption>Photo by {textWriter.name}</ReferenceCaption>
+          <ReferenceImage
+            src={referenceImageSrc}
+            alt={`Photo by ${textWriter.name}`}
+            title="Tap to enlarge"
+            onClick={() => setShowReferenceLarge(true)}
+          />
+          <ReferenceHint>tap to enlarge</ReferenceHint>
+        </ReferencePanel>
+      )}
+      {referenceImageSrc && (
+        <Dialog show={showReferenceLarge}>
+          <ReferenceLarge onClick={() => setShowReferenceLarge(false)}>
+            <img src={referenceImageSrc} alt={`Photo by ${textWriter.name}`} />
+            <div className="small">Photo by {textWriter.name} — tap to close</div>
+          </ReferenceLarge>
+        </Dialog>
+      )}
       <NotifStack>
         {notifications.map(n => (
           <FinishedNotification
@@ -286,6 +313,59 @@ const Draw = ({
 };
 
 export default Draw;
+
+const ReferencePanel = styled.div`
+  flex: 0 1 26vw;
+  min-width: 18vmin;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vmin;
+  padding: 0 1.5vmin;
+  z-index: 1;
+`;
+
+const ReferenceCaption = styled.div`
+  color: rgba(0, 245, 255, 0.8);
+  font-size: 1.8vmin;
+  letter-spacing: 0.06em;
+  text-align: center;
+`;
+
+const ReferenceImage = styled.img`
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 0.5vmin;
+  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+  cursor: zoom-in;
+`;
+
+const ReferenceHint = styled.div`
+  color: var(--cyber-text-muted);
+  font-size: 1.5vmin;
+  letter-spacing: 0.06em;
+`;
+
+const ReferenceLarge = styled.div`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5vmin;
+  cursor: zoom-out;
+
+  img {
+    max-width: 85vw;
+    max-height: 75vh;
+    object-fit: contain;
+    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border-radius: 1vmin;
+    box-shadow: var(--cyber-glow);
+  }
+`;
 
 const SpectatorBadge = styled.div`
   position: fixed;

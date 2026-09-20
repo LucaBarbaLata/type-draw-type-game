@@ -26,6 +26,7 @@ const scanPulse = keyframes`
 import { GameMode, PlayerInfo, StoryContent, StrokeSegment, RemoteStroke } from "./model";
 import { getPlayerId } from "./helpers";
 import Type from "./Type";
+import Upload from "./Upload";
 import Draw from "./Draw";
 import BigLogoScreen from "./BigLogoScreen";
 import {
@@ -92,9 +93,24 @@ function isTypeState(playerState: PlayerState): playerState is TypeState {
   return playerState.state === "type";
 }
 
+interface UploadState extends PlayerState {
+  state: "upload";
+  round: number;
+  rounds: number;
+  roundTimerSeconds: number;
+  gameMode: GameMode;
+  finishedPlayers?: PlayerInfo[];
+}
+
+function isUploadState(playerState: PlayerState): playerState is UploadState {
+  return playerState.state === "upload";
+}
+
 interface DrawState extends PlayerState {
   state: "draw";
   text: string;
+  /** Photo to redraw (Picture Perfect mode) — shown instead of the text prompt */
+  referenceImageSrc?: string | null;
   textWriter: PlayerInfo;
   round: number;
   rounds: number;
@@ -127,6 +143,7 @@ interface WaitForRoundFinishState extends PlayerState {
   state: "waitForRoundFinish";
   waitingForPlayers: PlayerInfo[];
   isTypeRound: boolean;
+  roundKind?: "upload" | "type" | "draw";
   roundChatMessages?: ChatMessage[];
   chatEnabled?: boolean;
 }
@@ -157,6 +174,7 @@ interface RematchState extends PlayerState {
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
   prompt: string;
+  promptImageSrc?: string;
   snapshotDataUrl?: string;
 }
 
@@ -231,7 +249,7 @@ const Game = () => {
   React.useEffect(() => {
     const cur = playerState.state;
     const prev = prevStateRef.current;
-    if ((cur === "type" || cur === "draw") && cur !== prev) {
+    if ((cur === "type" || cur === "draw" || cur === "upload") && cur !== prev) {
       playRoundStart();
     }
     prevStateRef.current = cur;
@@ -498,11 +516,26 @@ const Game = () => {
           onTimerExpire={playTimerExpire}
         />
       );
+    } else if (isUploadState(playerState)) {
+      return (
+        <Upload
+          round={playerState.round}
+          rounds={playerState.rounds}
+          roundTimerSeconds={playerState.roundTimerSeconds ?? 0}
+          handleDone={handleDrawDone}
+          onSubmit={playSubmitSuccess}
+          onUrgentStart={playUrgentStart}
+          onTick={playUrgentTick}
+          onTimerExpire={playTimerExpire}
+          cacheKey={`upload-${gameIdNotNull}`}
+        />
+      );
     } else if (isDrawState(playerState)) {
       const isTeam = (playerState.gameMode ?? "CLASSIC") === "TEAM";
       return (
         <Draw
           text={playerState.text}
+          referenceImageSrc={playerState.referenceImageSrc ?? undefined}
           textWriter={playerState.textWriter}
           round={playerState.round}
           rounds={playerState.rounds}
@@ -548,7 +581,7 @@ const Game = () => {
     } else if (isWaitForRoundFinishState(playerState)) {
       return (
         <WaitForRoundFinished
-          isTypeRound={playerState.isTypeRound}
+          roundKind={playerState.roundKind ?? (playerState.isTypeRound ? "type" : "draw")}
           waitingForPlayers={playerState.waitingForPlayers}
         />
       );
@@ -658,13 +691,13 @@ const Game = () => {
 export default Game;
 
 const WaitForRoundFinished = ({
-  isTypeRound,
+  roundKind,
   waitingForPlayers,
 }: {
-  isTypeRound: boolean;
+  roundKind: "upload" | "type" | "draw";
   waitingForPlayers: PlayerInfo[];
 }) => {
-  const roundAction = isTypeRound ? "typing" : "drawing";
+  const roundAction = roundKind === "upload" ? "uploading" : roundKind === "type" ? "typing" : "drawing";
   const waitingForPlayersText = waitingForPlayers.map((p) => p.name).join(", ");
 
   return (

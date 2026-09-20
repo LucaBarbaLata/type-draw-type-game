@@ -9,12 +9,14 @@ import drawImg from "./img/draw.svg";
 
 export const ConfirmDrawingDialog = ({
   text,
+  referenceImageSrc,
   show,
   drawingDataUrl,
   handleDone,
   handleContinue,
 }: {
   text: string;
+  referenceImageSrc?: string;
   show: boolean;
   drawingDataUrl?: string;
   handleDone: () => void;
@@ -24,12 +26,21 @@ export const ConfirmDrawingDialog = ({
     <Dialog show={show}>
       <ConfirmDrawingDialogContent>
         <h1>Are you finished with your drawing?</h1>
-        <Text className="ConfirmDrawingDialogContent-text">
-          {NewlineToBreak(text)}
-        </Text>
-        <div>
-          <img src={drawingDataUrl} alt="Drawing" />
-        </div>
+        {referenceImageSrc ? (
+          <Comparison>
+            <img src={referenceImageSrc} alt="Photo" />
+            <img src={drawingDataUrl} alt="Drawing" />
+          </Comparison>
+        ) : (
+          <>
+            <Text className="ConfirmDrawingDialogContent-text">
+              {NewlineToBreak(text)}
+            </Text>
+            <div>
+              <img src={drawingDataUrl} alt="Drawing" />
+            </div>
+          </>
+        )}
         <div className="buttons">
           <button className="button" onClick={handleDone}>
             Yes, I'm done
@@ -63,8 +74,34 @@ const ConfirmDrawingDialogContent = styled.div`
   }
 `;
 
+const Comparison = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2vmin;
+  max-width: 100%;
+
+  img {
+    max-width: 40%;
+    max-height: 50vh;
+    object-fit: contain;
+  }
+`;
+
+const ReferencePhoto = styled.img`
+  max-width: 90%;
+  max-height: 55vh;
+  object-fit: contain;
+  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  border-radius: 1vmin;
+  box-shadow: var(--cyber-glow);
+  margin: 2vmin 0;
+`;
+
 export const DrawHelpDialog = ({
   text,
+  referenceImageSrc,
   textWriter,
   round,
   rounds,
@@ -73,6 +110,7 @@ export const DrawHelpDialog = ({
   handleClose,
 }: {
   text: string;
+  referenceImageSrc?: string;
   textWriter: PlayerInfo;
   round: number;
   rounds: number;
@@ -91,9 +129,13 @@ export const DrawHelpDialog = ({
             <h1>
               <img src={drawImg} alt="Draw" />
             </h1>
-            <div>... this text by {textWriter.name}:</div>
+            <div>... this {referenceImageSrc ? "photo" : "text"} by {textWriter.name}:</div>
           </div>
-          <Text>{NewlineToBreak(text)}</Text>
+          {referenceImageSrc ? (
+            <ReferencePhoto src={referenceImageSrc} alt={`Photo by ${textWriter.name}`} />
+          ) : (
+            <Text>{NewlineToBreak(text)}</Text>
+          )}
           <button className="button" onClick={handleClose}>
             Okay, {firstShow ? "start" : "continue"} drawing
           </button>

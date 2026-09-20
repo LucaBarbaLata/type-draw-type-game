@@ -120,6 +120,40 @@ class GameRoundsGeneratorTests {
     }
 
     @Test
+    void generateTruncatedGames() {
+        int maxNumberOfPlayers = 20;
+
+        for (int numberOfPlayers = 2; numberOfPlayers <= maxNumberOfPlayers; numberOfPlayers++) {
+            int[][] rounds = GameRoundsGenerator.generate(numberOfPlayers, 2);
+
+            printMatrixIfEnabled("Truncated game:", rounds);
+
+            Assertions.assertEquals(2, rounds.length);
+            Set<Integer> allStoryNumbers = IntStream.range(0, numberOfPlayers).boxed().collect(Collectors.toSet());
+            for (int[] round : rounds) {
+                Assertions.assertEquals(numberOfPlayers, round.length);
+                Set<Integer> storiesInRound = Arrays.stream(round).boxed().collect(Collectors.toSet());
+                Assertions.assertEquals(allStoryNumbers, storiesInRound, "Round needs to contain all stories");
+            }
+
+            // the second round must be a derangement of the first: nobody continues their own story
+            for (int p = 0; p < numberOfPlayers; p++) {
+                Assertions.assertNotEquals(rounds[0][p], rounds[1][p], "Player must not get their own story in round 2");
+            }
+        }
+
+        // the full number of rounds is the same as the untruncated game
+        Assertions.assertEquals(5, GameRoundsGenerator.generate(5, 5).length);
+    }
+
+    @Test
+    void generateTruncatedThrowsOnIllegalArgument() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(1, 1));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(4, 0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(4, 5));
+    }
+
+    @Test
     void generateThrowsOnIllegalArgument() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(-1));
         Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(0));

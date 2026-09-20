@@ -43,12 +43,13 @@ public class Controller {
         return gameManager.getPublicGames();
     }
 
-    @GetMapping(path = "/image/{gameId:\\w+}/{imageId:[\\w\\-]+}.png")
-    public void getImage(HttpServletResponse response, @PathVariable String gameId, @PathVariable String imageId)
-            throws IOException {
-        response.setContentType(MediaType.IMAGE_PNG_VALUE);
+    @GetMapping(path = "/image/{gameId:\\w+}/{imageId:[\\w\\-]+}.{extension:png|jpg}")
+    public void getImage(HttpServletResponse response, @PathVariable String gameId, @PathVariable String imageId,
+            @PathVariable String extension) throws IOException {
+        // drawings are stored as PNG, uploaded photos (Picture Perfect mode) as JPEG
+        response.setContentType("jpg".equals(extension) ? MediaType.IMAGE_JPEG_VALUE : MediaType.IMAGE_PNG_VALUE);
         Path gameDir = gameManager.getGameDir(gameId);
-        Path imagePath = gameDir.resolve(imageId + ".png").normalize();
+        Path imagePath = gameDir.resolve(imageId + "." + extension).normalize();
         if (!imagePath.startsWith(gameDir)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;

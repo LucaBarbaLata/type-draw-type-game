@@ -35,6 +35,7 @@ Select a mode when creating a lobby. All players see the active mode before the 
 | **Fog of War** | Only a small circle around your cursor is visible while drawing. |
 | **Hot Canvas** | All players draw simultaneously. Every rotation the server passes each canvas to the next player — nobody finishes their own drawing. |
 | **Team Mode** | Two players share one canvas and draw on it simultaneously in real time via WebSocket stroke relay. |
+| **Picture Perfect** | Everyone uploads a photo from their device, then redraws a random other player's photo by hand with the original in view. The reveal shows photo and drawing side by side. Two rounds only. |
 
 ---
 

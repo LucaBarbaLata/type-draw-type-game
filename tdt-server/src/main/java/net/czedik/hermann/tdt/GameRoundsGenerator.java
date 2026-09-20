@@ -36,6 +36,23 @@ public class GameRoundsGenerator {
         return rounds;
     }
 
+    /**
+     * Generates a game matrix like {@link #generate(int)} but truncated to the given number of rounds.
+     * <p>
+     * Row 0 is a random permutation of the story indices and row 1 is always a derangement of row 0 (for an even
+     * number of players it is a cyclic shift by one, for an odd number a non-zero cyclic shift), so with 2 rounds
+     * every player continues a story seeded by a different player than themselves.
+     *
+     * @param numberOfPlayers number of players (must not be less than 2)
+     * @param numberOfRounds  number of rounds (between 1 and numberOfPlayers)
+     * @return game matrix with numberOfRounds rows and numberOfPlayers columns
+     */
+    public static int[][] generate(int numberOfPlayers, int numberOfRounds) {
+        if (numberOfRounds < 1 || numberOfRounds > numberOfPlayers)
+            throw new IllegalArgumentException("Number of rounds must be between 1 and the number of players");
+        return Arrays.copyOf(generate(numberOfPlayers), numberOfRounds);
+    }
+
     private static void generateForEven(int numberOfPlayers, int[][] rounds) {
         // rounds[0] is already initialized with a random permutation.
 

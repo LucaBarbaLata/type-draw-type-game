@@ -8,5 +8,6 @@ public enum GameMode {
     TELEPHONE_NOIR,
     FOG_OF_WAR,
     HOT_POTATO,
-    TEAM
+    TEAM,
+    PICTURE_PERFECT
 }

@@ -6,7 +6,8 @@ export type GameMode =
   | "TELEPHONE_NOIR"
   | "FOG_OF_WAR"
   | "HOT_POTATO"
-  | "TEAM";
+  | "TEAM"
+  | "PICTURE_PERFECT";
 
 export interface PlayerInfo {
   name: string;
@@ -14,8 +15,11 @@ export interface PlayerInfo {
   isCreator: boolean;
 }
 
+/** "photo" is an image uploaded by a player (Picture Perfect mode) rather than a drawing */
+export type StoryElementType = "text" | "image" | "photo";
+
 export interface StoryElement {
-  type: "text" | "image";
+  type: StoryElementType;
   content: string;
   player: PlayerInfo;
   replayUrl?: string;

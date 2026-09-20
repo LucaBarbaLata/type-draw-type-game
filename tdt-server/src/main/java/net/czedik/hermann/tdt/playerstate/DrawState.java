@@ -12,8 +12,9 @@ import net.czedik.hermann.tdt.PlayerInfo;
  *
  * @param round             Current round number (1-based)
  * @param rounds            Total number of rounds
- * @param text              Text that should be drawn
- * @param textWriter        author of the text
+ * @param text              Text that should be drawn (empty when drawing a reference image)
+ * @param referenceImageSrc URL of the photo that should be redrawn (only set in PICTURE_PERFECT mode)
+ * @param textWriter        author of the text (or of the reference photo)
  * @param roundTimerSeconds seconds allowed per round, 0 means no timer
  * @param gameMode          the active game mode
  * @param teamPartner       team partner info (only set in TEAM mode)
@@ -24,6 +25,7 @@ public record DrawState(
         int round,
         int rounds,
         String text,
+        String referenceImageSrc,
         PlayerInfo textWriter,
         int roundTimerSeconds,
         GameMode gameMode,
@@ -36,7 +38,7 @@ public record DrawState(
             throw new IllegalArgumentException("Round must be positive number");
         Objects.requireNonNull(text);
         Objects.requireNonNull(textWriter);
-        // teamPartner and finishedPlayers are nullable
+        // referenceImageSrc, teamPartner and finishedPlayers are nullable
     }
 
     @Override

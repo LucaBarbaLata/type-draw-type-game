@@ -16,6 +16,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -59,6 +60,7 @@ import net.czedik.hermann.tdt.playerstate.SpectatorCurrentDrawing;
 import net.czedik.hermann.tdt.playerstate.SpectatorState;
 import net.czedik.hermann.tdt.playerstate.StoriesState;
 import net.czedik.hermann.tdt.playerstate.TypeState;
+import net.czedik.hermann.tdt.playerstate.UploadState;
 import net.czedik.hermann.tdt.playerstate.WaitForGameStartState;
 import net.czedik.hermann.tdt.playerstate.WaitForPlayersState;
 import net.czedik.hermann.tdt.playerstate.WaitForRoundFinishState;
@@ -71,6 +73,15 @@ public class Game {
 
     private static final int MAX_CHAT_MESSAGES = 50;
     private static final int MAX_CHAT_TEXT_LENGTH = 200;
+
+    /** Number of rounds in PICTURE_PERFECT mode: one upload round followed by one draw round. */
+    private static final int PICTURE_PERFECT_ROUNDS = 2;
+
+    /** Maximum size of an uploaded photo (PICTURE_PERFECT mode). Well below the 5 MB websocket binary buffer. */
+    private static final int MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+
+    private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+    private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
     public final String gameId;
 
@@ -377,7 +388,7 @@ public class Game {
         if (gameState.gameMode == GameMode.HOT_POTATO) {
             return java.util.Collections.emptyList();
         }
-        if (isTypeRound() || notFinishedPlayers.isEmpty() || gameState.gameMatrix == null) {
+        if (!isDrawRound() || notFinishedPlayers.isEmpty() || gameState.gameMatrix == null) {
             return java.util.Collections.emptyList();
         }
         List<SpectatorCurrentDrawing> result = new ArrayList<>();
@@ -386,7 +397,9 @@ public class Game {
             StoryElement prevElement = getStoryByIndex(storyIndex).elements[gameState.round - 1];
             if (prevElement == null) continue;
             String snapshot = latestSpectatorSnapshots.get(player.id());
-            result.add(new SpectatorCurrentDrawing(mapPlayerToPlayerInfo(player), prevElement.content, snapshot));
+            String prompt = isFileElement(prevElement) ? "" : prevElement.content;
+            String promptImageSrc = isFileElement(prevElement) ? getDrawingSrc(prevElement.content) : null;
+            result.add(new SpectatorCurrentDrawing(mapPlayerToPlayerInfo(player), prompt, promptImageSrc, snapshot));
         }
         return result;
     }
@@ -405,7 +418,7 @@ public class Game {
                 if (elements[roundNo] == null) continue;
                 StoryElement e = elements[roundNo];
                 Player player = getPlayerForStoryInRound(storyIndex, roundNo);
-                String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
+                String content = isFileElement(e) ? getDrawingSrc(e.content) : e.content;
                 String replayUrl1 = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
                 fe[idx++] = new FrontendStoryElement(e.type, content, mapPlayerToPlayerInfo(player), replayUrl1, java.util.Collections.emptyMap());
             }
@@ -505,7 +518,7 @@ public class Game {
         for (int roundNo = 0; roundNo < elements.length; roundNo++) {
             StoryElement e = elements[roundNo];
             Player player = getPlayerForStoryInRound(storyIndex, roundNo);
-            String content = "image".equals(e.type) ? getDrawingSrc(e.content) : e.content;
+            String content = isFileElement(e) ? getDrawingSrc(e.content) : e.content;
             String replayUrl = "image".equals(e.type) ? getReplayUrl(storyIndex, roundNo) : null;
             java.util.Map<String, Integer> reactions = java.util.Collections.emptyMap();
             if ("image".equals(e.type) && gameState.drawingReactions != null) {
@@ -533,15 +546,19 @@ public class Game {
         }
 
         if (!hasPlayerFinishedCurrentRound(player)) {
-            if (isTypeRound()) {
-                // In TEAM mode, only the primary (first) player in each pair chooses the topic.
-                // The secondary player waits while their partner types.
-                if (gameState.gameMode == GameMode.TEAM && isSecondaryTeamPlayer(player)) {
-                    return getWaitForRoundFinishedState();
-                }
-                return getTypeState(player);
-            } else { // draw round
-                return getDrawState(player);
+            switch (getRoundKind(gameState.round)) {
+                case UPLOAD:
+                    return getUploadState(player);
+                case TYPE:
+                    // In TEAM mode, only the primary (first) player in each pair chooses the topic.
+                    // The secondary player waits while their partner types.
+                    if (gameState.gameMode == GameMode.TEAM && isSecondaryTeamPlayer(player)) {
+                        return getWaitForRoundFinishedState();
+                    }
+                    return getTypeState(player);
+                case DRAW:
+                default:
+                    return getDrawState(player);
             }
         } else {
             return getWaitForRoundFinishedState();
@@ -574,7 +591,7 @@ public class Game {
             List<Player> waitingFor = gameState.players.stream()
                     .filter(p -> !gameState.hotPotatoSubmitted.contains(p.id()))
                     .collect(Collectors.toList());
-            return new WaitForRoundFinishState(mapPlayersToPlayerInfos(waitingFor), false, List.copyOf(roundChatMessages), gameState.chatEnabled);
+            return new WaitForRoundFinishState(mapPlayersToPlayerInfos(waitingFor), false, "draw", List.copyOf(roundChatMessages), gameState.chatEnabled);
         }
 
         int storyIndex = gameState.hotPotatoMatrix[rotation][playerIndex];
@@ -602,12 +619,30 @@ public class Game {
 
     private PlayerState getWaitForRoundFinishedState() {
         List<Player> playersNotFinished = getNotFinishedPlayers();
-        return new WaitForRoundFinishState(mapPlayersToPlayerInfos(playersNotFinished), isTypeRound(), List.copyOf(roundChatMessages), gameState.chatEnabled);
+        String roundKind = getRoundKind(gameState.round).name().toLowerCase(Locale.ROOT);
+        return new WaitForRoundFinishState(mapPlayersToPlayerInfos(playersNotFinished), isTypeRound(), roundKind, List.copyOf(roundChatMessages), gameState.chatEnabled);
+    }
+
+    private PlayerState getUploadState(Player player) {
+        GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
+        return new UploadState(gameState.round + 1, gameState.gameMatrix.length, gameState.roundTimerSeconds, mode,
+                getOtherFinishedPlayers(player));
+    }
+
+    /** Players (other than the given one) who have already submitted for the current round. */
+    private List<PlayerInfo> getOtherFinishedPlayers(Player player) {
+        return gameState.players.stream()
+                .filter(p -> !p.equals(player) && getCurrentStoryForPlayer(p).elements[gameState.round] != null)
+                .map(Game::mapPlayerToPlayerInfo)
+                .collect(Collectors.toList());
     }
 
     private PlayerState getDrawState(Player player) {
         int storyIndex = getCurrentStoryIndexForPlayer(player);
-        String text = getStoryByIndex(storyIndex).elements[gameState.round - 1].content;
+        StoryElement previousElement = getStoryByIndex(storyIndex).elements[gameState.round - 1];
+        // In PICTURE_PERFECT mode the previous element is an uploaded photo which is redrawn instead of a text
+        String text = isFileElement(previousElement) ? "" : previousElement.content;
+        String referenceImageSrc = isFileElement(previousElement) ? getDrawingSrc(previousElement.content) : null;
         Player previousPlayer = getPreviousPlayerForStory(storyIndex);
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         PlayerInfo teamPartner = null;
@@ -623,13 +658,9 @@ public class Game {
                 }
             }
         }
-        List<PlayerInfo> finishedPlayers = gameState.players.stream()
-                .filter(p -> !p.equals(player) && getCurrentStoryForPlayer(p).elements[gameState.round] != null)
-                .map(Game::mapPlayerToPlayerInfo)
-                .collect(Collectors.toList());
-        return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text,
+        return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text, referenceImageSrc,
                 mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner,
-                spectatorClients.size(), finishedPlayers);
+                spectatorClients.size(), getOtherFinishedPlayers(player));
     }
 
     private PlayerState getTypeState(Player player) {
@@ -711,8 +742,8 @@ public class Game {
             log.warn("Game {}: Ignoring replay with invalid round {}", gameId, action.round());
             return;
         }
-        if (isTypeRound(roundIndex)) {
-            log.warn("Game {}: Ignoring replay for type round {}", gameId, roundIndex);
+        if (getRoundKind(roundIndex) != RoundKind.DRAW) {
+            log.warn("Game {}: Ignoring replay for non-draw round {}", gameId, roundIndex);
             return;
         }
         int playerIndex = gameState.players.indexOf(player);
@@ -930,6 +961,11 @@ public class Game {
             return;
         }
 
+        if (gameState.gameMode == GameMode.PICTURE_PERFECT) {
+            startPicturePerfectGame();
+            return;
+        }
+
         gameState.gameMatrix = GameRoundsGenerator.generate(gameState.players.size());
 
         gameState.stories = new Story[gameState.players.size()];
@@ -1053,6 +1089,82 @@ public class Game {
         updateStateForAllPlayers();
     }
 
+    // ---- Picture Perfect Mode ------------------------------------------------
+
+    /**
+     * Two rounds: every player uploads a photo (round 0), then every player redraws a photo uploaded by
+     * somebody else (round 1). Row 1 of the truncated game matrix is a derangement of row 0, so nobody
+     * gets their own photo.
+     */
+    private void startPicturePerfectGame() {
+        int numPlayers = gameState.players.size();
+
+        gameState.gameMatrix = GameRoundsGenerator.generate(numPlayers, PICTURE_PERFECT_ROUNDS);
+
+        gameState.stories = new Story[numPlayers];
+        Arrays.setAll(gameState.stories, i -> new Story(PICTURE_PERFECT_ROUNDS));
+
+        log.info("Game {}: Picture Perfect started — {} players, {} rounds", gameId, numPlayers, PICTURE_PERFECT_ROUNDS);
+
+        storeState();
+        updateStateForAllPlayers();
+    }
+
+    /**
+     * Stores a photo uploaded by the player as the first element of their story (PICTURE_PERFECT mode, round 0).
+     * The bytes are validated by size and magic number only (the browser already downscaled and re-encoded them);
+     * nothing is decoded on the server.
+     */
+    private void uploadPhoto(Player player, ByteBuffer image) throws IOException {
+        Story story = getCurrentStoryForPlayer(player);
+        if (story.elements[gameState.round] != null) {
+            log.warn("Game {}: Player {} already uploaded a photo for round {}", gameId, player.id(), gameState.round);
+            return;
+        }
+        if (image.remaining() > MAX_UPLOAD_BYTES) {
+            log.warn("Game {}: Ignoring photo upload from player {} — too large ({} bytes)", gameId, player.id(), image.remaining());
+            return;
+        }
+        String extension;
+        if (startsWith(image, JPEG_MAGIC)) {
+            extension = ".jpg";
+        } else if (startsWith(image, PNG_MAGIC)) {
+            extension = ".png";
+        } else {
+            log.warn("Game {}: Ignoring photo upload from player {} — not a JPEG or PNG", gameId, player.id());
+            return;
+        }
+
+        String imageName = UUID.randomUUID().toString() + extension;
+        Path imagePath = gameDir.resolve(imageName);
+        try (ByteChannel channel =
+                     Files.newByteChannel(imagePath, EnumSet.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))) {
+            channel.write(image);
+        }
+
+        story.elements[gameState.round] = StoryElement.createPhotoElement(imageName);
+
+        log.info("Game {}: Player {} uploaded photo {} for round {}", gameId, player.id(), imageName, gameState.round);
+
+        checkAndHandleRoundFinished();
+
+        updateStateForAllPlayers();
+        updateStateForSpectators();
+    }
+
+    private static boolean startsWith(ByteBuffer buffer, byte[] magic) {
+        if (buffer.remaining() < magic.length) return false;
+        for (int i = 0; i < magic.length; i++) {
+            if (buffer.get(buffer.position() + i) != magic[i]) return false;
+        }
+        return true;
+    }
+
+    /** Elements whose content is a filename in the game directory (drawings and uploaded photos). */
+    private static boolean isFileElement(StoryElement element) {
+        return "image".equals(element.type) || "photo".equals(element.type);
+    }
+
     /**
      * Returns the team pair array that contains the given playerIndex, or null if not found.
      */
@@ -1074,7 +1186,7 @@ public class Game {
         Player sender = clientToPlayer.get(senderClient);
         if (sender == null) return;
         if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) return;
-        if (isTypeRound()) return;
+        if (!isDrawRound()) return;
 
         int senderIndex = gameState.players.indexOf(sender);
         int[] pair = getTeamPairForPlayer(senderIndex);
@@ -1098,7 +1210,7 @@ public class Game {
         Player sender = clientToPlayer.get(senderClient);
         if (sender == null) return;
         if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) return;
-        if (isTypeRound()) return;
+        if (!isDrawRound()) return;
 
         int senderIndex = gameState.players.indexOf(sender);
         int[] pair = getTeamPairForPlayer(senderIndex);
@@ -1127,8 +1239,8 @@ public class Game {
             log.warn("Game {}: teamStroke ignored — mode={} state={}", gameId, gameState.gameMode, gameState.state);
             return;
         }
-        if (isTypeRound()) {
-            return; // no relay during type rounds
+        if (!isDrawRound()) {
+            return; // no relay outside draw rounds
         }
         if (action.round() != gameState.round + 1) {
             log.warn("Game {}: teamStroke ignored — wrong round {} (current={})", gameId, action.round(), gameState.round + 1);
@@ -1204,16 +1316,36 @@ public class Game {
         return Arrays.stream(gameState.stories).allMatch(s -> s.elements[gameState.round] != null);
     }
 
+    private enum RoundKind {
+        /** Players upload a photo (first round of PICTURE_PERFECT mode) */
+        UPLOAD,
+        /** Players type a text */
+        TYPE,
+        /** Players draw a picture */
+        DRAW
+    }
+
+    /**
+     * What players do in the given round. In the classic modes rounds alternate between typing (even rounds) and
+     * drawing (odd rounds). In PICTURE_PERFECT mode round 0 is an upload round and round 1 a draw round.
+     */
+    private RoundKind getRoundKind(int roundNo) {
+        if (gameState.gameMode == GameMode.PICTURE_PERFECT) {
+            return roundNo == 0 ? RoundKind.UPLOAD : RoundKind.DRAW;
+        }
+        return roundNo % 2 == 0 ? RoundKind.TYPE : RoundKind.DRAW;
+    }
+
     private boolean isTypeRound() {
-        return isTypeRound(gameState.round);
+        return getRoundKind(gameState.round) == RoundKind.TYPE;
     }
 
     private boolean isDrawRound() {
-        return !isTypeRound();
+        return getRoundKind(gameState.round) == RoundKind.DRAW;
     }
 
-    private static boolean isTypeRound(int roundNo) {
-        return roundNo % 2 == 0;
+    private boolean isUploadRound() {
+        return getRoundKind(gameState.round) == RoundKind.UPLOAD;
     }
 
     public void draw(Client client, ByteBuffer image) throws IOException {
@@ -1229,6 +1361,11 @@ public class Game {
 
         if (gameState.gameMode == GameMode.HOT_POTATO) {
             hotPotatoDraw(player, image);
+            return;
+        }
+
+        if (isUploadRound()) {
+            uploadPhoto(player, image);
             return;
         }
 
@@ -1361,7 +1498,7 @@ public class Game {
     }
 
     public void spectatorSnapshot(Client client, SpectatorSnapshotAction action) {
-        if (gameState.state != GameState.State.Started || isTypeRound() || gameState.gameMode == GameMode.HOT_POTATO) {
+        if (gameState.state != GameState.State.Started || !isDrawRound() || gameState.gameMode == GameMode.HOT_POTATO) {
             return;
         }
         Player player = clientToPlayer.get(client);

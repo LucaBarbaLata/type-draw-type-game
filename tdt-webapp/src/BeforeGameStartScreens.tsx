@@ -21,6 +21,7 @@ const GAME_MODE_OPTIONS: { value: GameMode; label: string; description: string }
   { value: "FOG_OF_WAR",     label: "Fog of War",       description: "Only a small circle around your cursor is visible while drawing. Explore the canvas to see what you've done." },
   { value: "HOT_POTATO",     label: "Hot Canvas",       description: "All players draw at the same time. Every 30 s the server rotates everyone to a different canvas." },
   { value: "TEAM",           label: "Team Mode",        description: "Two players share one canvas and draw on it simultaneously in real time." },
+  { value: "PICTURE_PERFECT", label: "Picture Perfect", description: "Everyone uploads a photo. Someone else has to redraw it by hand — then compare the two side by side." },
 ];
 
 export interface GameSettings {

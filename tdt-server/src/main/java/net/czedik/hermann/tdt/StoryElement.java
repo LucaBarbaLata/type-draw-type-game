@@ -19,6 +19,14 @@ public class StoryElement {
         return new StoryElement("image", filename);
     }
 
+    /**
+     * An image uploaded by a player (Picture Perfect mode), as opposed to a drawing. Like an image element, the
+     * content is the filename within the game directory.
+     */
+    public static StoryElement createPhotoElement(String filename) {
+        return new StoryElement("photo", filename);
+    }
+
     public static StoryElement createTextElement(String text) {
         return new StoryElement("text", text);
     }

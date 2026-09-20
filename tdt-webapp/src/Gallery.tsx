@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 
-import { StoryContent } from "./model";
+import { StoryContent, StoryElementType } from "./model";
 import NewlineToBreak from "./NewLineToBreak";
 
 const Gallery = () => {
@@ -68,12 +68,12 @@ const Gallery = () => {
               <PanelAuthor>
                 <Face>{el.player.face}</Face>
                 <AuthorName>{el.player.name}</AuthorName>
-                <AuthorVerb>{el.type === "text" ? "typed" : "drew"}</AuthorVerb>
+                <AuthorVerb>{el.type === "text" ? "typed" : el.type === "photo" ? "shared a photo" : "drew"}</AuthorVerb>
               </PanelAuthor>
 
-              {el.type === "image" ? (
+              {el.type !== "text" ? (
                 <DrawingPanel>
-                  <DrawingImg src={el.content} alt={`Drawing by ${el.player.name}`} />
+                  <DrawingImg src={el.content} alt={`${el.type === "photo" ? "Photo" : "Drawing"} by ${el.player.name}`} />
                 </DrawingPanel>
               ) : (
                 <TextPanel>
@@ -278,7 +278,7 @@ const Chain = styled.div`
   padding: 0 3vmin;
 `;
 
-const PanelWrapper = styled.div<{ $type: "text" | "image" }>`
+const PanelWrapper = styled.div<{ $type: StoryElementType }>`
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -345,12 +345,12 @@ const TextContent = styled.div`
   letter-spacing: 0.02em;
 `;
 
-const Connector = styled.div<{ $type: "text" | "image" }>`
+const Connector = styled.div<{ $type: StoryElementType }>`
   width: 2px;
   height: 3vmin;
   background: linear-gradient(
     to bottom,
-    ${({ $type }) => $type === "image"
+    ${({ $type }) => $type !== "text"
       ? "rgba(0,245,255,0.35)"
       : "rgba(255,32,121,0.35)"},
     rgba(0, 245, 255, 0.1)

@@ -10,6 +10,8 @@ import Chat, { ChatMessage } from "./Chat";
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
   prompt: string;
+  /** Photo being redrawn (Picture Perfect mode) */
+  promptImageSrc?: string;
   snapshotDataUrl?: string;
 }
 
@@ -85,7 +87,10 @@ const SpectatorView = ({
             {currentDrawings.map((d, i) => (
               <CurrentDrawingCard key={i}>
                 <Player face={d.player.face}>{d.player.name}</Player>
-                <DrawingPrompt>"{d.prompt}"</DrawingPrompt>
+                {d.promptImageSrc
+                  ? <PromptPhoto src={d.promptImageSrc} alt="Photo being redrawn" />
+                  : <DrawingPrompt>"{d.prompt}"</DrawingPrompt>
+                }
                 {d.snapshotDataUrl
                   ? <LiveCanvas src={d.snapshotDataUrl} alt="Live drawing" />
                   : <CanvasPlaceholder>drawing...</CanvasPlaceholder>
@@ -157,12 +162,13 @@ const StoryElementComponent = ({ element }: { element: StoryElement }) => {
       </TextStoryElement>
     );
   } else {
+    const isPhoto = element.type === "photo";
     return (
       <ImageStoryElement>
         <Player face={element.player.face}>
-          {element.player.name} drew:
+          {element.player.name} {isPhoto ? "shared a photo:" : "drew:"}
         </Player>
-        <img src={element.content} alt="Drawing" />
+        <img src={element.content} alt={isPhoto ? "Photo" : "Drawing"} />
       </ImageStoryElement>
     );
   }
@@ -301,6 +307,14 @@ const DrawingPrompt = styled.div`
   color: #c8d8f0;
   font-style: italic;
   text-align: center;
+  margin-top: 0.5vmin;
+`;
+
+const PromptPhoto = styled.img`
+  width: 100%;
+  max-width: 180px;
+  border-radius: 1vmin;
+  border: 1px solid rgba(255, 32, 121, 0.4);
   margin-top: 0.5vmin;
 `;
 

@@ -191,6 +191,11 @@ const Stories = ({
 
 export default Stories;
 
+/** Label for who contributed an element: "typed:", "painted:" or (Picture Perfect) "shared a photo:" */
+function elementVerb(e: StoryElement) {
+  return e.type === "text" ? "typed:" : e.type === "photo" ? "shared a photo:" : "painted:";
+}
+
 async function exportStory(story: StoryContent, storyIndex: number) {
   const W = 900;
   const PAD = 40;
@@ -203,7 +208,7 @@ async function exportStory(story: StoryContent, storyIndex: number) {
   const imageMap = new Map<string, HTMLImageElement>();
   await Promise.all(
     story.elements
-      .filter((e) => e.type === "image")
+      .filter((e) => e.type !== "text")
       .map(
         (e) =>
           new Promise<void>((resolve) => {
@@ -243,7 +248,7 @@ async function exportStory(story: StoryContent, storyIndex: number) {
   let totalH = PAD;
   for (const e of story.elements) {
     let h = HEADER_H;
-    if (e.type === "image") {
+    if (e.type !== "text") {
       const img = imageMap.get(e.content);
       h += img ? Math.round((img.height / img.width) * contentW) : 100;
     } else {
@@ -278,11 +283,11 @@ async function exportStory(story: StoryContent, storyIndex: number) {
     ctx.fillStyle = "#00f5ff";
     ctx.shadowColor = "#00f5ff";
     ctx.shadowBlur = 6;
-    ctx.fillText(`${e.player.name} ${e.type === "text" ? "typed:" : "painted:"}`, PAD, y + 22);
+    ctx.fillText(`${e.player.name} ${elementVerb(e)}`, PAD, y + 22);
     ctx.shadowBlur = 0;
     y += HEADER_H;
 
-    if (e.type === "image") {
+    if (e.type !== "text") {
       const img = imageMap.get(e.content);
       if (img) {
         const imgH = Math.round((img.height / img.width) * contentW);
@@ -351,7 +356,7 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
   const imageMap = new Map<string, HTMLImageElement>();
   await Promise.all(
     story.elements
-      .filter((e) => e.type === "image")
+      .filter((e) => e.type !== "text")
       .map(
         (e) =>
           new Promise<void>((resolve) => {
@@ -395,12 +400,12 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
     ctx.shadowBlur = 6;
     ctx.textAlign = "left";
     ctx.fillText(
-      `${e.player.face} ${e.player.name} ${e.type === "text" ? "typed:" : "drew:"}`,
+      `${e.player.face} ${e.player.name} ${elementVerb(e)}`,
       x + PAD, 28
     );
     ctx.shadowBlur = 0;
 
-    if (e.type === "image") {
+    if (e.type !== "text") {
       const img = imageMap.get(e.content);
       if (img) {
         const drawH = H - HEADER_H - PAD;
@@ -552,19 +557,23 @@ const Story = ({
   revealedCount: number;
   myReactions: Record<string, string | null>;
   onReact?: (elemIdx: number, reaction: string) => void;
-}) => (
-  <StyledStory>
-    {story.elements.slice(0, revealedCount).map((e, index) => (
-      <AnimatedElement key={index}>
-        <StoryElementComponent
-          element={e}
-          myReaction={myReactions[`${storyIndex}_${index}`] ?? null}
-          onReact={e.type === "image" && onReact ? (r) => onReact(index, r) : undefined}
-        />
-      </AnimatedElement>
-    ))}
-  </StyledStory>
-);
+}) => {
+  // Picture Perfect: the uploaded photo and its redrawing are shown side by side
+  const Container = story.elements[0]?.type === "photo" ? CompareRow : StyledStory;
+  return (
+    <Container>
+      {story.elements.slice(0, revealedCount).map((e, index) => (
+        <AnimatedElement key={index}>
+          <StoryElementComponent
+            element={e}
+            myReaction={myReactions[`${storyIndex}_${index}`] ?? null}
+            onReact={e.type === "image" && onReact ? (r) => onReact(index, r) : undefined}
+          />
+        </AnimatedElement>
+      ))}
+    </Container>
+  );
+};
 
 const StoryElementComponent = ({
   element,
@@ -581,6 +590,15 @@ const StoryElementComponent = ({
         <Player face={element.player.face}>{element.player.name} typed:</Player>
         <div className="field">{NewlineToBreak(element.content)}</div>
       </TextStoryElement>
+    );
+  }
+
+  if (element.type === "photo") {
+    return (
+      <PhotoStoryElement>
+        <Player face={element.player.face}>{element.player.name} shared a photo:</Player>
+        <img src={element.content} alt="Photo" />
+      </PhotoStoryElement>
     );
   }
 
@@ -637,6 +655,37 @@ const ImageStoryElement = styled.div`
     border: 1.5px solid rgba(0, 245, 255, 0.5);
     border-radius: 1vmin;
     box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
+  }
+`;
+
+const PhotoStoryElement = styled(ImageStoryElement)`
+  img {
+    border-color: rgba(255, 32, 121, 0.5);
+    box-shadow: 0 0 16px rgba(255, 32, 121, 0.2), 0 0 40px rgba(255, 32, 121, 0.06);
+  }
+`;
+
+const CompareRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2vmin;
+  width: 100%;
+
+  > * {
+    flex: 1 1 38vw;
+    min-width: 0;
+    width: auto;
+  }
+
+  ${ImageStoryElement}, ${PhotoStoryElement} {
+    width: 100%;
+    max-width: 80vw;
+  }
+
+  ${ImageStoryElement} img, ${PhotoStoryElement} img {
+    max-width: 100%;
   }
 `;
 
