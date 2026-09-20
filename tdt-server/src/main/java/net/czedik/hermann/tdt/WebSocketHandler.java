@@ -39,19 +39,17 @@ import net.czedik.hermann.tdt.actions.VoteAction;
 public class WebSocketHandler extends AbstractWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(WebSocketHandler.class);
 
-    private static final long KEEP_CLIENTS_ALIVE_INTERVAL_SECONDS = 15;
-
     private final Map<WebSocketSession, Client> clients = new ConcurrentHashMap<>();
 
     private final GameManager gameManager;
 
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
-    public WebSocketHandler(GameManager gameManager) {
+    public WebSocketHandler(GameManager gameManager, long keepClientsAliveIntervalSeconds) {
         this.gameManager = gameManager;
 
         executorService.scheduleWithFixedDelay(this::keepClientsActive,
-                KEEP_CLIENTS_ALIVE_INTERVAL_SECONDS, KEEP_CLIENTS_ALIVE_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                keepClientsAliveIntervalSeconds, keepClientsAliveIntervalSeconds, TimeUnit.SECONDS);
     }
 
     /**

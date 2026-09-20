@@ -1,0 +1,82 @@
+# Type Draw Type — instance configuration
+#
+# Copy this file to `config.yml` and edit it. Every key is optional: anything you leave out keeps the
+# default shown here. Only the keys you want to change need to be present.
+#
+# Where the server looks for it:
+#   - Docker (Dockerfile_prod):  /tdt-data/config.yml  — i.e. inside the data volume mounted at /tdt-data.
+#                                Override with -e TDT_CONFIG_FILE=/some/other/path.yml
+#   - Running the jar directly:  ./config.yml in the working directory (or set TDT_CONFIG_FILE).
+#   - `./gradlew bootRun`:       tdt-server/config.yml
+#
+# Every key can also be given as an environment variable or command-line flag instead, e.g.
+#   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...
+# Environment variables and command-line flags take precedence over this file.
+#
+# Restart the server after changing the file.
+
+server:
+  # HTTP port the server listens on (Docker maps this with -p <host>:8080).
+  port: 8080
+
+  # Gzip HTTP responses (the static frontend assets and JSON API).
+  compression:
+    enabled: true
+
+tdt:
+  # Directory where games (state, drawings, uploads, replays) are persisted. A `games/` folder is created inside.
+  # In Docker this is fixed to /tdt-data by the image's start command — mount your volume there instead of
+  # changing this key.
+  storage-dir: .
+
+  websocket:
+    # Browser origins allowed to open the game websocket. Must contain the exact scheme + host (+ port) that
+    # players type into their address bar, otherwise the websocket handshake is rejected and nobody can join.
+    #
+    #   allowed-origins:
+    #     - https://tdt.example.com
+    #     - http://192.168.1.10:8080
+    #
+    # Use "*" to allow every origin (fine for a LAN party, not recommended on the public internet).
+    allowed-origins:
+      - http://localhost:8080
+
+    # Largest text frame the server accepts, in bytes. Text frames carry JSON actions, Team-mode canvas syncs
+    # (base64 PNG) and drawing replays. Raise this if large Team-mode canvases get disconnected.
+    max-text-message-bytes: 3145728    # 3 MiB
+
+    # Largest binary frame the server accepts, in bytes. Binary frames carry submitted drawings and uploaded
+    # photos (Picture Perfect). Must be larger than limits.max-upload-bytes.
+    max-binary-message-bytes: 5242880  # 5 MiB
+
+    # Seconds between websocket pings sent to every connected client. Keeps idle connections alive through
+    # reverse proxies (nginx, Caddy, Cloudflare) that close silent websockets after their read timeout.
+    # Set it to well under your proxy's timeout.
+    keep-alive-interval-seconds: 15
+
+  limits:
+    # Hard cap on players per game, applied on top of whatever the lobby creator picks.
+    # 0 = no server-wide cap (the creator's "max players" setting, or unlimited, applies).
+    # A creator choosing "unlimited" or a number above this cap gets clamped to the cap.
+    max-players: 0
+
+    # How many of the most recent messages each chat (lobby chat and per-round chat) keeps and replays to
+    # players who reconnect.
+    max-chat-messages: 50
+
+    # Longest chat message accepted, in characters. Longer messages are silently dropped.
+    max-chat-text-length: 200
+
+    # Largest photo accepted in Picture Perfect mode, in bytes. The browser already downscales photos before
+    # uploading; this is the server-side safety limit. Must fit into websocket.max-binary-message-bytes.
+    max-upload-bytes: 2097152          # 2 MiB
+
+  public-games:
+    # Whether lobbies may be listed in the public server browser. Set to false on a private instance:
+    # the "public lobby" toggle is then ignored and /api/games always returns an empty list.
+    enabled: true
+
+# Standard Spring Boot settings work here too, e.g. to quieten the log:
+# logging:
+#   level:
+#     net.czedik.hermann.tdt: WARN

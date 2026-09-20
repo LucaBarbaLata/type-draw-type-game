@@ -21,13 +21,19 @@ public class GameLoader {
 
     private final Path gameDir;
 
+    private final TdtProperties.Limits limits;
+
+    private final boolean publicGamesEnabled;
+
     private Game loadedGame;
 
     private final AtomicLong gameRefCount = new AtomicLong(0);
 
-    public GameLoader(String gameId, Path gameDir) {
+    public GameLoader(String gameId, Path gameDir, TdtProperties.Limits limits, boolean publicGamesEnabled) {
         this.gameId = Objects.requireNonNull(gameId);
         this.gameDir = Objects.requireNonNull(gameDir);
+        this.limits = Objects.requireNonNull(limits);
+        this.publicGamesEnabled = publicGamesEnabled;
     }
 
     public GameRef getGameRef() {
@@ -58,7 +64,7 @@ public class GameLoader {
         if (gameState.gameMode == null) {
             gameState.gameMode = GameMode.CLASSIC;
         }
-        return new Game(gameId, gameDir, gameState);
+        return new Game(gameId, gameDir, gameState, limits, publicGamesEnabled);
     }
 
     public class GameRef {

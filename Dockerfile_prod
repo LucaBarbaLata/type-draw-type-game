@@ -5,4 +5,6 @@ WORKDIR /opt/tdt/
 COPY build/server.jar server.jar
 EXPOSE 8080
 VOLUME /tdt-data
-ENTRYPOINT ["java","-jar","server.jar","--storage.dir=/tdt-data/"]
+# optional instance configuration, see config.example.yml in the repository root
+ENV TDT_CONFIG_FILE=/tdt-data/config.yml
+ENTRYPOINT ["java","-jar","server.jar","--tdt.storage-dir=/tdt-data/"]

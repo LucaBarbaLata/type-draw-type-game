@@ -117,6 +117,52 @@ The game is now at `http://<your-server-ip>:8080/`
 
 ---
 
+## Configuration
+
+Everything an instance host can tune lives in **one file: `config.yml`**. Start from the fully commented
+[`config.example.yml`](config.example.yml) — copy it, keep only the keys you want to change, and restart the server.
+
+Where the server looks for it:
+
+| How you run it | Location |
+|---|---|
+| Docker (`Dockerfile_prod`) | `/tdt-data/config.yml` — inside the data volume. Override with `-e TDT_CONFIG_FILE=/path/to/file.yml` |
+| `java -jar server.jar` | `./config.yml` in the working directory (or set `TDT_CONFIG_FILE`) |
+| `./gradlew bootRun` | `tdt-server/config.yml` |
+
+The file is optional; anything you leave out keeps its default. A typical public deployment behind a reverse proxy only needs:
+
+```yaml
+tdt:
+  websocket:
+    allowed-origins:
+      - https://tdt.example.com   # the exact origin players see in their address bar
+```
+
+What you can configure:
+
+| Key | Default | What it does |
+|---|---|---|
+| `server.port` | `8080` | HTTP port |
+| `tdt.storage-dir` | `.` | Where games are persisted (fixed to `/tdt-data` in Docker) |
+| `tdt.websocket.allowed-origins` | `[http://localhost:8080]` | Origins allowed to open the game WebSocket. `"*"` allows any |
+| `tdt.websocket.max-text-message-bytes` | 3 MiB | Largest text frame (JSON actions, Team-mode canvas syncs, replays) |
+| `tdt.websocket.max-binary-message-bytes` | 5 MiB | Largest binary frame (drawings, uploaded photos) |
+| `tdt.websocket.keep-alive-interval-seconds` | `15` | Ping interval that keeps idle connections open through proxies |
+| `tdt.limits.max-players` | `0` (none) | Server-wide cap on players per game, on top of the lobby setting |
+| `tdt.limits.max-chat-messages` | `50` | Chat history kept per game |
+| `tdt.limits.max-chat-text-length` | `200` | Longest accepted chat message |
+| `tdt.limits.max-upload-bytes` | 2 MiB | Largest photo accepted in Picture Perfect mode |
+| `tdt.public-games.enabled` | `true` | Whether lobbies can be listed in the public server browser |
+
+Invalid values (e.g. a negative limit or an empty origins list) stop the server at startup with a message naming the
+key and the line in `config.yml`.
+
+Every key can also be passed as an environment variable or command-line flag, which take precedence over the file —
+for example `-e TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com` or `--tdt.limits.max-players=8`.
+
+---
+
 ## Development
 
 ### Backend

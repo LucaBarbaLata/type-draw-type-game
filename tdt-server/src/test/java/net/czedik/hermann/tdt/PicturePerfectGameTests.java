@@ -80,7 +80,8 @@ class PicturePerfectGameTests {
     @BeforeEach
     void setUpGame() throws IOException {
         TestClient creator = new TestClient("creator");
-        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true));
+        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true),
+                new TdtProperties.Limits(), true);
         game.access(creator.client, new AccessAction(GAME_ID, creator.playerId));
         players.add(creator);
 

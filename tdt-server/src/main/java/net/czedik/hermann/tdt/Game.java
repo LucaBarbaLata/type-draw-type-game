@@ -71,14 +71,8 @@ public class Game {
 
     public static final String STATE_FILENAME = "state.json";
 
-    private static final int MAX_CHAT_MESSAGES = 50;
-    private static final int MAX_CHAT_TEXT_LENGTH = 200;
-
     /** Number of rounds in PICTURE_PERFECT mode: one upload round followed by one draw round. */
     private static final int PICTURE_PERFECT_ROUNDS = 2;
-
-    /** Maximum size of an uploaded photo (PICTURE_PERFECT mode). Well below the 5 MB websocket binary buffer. */
-    private static final int MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
     private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
     private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
@@ -88,6 +82,12 @@ public class Game {
     private final Path gameDir;
 
     private final GameState gameState;
+
+    /** Server-wide limits from the instance configuration (chat, uploads, player cap). */
+    private final TdtProperties.Limits limits;
+
+    /** Whether the instance allows lobbies to be listed in the public server browser. */
+    private final boolean publicGamesEnabled;
 
     private final List<ChatMessage> chatMessages = new ArrayList<>();
 
@@ -105,16 +105,40 @@ public class Game {
     // Runtime-only: latest canvas snapshot per player ID, used to show spectators live drawing progress
     private final Map<String, String> latestSpectatorSnapshots = new HashMap<>();
 
-    public Game(String gameId, Path gameDir, Player creator) {
-        this(gameId, gameDir, new GameState());
+    public Game(String gameId, Path gameDir, Player creator, TdtProperties.Limits limits, boolean publicGamesEnabled) {
+        this(gameId, gameDir, new GameState(), limits, publicGamesEnabled);
 
         gameState.players.add(Objects.requireNonNull(creator));
     }
 
-    public Game(String gameId, Path gameDir, GameState gameState) {
+    public Game(String gameId, Path gameDir, GameState gameState, TdtProperties.Limits limits, boolean publicGamesEnabled) {
         this.gameId = Objects.requireNonNull(gameId);
         this.gameDir = Objects.requireNonNull(gameDir);
         this.gameState = Objects.requireNonNull(gameState);
+        this.limits = Objects.requireNonNull(limits);
+        this.publicGamesEnabled = publicGamesEnabled;
+    }
+
+    /**
+     * Applies the server-wide player cap to a lobby's max-players setting: 0 (unlimited) or anything above the cap
+     * becomes the cap. Without a server cap the lobby setting is returned unchanged.
+     */
+    private int clampMaxPlayers(int lobbyMaxPlayers) {
+        int cap = limits.getMaxPlayers();
+        lobbyMaxPlayers = Math.max(0, lobbyMaxPlayers);
+        if (cap <= 0) {
+            return lobbyMaxPlayers;
+        }
+        return lobbyMaxPlayers == 0 ? cap : Math.min(lobbyMaxPlayers, cap);
+    }
+
+    /** A lobby can only be public if the instance allows public games at all. */
+    private boolean clampIsPublic(boolean isPublic) {
+        if (isPublic && !publicGamesEnabled) {
+            log.info("Game {}: Ignoring request to make the lobby public — public games are disabled on this server", gameId);
+            return false;
+        }
+        return isPublic;
     }
 
     // returns whether the client should remain associated with this game (player or spectator)
@@ -168,10 +192,10 @@ public class Game {
             log.warn("Game {}: Ignoring settings change in state {}", gameId, gameState.state);
             return;
         }
-        gameState.maxPlayers = Math.max(0, settingsAction.maxPlayers());
+        gameState.maxPlayers = clampMaxPlayers(settingsAction.maxPlayers());
         gameState.roundTimerSeconds = Math.max(0, settingsAction.roundTimerSeconds());
         gameState.chatEnabled = settingsAction.chatEnabled();
-        gameState.isPublic = settingsAction.isPublic();
+        gameState.isPublic = clampIsPublic(settingsAction.isPublic());
         if (settingsAction.gameMode() != null) {
             gameState.gameMode = settingsAction.gameMode();
         }
@@ -202,12 +226,12 @@ public class Game {
             return;
         }
         String text = chatAction.text();
-        if (text == null || text.isBlank() || text.length() > MAX_CHAT_TEXT_LENGTH) {
+        if (text == null || text.isBlank() || text.length() > limits.getMaxChatTextLength()) {
             return;
         }
         ChatMessage message = new ChatMessage(mapPlayerToPlayerInfo(player), text.strip());
         chatMessages.add(message);
-        if (chatMessages.size() > MAX_CHAT_MESSAGES) {
+        if (chatMessages.size() > limits.getMaxChatMessages()) {
             chatMessages.remove(0);
         }
         log.info("Game {}: Chat from {}: {}", gameId, player.name(), text.strip());
@@ -237,7 +261,7 @@ public class Game {
             }
         }
         String text = chatAction.text();
-        if (text == null || text.isBlank() || text.length() > MAX_CHAT_TEXT_LENGTH) {
+        if (text == null || text.isBlank() || text.length() > limits.getMaxChatTextLength()) {
             return;
         }
         PlayerInfo sender = player != null
@@ -245,7 +269,7 @@ public class Game {
                 : new PlayerInfo("Spectator", "A", false);
         ChatMessage message = new ChatMessage(sender, text.strip());
         roundChatMessages.add(message);
-        if (roundChatMessages.size() > MAX_CHAT_MESSAGES) {
+        if (roundChatMessages.size() > limits.getMaxChatMessages()) {
             roundChatMessages.remove(0);
         }
         log.info("Game {}: RoundChat from {}: {}", gameId, sender.name(), text.strip());
@@ -326,8 +350,9 @@ public class Game {
                 client.send(new BannedState());
                 return false;
             }
-            if (gameState.maxPlayers > 0 && gameState.players.size() >= gameState.maxPlayers) {
-                log.info("Game {}: Join rejected — game is full ({}/{})", gameId, gameState.players.size(), gameState.maxPlayers);
+            int effectiveMaxPlayers = clampMaxPlayers(gameState.maxPlayers);
+            if (effectiveMaxPlayers > 0 && gameState.players.size() >= effectiveMaxPlayers) {
+                log.info("Game {}: Join rejected — game is full ({}/{})", gameId, gameState.players.size(), effectiveMaxPlayers);
                 client.send(new AlreadyStartedGameState());
                 return false;
             }
@@ -708,13 +733,15 @@ public class Game {
     }
 
     public PublicGameInfo getPublicInfo() {
+        if (!publicGamesEnabled) return null;
         if (gameState.state != GameState.State.WaitingForPlayers) return null;
         if (!gameState.isPublic) return null;
         Player creator = gameState.players.stream().filter(Player::isCreator).findFirst().orElse(null);
         if (creator == null) return null;
         // Don't advertise the lobby if the creator has disconnected
         if (playerToClients.getOrDefault(creator, Collections.emptySet()).isEmpty()) return null;
-        return new PublicGameInfo(gameId, creator.name(), creator.face(), gameState.players.size(), gameState.maxPlayers);
+        return new PublicGameInfo(gameId, creator.name(), creator.face(), gameState.players.size(),
+                clampMaxPlayers(gameState.maxPlayers));
     }
 
     private String getDrawingSrc(String imageFilename) {
@@ -912,9 +939,9 @@ public class Game {
     public void applyRematchSettings(RematchData data) {
         gameState.gameMode = data.gameMode();
         gameState.roundTimerSeconds = data.roundTimerSeconds();
-        gameState.maxPlayers = data.maxPlayers();
+        gameState.maxPlayers = clampMaxPlayers(data.maxPlayers());
         gameState.chatEnabled = data.chatEnabled();
-        gameState.isPublic = data.isPublic();
+        gameState.isPublic = clampIsPublic(data.isPublic());
         gameState.hotPotatoIntervalSeconds = data.hotPotatoIntervalSeconds();
         gameState.hotPotatoTotalSeconds = data.hotPotatoTotalSeconds();
     }
@@ -936,7 +963,7 @@ public class Game {
 
         if (startAction != null) {
             gameState.roundTimerSeconds = Math.max(0, startAction.roundTimerSeconds());
-            gameState.maxPlayers = Math.max(0, startAction.maxPlayers());
+            gameState.maxPlayers = clampMaxPlayers(startAction.maxPlayers());
         }
 
         if (gameState.players.size() > 1) {
@@ -1121,7 +1148,7 @@ public class Game {
             log.warn("Game {}: Player {} already uploaded a photo for round {}", gameId, player.id(), gameState.round);
             return;
         }
-        if (image.remaining() > MAX_UPLOAD_BYTES) {
+        if (image.remaining() > limits.getMaxUploadBytes()) {
             log.warn("Game {}: Ignoring photo upload from player {} — too large ({} bytes)", gameId, player.id(), image.remaining());
             return;
         }

@@ -17,8 +17,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Consumer;
@@ -62,10 +60,19 @@ public class GameManager {
 
     private final Path gamesPath;
 
-    public GameManager(@Value("${storage.dir}") String storageDir) {
-        Path storageDirPath = Path.of(storageDir).toAbsolutePath().normalize();
+    private final TdtProperties.Limits limits;
+
+    private final boolean publicGamesEnabled;
+
+    public GameManager(TdtProperties properties) {
+        Path storageDirPath = Path.of(properties.getStorageDir()).toAbsolutePath().normalize();
         log.info("Using storage path: {}", storageDirPath);
         gamesPath = storageDirPath.resolve("games");
+        limits = properties.getLimits();
+        publicGamesEnabled = properties.getPublicGames().isEnabled();
+        log.info("Limits: maxPlayers={}, maxChatMessages={}, maxChatTextLength={}, maxUploadBytes={}; publicGamesEnabled={}",
+                limits.getMaxPlayers(), limits.getMaxChatMessages(), limits.getMaxChatTextLength(),
+                limits.getMaxUploadBytes(), publicGamesEnabled);
     }
 
     public String newGame(CreateGameRequest createGameRequest) throws IOException {
@@ -73,7 +80,7 @@ public class GameManager {
         Path gameDir = getGameDir(gameId);
         Player player = new Player(createGameRequest.playerId(), createGameRequest.playerName(),
                 createGameRequest.playerFace(), true);
-        Game newGame = new Game(gameId, gameDir, player);
+        Game newGame = new Game(gameId, gameDir, player, limits, publicGamesEnabled);
 
         GameRef gameRef = getGameRef(gameId);
         try {
@@ -140,7 +147,7 @@ public class GameManager {
         GameRef gameRef;
         synchronized (this) {
             GameLoader gameLoader = gameLoaders.computeIfAbsent(gameId,
-                    id -> new GameLoader(gameId, getGameDir(gameId)));
+                    id -> new GameLoader(gameId, getGameDir(gameId), limits, publicGamesEnabled));
             log.info("Access to game loader of game {} (total number of game loaders: {})", gameId, gameLoaders.size());
             gameRef = gameLoader.getGameRef();
         }
@@ -202,7 +209,7 @@ public class GameManager {
     }
 
     private void updatePublicRegistry(Game game) {
-        if (game == null) return;
+        if (game == null || !publicGamesEnabled) return;
         PublicGameInfo info = game.getPublicInfo();
         synchronized (this) {
             if (info == null) {
@@ -456,7 +463,7 @@ public class GameManager {
         }
         Path newGameDir = getGameDir(newGameId);
         Player creator = new Player(rematchData.creatorId(), rematchData.creatorName(), rematchData.creatorFace(), true);
-        Game newGame = new Game(newGameId, newGameDir, creator);
+        Game newGame = new Game(newGameId, newGameDir, creator, limits, publicGamesEnabled);
         newGame.applyRematchSettings(rematchData);
 
         GameRef newGameRef = getGameRef(newGameId);
