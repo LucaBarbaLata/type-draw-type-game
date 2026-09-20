@@ -53,8 +53,10 @@
   --cyber-text-muted: #3d5570;
   --cyber-text-disabled: #1e2c3a;
 
-  /* Logo & icons */
+  /* Logo & icons. The logo SVG is black text with colored letters; dark themes invert it
+     (white text, neon letters) while light themes show it as drawn. */
   --cyber-logo: #ffffff;
+  --cyber-logo-filter: invert(1);
   --cyber-logo-glow: drop-shadow(0 0 10px var(--cyber-cyan)) drop-shadow(0 0 20px rgba(var(--cyber-cyan-rgb), 0.4));
   --cyber-logo-glow-strong: drop-shadow(0 0 20px var(--cyber-cyan)) drop-shadow(0 0 45px rgba(var(--cyber-cyan-rgb), 0.65)) drop-shadow(0 0 70px rgba(var(--cyber-cyan-rgb), 0.2));
   --cyber-icon-glow: drop-shadow(0 0 3px currentColor);
@@ -204,6 +206,7 @@
   --cyber-bg-deep: #ffffff;
   --cyber-bg-deep-rgb: 255, 255, 255;
 
+  --cyber-logo-filter: none;
   --cyber-logo-glow: drop-shadow(0 2px 6px rgba(var(--cyber-cyan-rgb), 0.3));
   --cyber-logo-glow-strong: drop-shadow(0 4px 14px rgba(var(--cyber-cyan-rgb), 0.45));
   --cyber-icon-glow: none;

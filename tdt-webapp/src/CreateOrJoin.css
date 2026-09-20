@@ -30,7 +30,7 @@
   flex-grow: 0;
 }
 
-.Join-logo .Logo .ThemedIcon {
+.Join-logo .Logo img {
   max-height: 75vh;
   width: 40vw;
 }

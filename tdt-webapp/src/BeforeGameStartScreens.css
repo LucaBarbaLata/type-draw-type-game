@@ -33,7 +33,7 @@
   flex-grow: 0;
 }
 
-.BeforeGameStartScreen-right .Logo .ThemedIcon {
+.BeforeGameStartScreen-right .Logo img {
   width: 30vmin;
 }
 

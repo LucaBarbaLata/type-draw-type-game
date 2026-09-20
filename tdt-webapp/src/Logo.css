@@ -3,15 +3,14 @@
 }
 
 @keyframes logoGlow {
-  0%, 100% { filter: var(--cyber-logo-glow); }
-  50%       { filter: var(--cyber-logo-glow-strong); }
+  0%, 100% { filter: var(--cyber-logo-filter) var(--cyber-logo-glow); }
+  50%       { filter: var(--cyber-logo-filter) var(--cyber-logo-glow-strong); }
 }
 
-.Logo .ThemedIcon {
+.Logo img {
   display: block;
   width: 100%;
   max-height: 45vh;
-  color: var(--cyber-logo);
-  filter: var(--cyber-logo-glow);
+  filter: var(--cyber-logo-filter) var(--cyber-logo-glow);
   animation: logoGlow 7s ease-in-out infinite;
 }

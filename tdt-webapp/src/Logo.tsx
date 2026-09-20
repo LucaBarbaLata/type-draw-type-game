@@ -1,9 +1,11 @@
-import ThemedIcon from "./ThemedIcon";
+import logoImg from "./img/logo.svg";
 import "./Logo.css";
 
+/* Kept as an <img> (not a ThemedIcon mask): the DRAW letters carry their own colors,
+   which the theme only inverts on dark backgrounds (see --cyber-logo-filter). */
 const Logo = () => (
   <div className="Logo">
-    <ThemedIcon name="logo" label="Type Draw Type Game" />
+    <img src={logoImg} alt="Type Draw Type Game" />
   </div>
 );
 
