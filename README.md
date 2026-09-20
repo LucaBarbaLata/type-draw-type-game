@@ -31,10 +31,9 @@ Select a mode when creating a lobby. All players see the active mode before the 
 | **Shaky Hands** | A random wobble is added to every stroke. Good luck drawing a straight line. |
 | **Blind Draw** | Your brush is invisible while you draw. Strokes only appear when you lift the pen. |
 | **Telephone Noir** | The colour palette is locked to black, white, and grey. All drawings must be monochrome. |
-| **Opposite Mode** | Always draw the *opposite* of what you receive. The chain constantly inverts itself. |
-| **Fog of War** | Only a small circle around your cursor is visible while drawing. |
-| **Hot Canvas** | All players draw simultaneously. Every rotation the server passes each canvas to the next player — nobody finishes their own drawing. |
-| **Team Mode** | Two players share one canvas and draw on it simultaneously in real time via WebSocket stroke relay. |
+| **Fog of War** | Only a small circle around your cursor is visible while drawing. Explore the canvas to see what you've done. |
+| **Hot Canvas** | All players draw simultaneously. Every 15 / 30 / 60 seconds (host's choice) the server rotates everyone to a different canvas for a total of 3, 5 or 10 minutes — nobody finishes their own drawing. |
+| **Team Mode** | Two players share one canvas and draw on it simultaneously in real time via WebSocket stroke relay. Needs at least 4 players. |
 | **Picture Perfect** | Everyone uploads a photo from their device, then redraws a random other player's photo by hand with the original in view. The reveal shows photo and drawing side by side. Two rounds only. |
 
 ---
@@ -43,8 +42,9 @@ Select a mode when creating a lobby. All players see the active mode before the 
 
 ### Gameplay
 - **Round timer** — optional per-round time limit (30 / 60 / 90 / 120 / 180 seconds), with audio warnings and auto-submit on expiry
-- **Max players** — creator can cap the lobby at 2–12 players
+- **Max players** — creator can cap the lobby at 2–12 players; instance hosts can enforce a server-wide cap on top (see [Configuration](#configuration))
 - **Spectator mode** — late joiners watch the game without disrupting ongoing rounds
+- **Rematch** — a "Play Again" vote at the end restarts a new game with the same group
 - **Auto-reconnect** — WebSocket reconnects automatically on connection drops; player name and face are remembered across sessions
 - **Canvas caching** — drawing progress is saved to sessionStorage so a reload or brief disconnect doesn't wipe your work
 
@@ -58,9 +58,13 @@ Select a mode when creating a lobby. All players see the active mode before the 
 ### Lobby & sharing
 - Shareable game code and URL
 - QR code for instant mobile joining (click to download as PNG)
+- **Public lobbies** — flag a lobby as public and it shows up in the Server Browser on the home screen for anyone to join (instance hosts can turn this off)
+- **Chat** — lobby chat, plus a per-round chat for players who have already submitted; the host can disable it
+- **Host moderation** — the host can kick or ban players from the lobby
 
 ### Results
 - Progressive story reveal — uncover one element at a time with animations
+- **Emoji reactions** — react to any drawing during the reveal (👍 ❤️ 😂 🔥 😮 🤯 💕); reactions cascade live on everyone's screen
 - Download any story as a formatted PNG image
 
 ### How to Play guide
@@ -114,7 +118,25 @@ docker run --rm -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
 
 The game is now at `http://<your-server-ip>:8080/`
 
-`tdt-data` is a named Docker volume where game state is persisted across restarts.
+`tdt-data` is a named Docker volume that holds everything the instance owns: persisted games (state, drawings,
+uploaded photos, replays) **and** the optional `config.yml` the server reads at startup.
+
+**5. Configure (optional):**
+
+Out of the box the server only accepts WebSocket connections from `http://localhost:8080`, so as soon as players
+reach the game through a different hostname or a reverse proxy you need a `config.yml` — see
+[Configuration](#configuration). Put it into the data volume with either of these:
+
+```bash
+# a) copy it into the named volume
+docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
+
+# b) or mount a host directory instead of a named volume and keep config.yml in it
+mkdir -p ./tdt-data && cp config.example.yml ./tdt-data/config.yml   # then edit it
+docker run --rm -p 8080:8080 -v "$PWD/tdt-data":/tdt-data tdt-game-prod
+```
+
+Restart the container after changing the file.
 
 ---
 
@@ -122,12 +144,14 @@ The game is now at `http://<your-server-ip>:8080/`
 
 Everything an instance host can tune lives in **one file: `config.yml`**. Start from the fully commented
 [`config.example.yml`](config.example.yml) — copy it, keep only the keys you want to change, and restart the server.
+The built-in defaults live in `tdt-server/src/main/resources/application.yml`; don't edit that file to configure an
+instance. `config.yml` (in the repo root and in `tdt-server/`) is git-ignored, so your real values never end up in a commit.
 
 Where the server looks for it:
 
 | How you run it | Location |
 |---|---|
-| Docker (`Dockerfile_prod`) | `/tdt-data/config.yml` — inside the data volume. Override with `-e TDT_CONFIG_FILE=/path/to/file.yml` |
+| Docker (`Dockerfile_prod`) | `/tdt-data/config.yml` — inside the data volume (the image sets `TDT_CONFIG_FILE` to this path). Override with `-e TDT_CONFIG_FILE=/path/to/file.yml` |
 | `java -jar server.jar` | `./config.yml` in the working directory (or set `TDT_CONFIG_FILE`) |
 | `./gradlew bootRun` | `tdt-server/config.yml` |
 
@@ -145,22 +169,27 @@ What you can configure:
 | Key | Default | What it does |
 |---|---|---|
 | `server.port` | `8080` | HTTP port |
-| `tdt.storage-dir` | `.` | Where games are persisted (fixed to `/tdt-data` in Docker) |
-| `tdt.websocket.allowed-origins` | `[http://localhost:8080]` | Origins allowed to open the game WebSocket. `"*"` allows any |
-| `tdt.websocket.max-text-message-bytes` | 3 MiB | Largest text frame (JSON actions, Team-mode canvas syncs, replays) |
-| `tdt.websocket.max-binary-message-bytes` | 5 MiB | Largest binary frame (drawings, uploaded photos) |
-| `tdt.websocket.keep-alive-interval-seconds` | `15` | Ping interval that keeps idle connections open through proxies |
-| `tdt.limits.max-players` | `0` (none) | Server-wide cap on players per game, on top of the lobby setting |
-| `tdt.limits.max-chat-messages` | `50` | Chat history kept per game |
-| `tdt.limits.max-chat-text-length` | `200` | Longest accepted chat message |
-| `tdt.limits.max-upload-bytes` | 2 MiB | Largest photo accepted in Picture Perfect mode |
-| `tdt.public-games.enabled` | `true` | Whether lobbies can be listed in the public server browser |
+| `server.compression.enabled` | `true` | Gzip HTTP responses (static frontend assets and JSON API) |
+| `tdt.storage-dir` | `.` | Where games are persisted — a `games/` folder is created inside (fixed to `/tdt-data` in Docker) |
+| `tdt.websocket.allowed-origins` | `[http://localhost:8080]` | Origins allowed to open the game WebSocket — the exact scheme + host (+ port) players see in the address bar. `"*"` allows any |
+| `tdt.websocket.max-text-message-bytes` | 3 MiB | Largest text frame (JSON actions, Team-mode canvas syncs, replays). Raise it if large Team-mode canvases get disconnected |
+| `tdt.websocket.max-binary-message-bytes` | 5 MiB | Largest binary frame (drawings, uploaded photos). Must be larger than `max-upload-bytes` |
+| `tdt.websocket.keep-alive-interval-seconds` | `15` | Ping interval that keeps idle connections open through proxies — keep it well under your proxy's read timeout |
+| `tdt.limits.max-players` | `0` (none) | Server-wide cap on players per game; a lobby setting above it is clamped down |
+| `tdt.limits.max-chat-messages` | `50` | Chat history kept (and replayed to reconnecting players) per chat |
+| `tdt.limits.max-chat-text-length` | `200` | Longest accepted chat message, in characters; longer ones are dropped |
+| `tdt.limits.max-upload-bytes` | 2 MiB | Largest photo accepted in Picture Perfect mode (the browser already downscales before uploading) |
+| `tdt.public-games.enabled` | `true` | Whether lobbies can be listed in the public server browser. `false` ignores the "Public Lobby" toggle and `/api/games` always returns an empty list |
+
+Any other standard Spring Boot property (e.g. `logging.level.*`) works in the same file.
 
 Invalid values (e.g. a negative limit or an empty origins list) stop the server at startup with a message naming the
 key and the line in `config.yml`.
 
 Every key can also be passed as an environment variable or command-line flag, which take precedence over the file —
-for example `-e TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com` or `--tdt.limits.max-players=8`.
+for example `-e TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com` or `--tdt.limits.max-players=8`. The
+pre-config-file flags `--storage.dir=…` and `--websocket.allowed-origins=…` still work as aliases for
+`tdt.storage-dir` and `tdt.websocket.allowed-origins`.
 
 ---
 
@@ -172,7 +201,8 @@ Spring Boot 3 / Java 21, built with Gradle.
 
 ```bash
 cd tdt-server
-./gradlew bootRun
+./gradlew bootRun      # server at http://localhost:8080
+./gradlew test         # JUnit 5 test suite
 ```
 
 For live reloads, run in a second terminal:
@@ -181,6 +211,9 @@ For live reloads, run in a second terminal:
 ./gradlew build --continuous
 ```
 
+To try instance settings locally, drop a `config.yml` into `tdt-server/` (it's git-ignored) — `bootRun` picks it up
+the same way the production jar does.
+
 ### Frontend
 
 React 18 / TypeScript / Vite, built with Yarn.
@@ -188,10 +221,13 @@ React 18 / TypeScript / Vite, built with Yarn.
 ```bash
 cd tdt-webapp
 yarn
-yarn dev
+yarn dev               # dev server at http://localhost:5173
+yarn lint              # ESLint
+yarn build             # production build into dist/ (build.sh copies it into the server jar)
 ```
 
-Dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend on port 8080.
+Dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend on port 8080. There is no
+frontend test suite.
 
 ---
 
@@ -199,12 +235,13 @@ Dev server runs at `http://localhost:5173` and proxies `/api` requests to the ba
 
 | Layer | Stack |
 |---|---|
-| Frontend | React 18, TypeScript 5, Vite, styled-components |
+| Frontend | React 18, TypeScript 5, Vite 5, styled-components 6 |
 | Backend | Spring Boot 3.3, Java 21, Gradle |
 | Real-time | WebSocket (Spring) |
 | Audio | Web Audio API (fully synthesized) |
 | Container | Docker multi-stage build, Eclipse Temurin JRE 21 |
-| Storage | JSON state files in a Docker volume |
+| Storage | Flat files per game (JSON state, PNG drawings, uploaded photos, `.replay.json` timelapses) under `tdt.storage-dir`, plus `config.yml` — all in one Docker volume |
+| Configuration | Spring `@ConfigurationProperties` (`tdt.*`), validated at startup; external `config.yml` via `TDT_CONFIG_FILE` |
 
 ---
 
