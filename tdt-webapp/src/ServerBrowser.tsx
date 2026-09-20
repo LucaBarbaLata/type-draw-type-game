@@ -246,11 +246,11 @@ const PanelDivider = styled.div`
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(0, 245, 255, 0.35) 15%,
-    rgba(0, 245, 255, 0.35) 85%,
+    rgba(var(--cyber-cyan-rgb), 0.35) 15%,
+    rgba(var(--cyber-cyan-rgb), 0.35) 85%,
     transparent
   );
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+  box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.2);
   margin: 0 1vmin;
   flex-shrink: 0;
 `;
@@ -299,7 +299,7 @@ const NameInput = styled.input`
 
 // Join Match panel
 const StatusMsg = styled.div`
-  color: #6688aa;
+  color: var(--cyber-text-soft);
   font-size: 1.8vmin;
   text-align: center;
   margin-top: 2vmin;
@@ -316,7 +316,7 @@ const GameList = styled.div`
     width: 3px;
   }
   &::-webkit-scrollbar-thumb {
-    background: rgba(0, 245, 255, 0.3);
+    background: rgba(var(--cyber-cyan-rgb), 0.3);
     border-radius: 2px;
   }
 `;
@@ -326,16 +326,16 @@ const GameCard = styled.div<{ $i?: number }>`
   align-items: center;
   justify-content: space-between;
   padding: 1.5vmin 2vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.3);
   border-radius: 1vmin;
-  background: rgba(0, 245, 255, 0.03);
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.06);
+  background: rgba(var(--cyber-cyan-rgb), 0.03);
+  box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.06);
   animation: ${fadeUp} 0.32s ${({ $i }) => ($i ?? 0) * 0.07}s ease-out both;
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.6);
-    box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+    border-color: rgba(var(--cyber-cyan-rgb), 0.6);
+    box-shadow: 0 0 16px rgba(var(--cyber-cyan-rgb), 0.15);
   }
 `;
 
@@ -360,14 +360,14 @@ const CreatorName = styled.div`
 
 const PlayerCount = styled.div`
   font-size: 1.4vmin;
-  color: #6688aa;
+  color: var(--cyber-text-soft);
 `;
 
 const JoinBtn = styled.button`
   font-size: 1.6vmin;
   padding: 0.7vmin 2vmin;
-  background: rgba(0, 245, 255, 0.1);
-  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  background: rgba(var(--cyber-cyan-rgb), 0.1);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
   border-radius: 0.6vmin;
   color: var(--cyber-cyan);
   cursor: pointer;
@@ -377,7 +377,7 @@ const JoinBtn = styled.button`
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    background: rgba(0, 245, 255, 0.22);
+    background: rgba(var(--cyber-cyan-rgb), 0.22);
     border-color: var(--cyber-cyan);
   }
 

@@ -69,13 +69,13 @@
   max-width: 100%;
   max-height: 100vh;
   border-radius: 0.5vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.25);
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.08);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.25);
+  box-shadow: 0 0 20px rgba(var(--cyber-cyan-rgb), 0.08);
 }
 
 /* Base tool button */
 .tool-button {
-  background-color: rgba(0, 0, 20, 0.85);
+  background-color: rgba(var(--cyber-bg-deep-rgb), 0.85);
   border: 1.5px solid var(--cyber-cyan);
   color: var(--cyber-cyan);
   text-align: center;
@@ -93,8 +93,8 @@
 }
 
 .tool-button:hover {
-  background-color: rgba(0, 245, 255, 0.12);
-  box-shadow: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.3);
+  background-color: rgba(var(--cyber-cyan-rgb), 0.12);
+  box-shadow: var(--cyber-glow-strong);
 }
 
 .tool-button:active {
@@ -117,8 +117,8 @@
 }
 
 .tool-button-help:hover {
-  background-color: rgba(255, 32, 121, 0.12);
-  box-shadow: 0 0 16px #ff2079, 0 0 40px rgba(255, 32, 121, 0.3);
+  background-color: rgba(var(--cyber-magenta-rgb), 0.12);
+  box-shadow: var(--cyber-glow-magenta-strong);
 }
 
 .tool-button-done {
@@ -129,8 +129,8 @@
 }
 
 .tool-button-done:hover {
-  background-color: rgba(57, 255, 20, 0.12);
-  box-shadow: 0 0 16px #39ff14, 0 0 40px rgba(57, 255, 20, 0.3);
+  background-color: rgba(var(--cyber-green-rgb), 0.12);
+  box-shadow: var(--cyber-glow-green-strong);
 }
 
 /* Eraser — magenta tint */
@@ -145,34 +145,34 @@
 .tool-button-fill {
   border-color: var(--cyber-yellow);
   color: var(--cyber-yellow);
-  box-shadow: 0 0 8px #f7c800, 0 0 20px rgba(247,200,0,0.2);
-  text-shadow: 0 0 8px #f7c800;
+  box-shadow: var(--cyber-glow-yellow);
+  text-shadow: var(--cyber-text-glow-yellow);
 }
 
 /* Shape tools */
 .tool-button-shape {
-  border-color: rgba(0, 245, 255, 0.6);
+  border-color: rgba(var(--cyber-cyan-rgb), 0.6);
 }
 
 /* Active tool highlight */
 .tool-button-active {
-  background-color: rgba(0, 245, 255, 0.18) !important;
-  box-shadow: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.4) !important;
+  background-color: rgba(var(--cyber-cyan-rgb), 0.18) !important;
+  box-shadow: var(--cyber-glow-strong) !important;
 }
 
 .tool-button-eraser.tool-button-active {
-  background-color: rgba(255, 32, 121, 0.18) !important;
-  box-shadow: 0 0 16px #ff2079, 0 0 40px rgba(255, 32, 121, 0.4) !important;
+  background-color: rgba(var(--cyber-magenta-rgb), 0.18) !important;
+  box-shadow: var(--cyber-glow-magenta-strong) !important;
 }
 
 .tool-button-fill.tool-button-active {
-  background-color: rgba(247, 200, 0, 0.18) !important;
-  box-shadow: 0 0 16px #f7c800, 0 0 40px rgba(247, 200, 0, 0.4) !important;
+  background-color: rgba(var(--cyber-yellow-rgb), 0.18) !important;
+  box-shadow: var(--cyber-glow-yellow-strong) !important;
 }
 
 .tool-button-shape.tool-button-active {
-  background-color: rgba(0, 245, 255, 0.18) !important;
-  box-shadow: 0 0 16px #00f5ff, 0 0 40px rgba(0, 245, 255, 0.4) !important;
+  background-color: rgba(var(--cyber-cyan-rgb), 0.18) !important;
+  box-shadow: var(--cyber-glow-strong) !important;
 }
 
 .tool-button-row {
@@ -182,25 +182,18 @@
   margin: 0.8vmin 0;
 }
 
-.tool-button img {
+/* Icons are masks filled with currentColor, so they follow the button's color */
+.tool-button .ThemedIcon {
   width: 6vmin;
   height: 6vmin;
-  filter: invert(1) sepia(1) saturate(5) hue-rotate(150deg) drop-shadow(0 0 3px #00f5ff);
-}
-
-.tool-button-help img {
-  filter: invert(1) sepia(1) saturate(5) hue-rotate(290deg) drop-shadow(0 0 3px #ff2079);
-}
-
-.tool-button-done img {
-  filter: invert(1) sepia(1) saturate(5) hue-rotate(65deg) drop-shadow(0 0 3px #39ff14);
+  filter: var(--cyber-icon-glow);
 }
 
 .tool-button-brush {
   cursor: pointer;
   margin: 1vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.35);
-  box-shadow: 0 0 6px rgba(0, 245, 255, 0.15);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.35);
+  box-shadow: 0 0 6px rgba(var(--cyber-cyan-rgb), 0.15);
 }
 
 .tool-popup {
@@ -209,8 +202,8 @@
   margin-left: 2vmin;
   padding: 1vmin;
   border-radius: 2vmin;
-  background-color: rgba(6, 6, 20, 0.95);
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  background-color: rgba(var(--cyber-bg-deep-rgb), 0.95);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
   box-shadow: var(--cyber-glow);
   backdrop-filter: blur(12px);
   display: flex;
@@ -243,7 +236,6 @@
 .tool-color img {
   width: 12vmin;
   height: 12vmin;
-  filter: invert(1) sepia(1) saturate(3) hue-rotate(150deg);
 }
 
 .ColorPicker {
@@ -275,14 +267,14 @@
   width: 7vmin;
   height: 7vmin;
   border-radius: 50%;
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .tool-noir-swatch:hover {
   transform: scale(1.12);
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
+  box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.6);
 }
 
 .DrawHelp {
@@ -294,8 +286,9 @@
   background-color: var(--cyber-bg);
 }
 
-.DrawHelp h1 img {
+.DrawHelp h1 .ThemedIcon {
   height: 12vmin;
   margin-top: 2.3vmin;
-  filter: invert(1) sepia(1) saturate(5) hue-rotate(150deg) drop-shadow(0 0 8px #00f5ff);
+  color: var(--cyber-cyan);
+  filter: var(--cyber-icon-glow);
 }

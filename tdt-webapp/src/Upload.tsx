@@ -189,7 +189,7 @@ const pulse = keyframes`
 `;
 
 const CameraIcon = styled.span`
-  filter: drop-shadow(0 0 8px #00f5ff);
+  filter: var(--cyber-icon-glow);
 `;
 
 const StatusText = styled.div`

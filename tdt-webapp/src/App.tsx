@@ -7,6 +7,7 @@ import Game from "./Game";
 import Gallery from "./Gallery";
 import ServerBrowser from "./ServerBrowser";
 import { Create, JoinWithCode } from "./CreateOrJoin";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 import "./App.css";
 
@@ -26,16 +27,20 @@ const App = () => {
   }, []);
 
   return (
-    <div className="App">
-      <Routes>
-        <Route path="/join" element={<JoinWithCode />} />
-        <Route path="/new" element={<Create />} />
-        <Route path="/g/:gameId" element={<Game />} />
-        <Route path="/g/:gameId/gallery" element={<Gallery />} />
-        <Route path="/server-browser" element={<ServerBrowser />} />
-        <Route path="*" element={<Home />} />
-      </Routes>
-    </div>
+    <>
+      <div className="App">
+        <Routes>
+          <Route path="/join" element={<JoinWithCode />} />
+          <Route path="/new" element={<Create />} />
+          <Route path="/g/:gameId" element={<Game />} />
+          <Route path="/g/:gameId/gallery" element={<Gallery />} />
+          <Route path="/server-browser" element={<ServerBrowser />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </div>
+      {/* Outside .App so the `.App > div` sizing rule doesn't apply to it */}
+      <ThemeSwitcher />
+    </>
   );
 };
 

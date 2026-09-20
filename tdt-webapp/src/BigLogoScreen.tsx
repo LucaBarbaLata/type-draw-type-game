@@ -74,9 +74,9 @@ const BigLogoScreenContentHeader = styled.div`
 const Footer = styled.div`
   font-size: 14px;
   text-align: right;
-  padding-right: 1vw;
+  padding-right: 9vmin; /* leave room for the floating theme switcher */
   padding-bottom: 1vw;
-  color: #3d5570;
+  color: var(--cyber-text-muted);
   letter-spacing: 0.05em;
 `;
 

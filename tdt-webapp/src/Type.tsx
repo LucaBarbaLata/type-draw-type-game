@@ -5,10 +5,9 @@ import Scrollable from "./Scrollable";
 import { GameMode, PlayerInfo } from "./model";
 import RoundTimer from "./RoundTimer";
 import WaitingMessage from "./WaitingMessage";
+import ThemedIcon from "./ThemedIcon";
 
 import "./Type.css";
-
-import typeImg from "./img/type.svg";
 
 const Type = ({
   round,
@@ -81,7 +80,7 @@ const Type = ({
             Round {round} of {rounds}
           </div>
           <h1>
-            <img src={typeImg} alt="Type" />
+            <ThemedIcon name="type" label="Type" />
           </h1>
           <div>
             {first

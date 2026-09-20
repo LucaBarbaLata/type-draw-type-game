@@ -6,9 +6,8 @@ import { DrawTool } from "./DrawCanvas";
 
 import Dialog from "./Dialog";
 import ColorPicker from "./ColorPicker";
+import ThemedIcon from "./ThemedIcon";
 
-import helpImg from "./img/help.svg";
-import checkImg from "./img/check.svg";
 import colorwheelImg from "./img/colorwheel.svg";
 
 const NOIR_SWATCHES = ["#000000", "#2a2a2a", "#555555", "#808080", "#aaaaaa", "#cccccc", "#e8e8e8", "#ffffff"];
@@ -77,7 +76,7 @@ const DrawTools = ({
   return (
     <div className="Draw-tools">
       <div className="tool-button tool-button-help" onClick={triggerHelp}>
-        <img src={helpImg} alt="Help" title="Help" />
+        <ThemedIcon name="help" label="Help" />
       </div>
 
       {/* Undo / Redo */}
@@ -150,7 +149,7 @@ const DrawTools = ({
       )}
 
       <div className="tool-button tool-button-done" onClick={onDone}>
-        <img src={checkImg} alt="Done" title="Done" />
+        <ThemedIcon name="check" label="Done" />
       </div>
     </div>
   );
@@ -167,7 +166,7 @@ const BrushButton = React.forwardRef(
       className="tool-button tool-button-brush"
       onClick={onClick}
       ref={ref}
-      style={{ backgroundColor: color === "#FFF" || color === "#ffffff" ? "#333" : "rgba(0,0,20,0.8)" }}
+      style={{ backgroundColor: color === "#FFF" || color === "#ffffff" ? "#333" : "rgba(var(--cyber-bg-deep-rgb), 0.8)" }}
     >
       <div style={{ width: size, height: size, backgroundColor: color, borderRadius: "50%" }} />
     </div>

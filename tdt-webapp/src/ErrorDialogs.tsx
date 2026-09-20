@@ -12,8 +12,8 @@ const shake = keyframes`
 `;
 
 const errPulse = keyframes`
-  0%, 100% { color: #ff2079; text-shadow: 0 0 8px #ff2079, 0 0 20px rgba(255,32,121,0.5); }
-  50%       { color: #ff6060; text-shadow: 0 0 18px #ff6060, 0 0 45px rgba(255,96,96,0.7); }
+  0%, 100% { opacity: 1;   text-shadow: var(--cyber-text-glow-magenta); }
+  50%       { opacity: 0.6; text-shadow: var(--cyber-text-glow-magenta-strong); }
 `;
 
 const ConnectionLostErrorDialogContent = styled.div`
@@ -24,7 +24,7 @@ const ConnectionLostErrorDialogContent = styled.div`
   justify-content: space-evenly;
 
   h1 {
-    color: #ff2079;
+    color: var(--cyber-magenta);
     letter-spacing: 0.15em;
     animation: ${shake} 0.55s ease-out 0.25s, ${errPulse} 1.4s ease-in-out 0.8s infinite;
   }

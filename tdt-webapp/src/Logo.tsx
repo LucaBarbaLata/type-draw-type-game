@@ -1,9 +1,9 @@
-import logoImg from "./img/logo.svg";
+import ThemedIcon from "./ThemedIcon";
 import "./Logo.css";
 
 const Logo = () => (
   <div className="Logo">
-    <img src={logoImg} alt="Type Draw Type Game" />
+    <ThemedIcon name="logo" label="Type Draw Type Game" />
   </div>
 );
 

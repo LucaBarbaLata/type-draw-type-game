@@ -4,8 +4,7 @@ import NewlineToBreak from "./NewLineToBreak";
 import { PlayerInfo } from "./model";
 import Dialog from "./Dialog";
 import Scrollable from "./Scrollable";
-
-import drawImg from "./img/draw.svg";
+import ThemedIcon from "./ThemedIcon";
 
 export const ConfirmDrawingDialog = ({
   text,
@@ -93,7 +92,7 @@ const ReferencePhoto = styled.img`
   max-width: 90%;
   max-height: 55vh;
   object-fit: contain;
-  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
   border-radius: 1vmin;
   box-shadow: var(--cyber-glow);
   margin: 2vmin 0;
@@ -127,7 +126,7 @@ export const DrawHelpDialog = ({
               Round {round} of {rounds}
             </div>
             <h1>
-              <img src={drawImg} alt="Draw" />
+              <ThemedIcon name="draw" label="Draw" />
             </h1>
             <div>... this {referenceImageSrc ? "photo" : "text"} by {textWriter.name}:</div>
           </div>
@@ -149,9 +148,11 @@ export const DrawHelpDialog = ({
 const Text = styled.div`
   border-radius: 2vmin;
   padding: 1vmin 2vmin;
-  background-color: #def5ff;
+  background-color: rgba(var(--cyber-cyan-rgb), 0.1);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
+  color: var(--cyber-text);
   width: 90%;
-  box-shadow: 0 0 1vmin #def5ff;
+  box-shadow: var(--cyber-glow);
   margin: 2vmin 0;
   word-break: break-word;
   overflow-wrap: anywhere;

@@ -179,12 +179,17 @@ const STEPS = [
 
 // ── Visuals ───────────────────────────────────────────────────────────────────
 
-const NODES = [
-  { icon: "✍️", label: "Type",   color: "#00f5ff" },
-  { icon: "🎨", label: "Draw",   color: "#ff6ec7" },
-  { icon: "✍️", label: "Type",   color: "#00f5ff" },
-  { icon: "🎨", label: "Draw",   color: "#ff6ec7" },
-  { icon: "🎉", label: "Reveal", color: "#ffe066" },
+// Accent roles from themes.css; translucent variants need the `-rgb` triplet token
+type Accent = "cyan" | "magenta" | "yellow";
+const accent = (a: Accent) => `var(--cyber-${a})`;
+const accentAlpha = (a: Accent, alpha: number) => `rgba(var(--cyber-${a}-rgb), ${alpha})`;
+
+const NODES: { icon: string; label: string; color: Accent }[] = [
+  { icon: "✍️", label: "Type",   color: "cyan" },
+  { icon: "🎨", label: "Draw",   color: "magenta" },
+  { icon: "✍️", label: "Type",   color: "cyan" },
+  { icon: "🎨", label: "Draw",   color: "magenta" },
+  { icon: "🎉", label: "Reveal", color: "yellow" },
 ];
 
 function OverviewVisual() {
@@ -212,7 +217,7 @@ function TypeVisual() {
   return (
     <MockScreen>
       <MockTop>
-        <Badge color="#00f5ff">TYPING ROUND</Badge>
+        <Badge color="cyan">TYPING ROUND</Badge>
         <MockRound>Round 1 of 6</MockRound>
       </MockTop>
       <MockLabel>Start a new story — type anything:</MockLabel>
@@ -229,7 +234,7 @@ function DrawVisual() {
   return (
     <MockScreen>
       <MockTop>
-        <Badge color="#ff6ec7">DRAWING ROUND</Badge>
+        <Badge color="magenta">DRAWING ROUND</Badge>
         <MockRound>Round 2 of 6</MockRound>
       </MockTop>
       <QuotedText>
@@ -248,35 +253,35 @@ function DrawSvg() {
   return (
     <svg viewBox="0 0 260 72" style={{ width: "100%", overflow: "visible" }}>
       {/* Wizard body + arms */}
-      <SvgPath d="M 55 68 L 55 46 M 43 56 L 67 56" stroke="#00f5ff" len={46} delay={0} />
+      <SvgPath d="M 55 68 L 55 46 M 43 56 L 67 56" stroke="var(--cyber-cyan)" len={46} delay={0} />
       {/* Hat brim + cone */}
-      <SvgPath d="M 44 46 L 66 46 M 44 46 L 55 26 L 66 46" stroke="#00f5ff" len={66} delay={0.28} />
+      <SvgPath d="M 44 46 L 66 46 M 44 46 L 55 26 L 66 46" stroke="var(--cyber-cyan)" len={66} delay={0.28} />
       {/* Wizard head */}
-      <SvgCircle cx={55} cy={50} r={5} stroke="#00f5ff" delay={0.16} />
+      <SvgCircle cx={55} cy={50} r={5} stroke="var(--cyber-cyan)" delay={0.16} />
       {/* Lightning bolt */}
-      <SvgPath d="M 70 50 L 83 43 L 78 53 L 96 44" stroke="#ffe066" len={44} delay={0.62} />
+      <SvgPath d="M 70 50 L 83 43 L 78 53 L 96 44" stroke="var(--cyber-yellow)" len={44} delay={0.62} />
       {/* Dragon body */}
-      <SvgPath d="M 133 60 Q 158 36 183 60" stroke="#ff6ec7" len={70} delay={0.92} />
+      <SvgPath d="M 133 60 Q 158 36 183 60" stroke="var(--cyber-magenta)" len={70} delay={0.92} />
       {/* Dragon neck + head */}
-      <SvgPath d="M 183 60 Q 196 50 202 55 L 213 48" stroke="#ff6ec7" len={48} delay={1.15} />
+      <SvgPath d="M 183 60 Q 196 50 202 55 L 213 48" stroke="var(--cyber-magenta)" len={48} delay={1.15} />
       {/* Dragon eye */}
-      <SvgCircle cx={199} cy={53} r={2} stroke="#ff6ec7" delay={1.3} />
+      <SvgCircle cx={199} cy={53} r={2} stroke="var(--cyber-magenta)" delay={1.3} />
       {/* Dragon wing */}
-      <SvgPath d="M 152 50 L 150 33 L 166 46" stroke="#ff6ec7" len={48} delay={1.44} />
+      <SvgPath d="M 152 50 L 150 33 L 166 46" stroke="var(--cyber-magenta)" len={48} delay={1.44} />
       {/* Dragon tail */}
-      <SvgPath d="M 133 60 L 118 69 L 112 62 L 104 68" stroke="#ff6ec7" len={40} delay={1.58} />
+      <SvgPath d="M 133 60 L 118 69 L 112 62 L 104 68" stroke="var(--cyber-magenta)" len={40} delay={1.58} />
       {/* Dragon legs */}
-      <SvgPath d="M 158 60 L 155 71 M 172 58 L 172 71" stroke="#ff6ec7" len={26} delay={1.72} />
+      <SvgPath d="M 158 60 L 155 71 M 172 58 L 172 71" stroke="var(--cyber-magenta)" len={26} delay={1.72} />
     </svg>
   );
 }
 
 function TwistVisual() {
-  const players = [
-    { name: "You",    sees: "blank prompt",     does: "write a sentence", icon: "✍️", color: "#00f5ff" },
-    { name: "Alex",   sees: "your sentence",    does: "draws it",         icon: "🎨", color: "#ff6ec7" },
-    { name: "Sam",    sees: "Alex's drawing",   does: "types what they see", icon: "✍️", color: "#00f5ff" },
-    { name: "Jordan", sees: "Sam's sentence",   does: "draws it",         icon: "🎨", color: "#ff6ec7" },
+  const players: { name: string; sees: string; does: string; icon: string; color: Accent }[] = [
+    { name: "You",    sees: "blank prompt",     does: "write a sentence", icon: "✍️", color: "cyan" },
+    { name: "Alex",   sees: "your sentence",    does: "draws it",         icon: "🎨", color: "magenta" },
+    { name: "Sam",    sees: "Alex's drawing",   does: "types what they see", icon: "✍️", color: "cyan" },
+    { name: "Jordan", sees: "Sam's sentence",   does: "draws it",         icon: "🎨", color: "magenta" },
   ];
   return (
     <TwistGrid>
@@ -356,22 +361,22 @@ const TopRow = styled.div`
 const ProgressTrack = styled.div`
   flex: 1;
   height: 3px;
-  background: rgba(0, 245, 255, 0.12);
+  background: rgba(var(--cyber-cyan-rgb), 0.12);
   border-radius: 2px;
   overflow: hidden;
 `;
 
 const ProgressFill = styled.div`
   height: 100%;
-  background: linear-gradient(90deg, #00f5ff 0%, #ff6ec7 100%);
+  background: linear-gradient(90deg, var(--cyber-cyan) 0%, var(--cyber-magenta) 100%);
   border-radius: 2px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 6px #00f5ff;
+  box-shadow: var(--cyber-glow);
 `;
 
 const StepCounter = styled.div`
   font-size: clamp(9px, 1.3vmin, 13px);
-  color: rgba(0, 245, 255, 0.4);
+  color: rgba(var(--cyber-cyan-rgb), 0.4);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -380,14 +385,14 @@ const StepCounter = styled.div`
 const CloseBtn = styled.button`
   background: none;
   border: none;
-  color: rgba(0, 245, 255, 0.4);
+  color: rgba(var(--cyber-cyan-rgb), 0.4);
   font-size: clamp(14px, 2.2vmin, 20px);
   cursor: pointer;
   padding: 0.4vmin 0.6vmin;
   line-height: 1;
   border-radius: 4px;
   transition: color 0.15s;
-  &:hover { color: #00f5ff; }
+  &:hover { color: var(--cyber-cyan); }
 `;
 
 const SlideArea = styled.div<{ dir: "next" | "prev" }>`
@@ -400,8 +405,8 @@ const SlideArea = styled.div<{ dir: "next" | "prev" }>`
 `;
 
 const VisualZone = styled.div`
-  background: rgba(0, 245, 255, 0.03);
-  border: 1.5px solid rgba(0, 245, 255, 0.18);
+  background: rgba(var(--cyber-cyan-rgb), 0.03);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.18);
   border-radius: 1.2vmin;
   padding: 2.5vmin 3vmin;
   display: flex;
@@ -418,14 +423,14 @@ const InfoZone = styled.div`
 
 const StepTitle = styled.h2`
   font-size: clamp(16px, 3vmin, 28px);
-  color: #00f5ff;
-  text-shadow: 0 0 12px rgba(0, 245, 255, 0.45);
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-text-glow);
   margin: 0;
 `;
 
 const StepBody = styled.p`
   font-size: clamp(12px, 1.85vmin, 17px);
-  color: #c8d8f0;
+  color: var(--cyber-text);
   line-height: 1.65;
   margin: 0;
 `;
@@ -434,12 +439,12 @@ const TipBox = styled.div`
   display: flex;
   gap: 1vmin;
   align-items: flex-start;
-  background: rgba(255, 224, 102, 0.06);
-  border: 1px solid rgba(255, 224, 102, 0.25);
+  background: rgba(var(--cyber-yellow-rgb), 0.06);
+  border: 1px solid rgba(var(--cyber-yellow-rgb), 0.25);
   border-radius: 0.8vmin;
   padding: 1.2vmin 1.5vmin;
   font-size: clamp(11px, 1.6vmin, 15px);
-  color: rgba(255, 224, 102, 0.85);
+  color: rgba(var(--cyber-yellow-rgb), 0.85);
   line-height: 1.55;
 `;
 
@@ -462,8 +467,8 @@ const Dot = styled.button<{ active: boolean; past: boolean }>`
   min-height: ${({ active }) => active ? "11px" : "7px"};
   border-radius: 50%;
   background: ${({ active, past }) =>
-    active ? "#00f5ff" : past ? "rgba(0,245,255,0.5)" : "rgba(0,245,255,0.2)"};
-  box-shadow: ${({ active }) => active ? "0 0 8px #00f5ff" : "none"};
+    active ? "var(--cyber-cyan)" : past ? "rgba(var(--cyber-cyan-rgb), 0.5)" : "rgba(var(--cyber-cyan-rgb), 0.2)"};
+  box-shadow: ${({ active }) => active ? "0 0 8px var(--cyber-cyan)" : "none"};
   border: none;
   cursor: pointer;
   padding: 0;
@@ -492,7 +497,7 @@ const ChainRow = styled.div`
   justify-content: center;
 `;
 
-const ChainNode = styled.div<{ color: string; delay: number }>`
+const ChainNode = styled.div<{ color: Accent; delay: number }>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -505,9 +510,9 @@ const NodeIcon = styled.div`
   font-size: clamp(20px, 4.5vmin, 40px);
 `;
 
-const NodeLabel = styled.div<{ color: string }>`
+const NodeLabel = styled.div<{ color: Accent }>`
   font-size: clamp(8px, 1.2vmin, 13px);
-  color: ${({ color }) => color};
+  color: ${({ color }) => accent(color)};
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: bold;
@@ -515,7 +520,7 @@ const NodeLabel = styled.div<{ color: string }>`
 
 const ChainArrow = styled.div<{ delay: number }>`
   font-size: clamp(12px, 2.2vmin, 20px);
-  color: rgba(0, 245, 255, 0.45);
+  color: rgba(var(--cyber-cyan-rgb), 0.45);
   opacity: 0;
   animation:
     ${popIn} 0.3s ${({ delay }) => delay}s both,
@@ -535,38 +540,38 @@ const MockTop = styled.div`
   display: flex;
   align-items: center;
   gap: 1.5vmin;
-  border-bottom: 1px solid rgba(0, 245, 255, 0.12);
+  border-bottom: 1px solid rgba(var(--cyber-cyan-rgb), 0.12);
   padding-bottom: 1vmin;
 `;
 
-const Badge = styled.span<{ color: string }>`
+const Badge = styled.span<{ color: Accent }>`
   font-size: clamp(7px, 1.05vmin, 11px);
   font-weight: bold;
   letter-spacing: 0.15em;
   padding: 0.3vmin 0.8vmin;
   border-radius: 0.4vmin;
-  background: ${({ color }) => color}20;
-  border: 1px solid ${({ color }) => color}55;
-  color: ${({ color }) => color};
+  background: ${({ color }) => accentAlpha(color, 0.125)};
+  border: 1px solid ${({ color }) => accentAlpha(color, 0.33)};
+  color: ${({ color }) => accent(color)};
 `;
 
 const MockRound = styled.div`
   font-size: clamp(9px, 1.25vmin, 13px);
-  color: #6688aa;
+  color: var(--cyber-text-soft);
 `;
 
 const MockLabel = styled.div`
   font-size: clamp(9px, 1.3vmin, 13px);
-  color: #6688aa;
+  color: var(--cyber-text-soft);
 `;
 
 const MockField = styled.div`
   font-size: clamp(11px, 1.7vmin, 17px);
-  color: #c8d8f0;
+  color: var(--cyber-text);
   padding: 0.8vmin 1.3vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.35);
   border-radius: 0.6vmin;
-  background: rgba(0, 245, 255, 0.04);
+  background: rgba(var(--cyber-cyan-rgb), 0.04);
   display: flex;
   align-items: center;
   min-height: 3.5vmin;
@@ -575,7 +580,7 @@ const MockField = styled.div`
 const MockTyped = styled.span``;
 
 const Cursor = styled.span<{ done: boolean }>`
-  color: #00f5ff;
+  color: var(--cyber-cyan);
   margin-left: 1px;
   ${({ done }) => !done && css`animation: ${blink} 0.75s step-end infinite;`}
   ${({ done }) => done && "opacity: 0;"}
@@ -583,7 +588,7 @@ const Cursor = styled.span<{ done: boolean }>`
 
 const MockFlow = styled.div`
   font-size: clamp(9px, 1.1vmin, 12px);
-  color: rgba(0, 245, 255, 0.3);
+  color: rgba(var(--cyber-cyan-rgb), 0.3);
   font-style: italic;
   text-align: center;
 `;
@@ -593,25 +598,25 @@ const QuotedText = styled.div`
   flex-direction: column;
   gap: 0.3vmin;
   padding: 0.8vmin 1.2vmin 0.8vmin 1.3vmin;
-  border-left: 3px solid #00f5ff;
-  background: rgba(0, 245, 255, 0.05);
+  border-left: 3px solid var(--cyber-cyan);
+  background: rgba(var(--cyber-cyan-rgb), 0.05);
   border-radius: 0 0.5vmin 0.5vmin 0;
 `;
 
 const QuoteBy = styled.div`
   font-size: clamp(8px, 1.1vmin, 12px);
-  color: #6688aa;
+  color: var(--cyber-text-soft);
 `;
 
 const QuoteContent = styled.div`
   font-size: clamp(11px, 1.6vmin, 16px);
-  color: #00f5ff;
+  color: var(--cyber-cyan);
 `;
 
 const CanvasZone = styled.div`
-  border: 1.5px dashed rgba(255, 110, 199, 0.28);
+  border: 1.5px dashed rgba(var(--cyber-magenta-rgb), 0.28);
   border-radius: 0.8vmin;
-  background: rgba(255, 110, 199, 0.02);
+  background: rgba(var(--cyber-magenta-rgb), 0.02);
   padding: 1.2vmin 1.5vmin;
   display: flex;
   align-items: center;
@@ -626,35 +631,35 @@ const TwistGrid = styled.div`
   width: 100%;
 `;
 
-const PlayerCard = styled.div<{ color: string; delay: number }>`
+const PlayerCard = styled.div<{ color: Accent; delay: number }>`
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 0.5vmin;
   padding: 1.5vmin 1vmin;
-  border: 1px solid ${({ color }) => color}30;
+  border: 1px solid ${({ color }) => accentAlpha(color, 0.19)};
   border-radius: 1vmin;
-  background: ${({ color }) => color}08;
+  background: ${({ color }) => accentAlpha(color, 0.03)};
   opacity: 0;
   animation: ${popIn} 0.38s ${({ delay }) => delay}s both;
 `;
 
-const PlayerName = styled.div<{ color: string }>`
+const PlayerName = styled.div<{ color: Accent }>`
   font-size: clamp(10px, 1.5vmin, 15px);
-  color: ${({ color }) => color};
+  color: ${({ color }) => accent(color)};
   font-weight: bold;
 `;
 
 const PlayerSees = styled.div`
   font-size: clamp(8px, 1.15vmin, 12px);
-  color: #6688aa;
-  em { color: #c8d8f0; font-style: normal; }
+  color: var(--cyber-text-soft);
+  em { color: var(--cyber-text); font-style: normal; }
 `;
 
 const PlayerDoes = styled.div`
   font-size: clamp(8px, 1.15vmin, 12px);
-  color: rgba(200, 216, 240, 0.5);
+  color: rgba(var(--cyber-text-rgb), 0.5);
   font-style: italic;
 `;
 
@@ -685,6 +690,6 @@ const RevealFace = styled.span`
 
 const RevealText = styled.span<{ dim: boolean }>`
   font-size: clamp(10px, 1.5vmin, 16px);
-  color: ${({ dim }) => dim ? "rgba(0,245,255,0.3)" : "#c8d8f0"};
+  color: ${({ dim }) => dim ? "rgba(var(--cyber-cyan-rgb), 0.3)" : "var(--cyber-text)"};
   font-style: ${({ dim }) => dim ? "italic" : "normal"};
 `;

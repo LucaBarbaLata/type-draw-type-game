@@ -180,8 +180,8 @@ const Header = styled.div`
   align-items: center;
   gap: 2vmin;
   padding: 3vmin;
-  background: rgba(0, 245, 255, 0.03);
-  border-bottom: 1.5px solid rgba(0, 245, 255, 0.2);
+  background: rgba(var(--cyber-cyan-rgb), 0.03);
+  border-bottom: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.2);
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 2vmin;
@@ -190,14 +190,14 @@ const Header = styled.div`
 const StatusBadge = styled.div`
   font-size: 3vmin;
   font-weight: bold;
-  color: #00f5ff;
-  text-shadow: 0 0 10px #00f5ff, 0 0 25px rgba(0, 245, 255, 0.4);
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-text-glow-strong);
   letter-spacing: 0.2em;
 `;
 
 const RoundInfo = styled.div`
   font-size: 2.2vmin;
-  color: #6688aa;
+  color: var(--cyber-text-soft);
   letter-spacing: 0.06em;
 `;
 
@@ -242,14 +242,14 @@ const ImageStoryElement = styled.div`
     margin-top: 1vmin;
     max-height: 100vh;
     max-width: 80vw;
-    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
     border-radius: 1vmin;
-    box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 16px rgba(var(--cyber-cyan-rgb), 0.2);
   }
 `;
 
 const EmptyNote = styled.div`
-  color: #3d5570;
+  color: var(--cyber-text-muted);
   font-size: 2.5vmin;
   text-align: center;
   margin: 6vmin;
@@ -270,7 +270,7 @@ const CurrentDrawingsSection = styled.div`
   width: 100%;
   padding: 3vmin;
   box-sizing: border-box;
-  border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  border-bottom: 1px solid rgba(var(--cyber-cyan-rgb), 0.1);
   margin-bottom: 2vmin;
 `;
 
@@ -284,7 +284,7 @@ const CurrentDrawingsGrid = styled.div`
 
 const CurrentDrawingsTitle = styled.div`
   font-size: 2vmin;
-  color: rgba(0, 245, 255, 0.6);
+  color: rgba(var(--cyber-cyan-rgb), 0.6);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 `;
@@ -294,8 +294,8 @@ const CurrentDrawingCard = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 1vmin;
-  background: rgba(0, 245, 255, 0.03);
-  border: 1px solid rgba(0, 245, 255, 0.15);
+  background: rgba(var(--cyber-cyan-rgb), 0.03);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.15);
   border-radius: 1vmin;
   padding: 2vmin 3vmin;
   width: 70vw;
@@ -304,7 +304,7 @@ const CurrentDrawingCard = styled.div`
 
 const DrawingPrompt = styled.div`
   font-size: 2vmin;
-  color: #c8d8f0;
+  color: var(--cyber-text);
   font-style: italic;
   text-align: center;
   margin-top: 0.5vmin;
@@ -314,7 +314,7 @@ const PromptPhoto = styled.img`
   width: 100%;
   max-width: 180px;
   border-radius: 1vmin;
-  border: 1px solid rgba(255, 32, 121, 0.4);
+  border: 1px solid rgba(var(--cyber-magenta-rgb), 0.4);
   margin-top: 0.5vmin;
 `;
 
@@ -322,14 +322,14 @@ const LiveCanvas = styled.img`
   width: 100%;
   max-width: 360px;
   border-radius: 1vmin;
-  border: 1px solid rgba(0, 245, 255, 0.3);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.3);
   margin-top: 1vmin;
   display: block;
 `;
 
 const CanvasPlaceholder = styled.div`
   font-size: 1.8vmin;
-  color: #3d5570;
+  color: var(--cyber-text-muted);
   letter-spacing: 0.1em;
   margin-top: 1vmin;
   font-style: italic;

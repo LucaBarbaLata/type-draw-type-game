@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { useWindowSize } from "./helpers";
+import { themeVar } from "./theme";
 
 const GameFinishedAnimation = ({
   handleShowStories,
@@ -50,19 +51,16 @@ const GameFinishedAnimation = ({
       b: number;
     }
 
-    const colors: Color[] = [
-      { r: 0, g: 245, b: 255 },
-      { r: 255, g: 32, b: 121 },
-      { r: 57, g: 255, b: 20 },
-      { r: 247, g: 200, b: 0 },
-      { r: 180, g: 0, b: 255 },
-      { r: 0, g: 180, b: 255 },
-    ];
+    // Confetti in the active theme's accent colors (the `-rgb` tokens are "r, g, b" triplets)
+    const colors: Color[] = ["cyan", "magenta", "green", "yellow", "orange"].map((name) => {
+      const [r, g, b] = themeVar(`--cyber-${name}-rgb`).split(",").map(Number);
+      return { r, g, b };
+    });
 
     let particles: Particle[] = [];
 
     const drawBackground = () => {
-      ctx.fillStyle = "#080818";
+      ctx.fillStyle = themeVar("--cyber-bg");
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
@@ -196,8 +194,8 @@ const StyledGameFinishedAnimation = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
-  color: #00f5ff;
-  text-shadow: 0 0 12px #00f5ff, 0 0 30px rgba(0, 245, 255, 0.4);
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-text-glow-strong);
   letter-spacing: 0.1em;
 
   canvas {

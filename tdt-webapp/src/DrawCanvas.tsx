@@ -1,6 +1,7 @@
 import React from "react";
 import { useWindowSize, getCanvasSize } from "./helpers";
 import { GameMode, StrokeSegment, RemoteStroke } from "./model";
+import { themeVar } from "./theme";
 
 export type DrawTool = "pen" | "eraser" | "fill" | "line" | "rect" | "circle";
 
@@ -364,7 +365,7 @@ const DrawCanvas = ({
     if (!fogCanvas) return;
     const ctx2 = fogCanvas.getContext("2d")!;
     ctx2.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
-    ctx2.fillStyle = "rgba(8,8,24,1)";
+    ctx2.fillStyle = themeVar("--cyber-bg-deep");
     ctx2.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
     if (clientX !== null && clientY !== null) {
       const rect = fogCanvas.getBoundingClientRect();

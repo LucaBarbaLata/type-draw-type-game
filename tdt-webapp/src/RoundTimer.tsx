@@ -7,13 +7,13 @@ const timerIn = keyframes`
 `;
 
 const urgentBeat = keyframes`
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px #ff2079, 0 0 25px rgba(255,32,121,0.25); }
-  50%       { transform: scale(1.08); box-shadow: 0 0 26px #ff2079, 0 0 55px rgba(255,32,121,0.55), inset 0 0 10px rgba(255,32,121,0.1); }
+  0%, 100% { transform: scale(1); box-shadow: var(--cyber-glow-magenta); }
+  50%       { transform: scale(1.08); box-shadow: var(--cyber-glow-magenta-strong), inset 0 0 10px rgba(var(--cyber-magenta-rgb), 0.1); }
 `;
 
 const warnBeat = keyframes`
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px #f7c800, 0 0 25px rgba(247,200,0,0.25); }
-  50%       { transform: scale(1.04); box-shadow: 0 0 20px #f7c800, 0 0 40px rgba(247,200,0,0.4); }
+  0%, 100% { transform: scale(1); box-shadow: var(--cyber-glow-yellow); }
+  50%       { transform: scale(1.04); box-shadow: var(--cyber-glow-yellow-strong); }
 `;
 
 type TimerLevel = "normal" | "warn" | "urgent";
@@ -75,23 +75,23 @@ const TimerContainer = styled.div<{ level: TimerLevel }>`
   position: fixed;
   top: 2vmin;
   right: 2vmin;
-  background: rgba(8, 8, 24, 0.9);
+  background: rgba(var(--cyber-bg-deep-rgb), 0.9);
   border: 1.5px solid ${({ level }) =>
-    level === "urgent" ? "#ff2079" : level === "warn" ? "#f7c800" : "#00f5ff"};
+    level === "urgent" ? "var(--cyber-magenta)" : level === "warn" ? "var(--cyber-yellow)" : "var(--cyber-cyan)"};
   color: ${({ level }) =>
-    level === "urgent" ? "#ff2079" : level === "warn" ? "#f7c800" : "#00f5ff"};
+    level === "urgent" ? "var(--cyber-magenta)" : level === "warn" ? "var(--cyber-yellow)" : "var(--cyber-cyan)"};
   text-shadow: ${({ level }) =>
     level === "urgent"
-      ? "0 0 8px #ff2079, 0 0 20px rgba(255,32,121,0.4)"
+      ? "var(--cyber-text-glow-magenta)"
       : level === "warn"
-      ? "0 0 8px #f7c800, 0 0 20px rgba(247,200,0,0.4)"
-      : "0 0 8px #00f5ff, 0 0 20px rgba(0,245,255,0.4)"};
+      ? "var(--cyber-text-glow-yellow)"
+      : "var(--cyber-text-glow)"};
   box-shadow: ${({ level }) =>
     level === "urgent"
-      ? "0 0 10px #ff2079, 0 0 25px rgba(255,32,121,0.25)"
+      ? "var(--cyber-glow-magenta)"
       : level === "warn"
-      ? "0 0 10px #f7c800, 0 0 25px rgba(247,200,0,0.25)"
-      : "0 0 10px #00f5ff, 0 0 25px rgba(0,245,255,0.25)"};
+      ? "var(--cyber-glow-yellow)"
+      : "var(--cyber-glow)"};
   padding: 1vmin 2vmin;
   border-radius: 0.6vmin;
   font-size: 3vmin;

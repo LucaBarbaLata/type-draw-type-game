@@ -110,9 +110,9 @@ const ReplayContainer = styled.div`
 const ReplayImage = styled.img`
   max-height: 100vh;
   max-width: 80vw;
-  border: 1.5px solid rgba(0, 245, 255, 0.5);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
   border-radius: 1vmin;
-  box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
+  box-shadow: 0 0 16px rgba(var(--cyber-cyan-rgb), 0.2), 0 0 40px rgba(var(--cyber-cyan-rgb), 0.06);
   display: block;
 `;
 
@@ -126,8 +126,8 @@ const CornerOverlay = styled.div`
 
 const StatusLabel = styled.span`
   font-size: 1.6vmin;
-  color: rgba(200, 216, 240, 0.7);
-  background: rgba(8, 8, 24, 0.7);
+  color: rgba(var(--cyber-text-rgb), 0.7);
+  background: rgba(var(--cyber-bg-deep-rgb), 0.7);
   padding: 0.3vmin 0.8vmin;
   border-radius: 0.4vmin;
   letter-spacing: 0.08em;
@@ -135,8 +135,8 @@ const StatusLabel = styled.span`
 
 const ResumeLabel = styled.span`
   font-size: 1.8vmin;
-  color: rgba(0, 245, 255, 0.7);
-  background: rgba(8, 8, 24, 0.7);
+  color: rgba(var(--cyber-cyan-rgb), 0.7);
+  background: rgba(var(--cyber-bg-deep-rgb), 0.7);
   padding: 0.2vmin 0.7vmin;
   border-radius: 0.4vmin;
 `;
@@ -147,7 +147,7 @@ const PulsingDot = styled.div`
   min-width: 8px;
   min-height: 8px;
   border-radius: 50%;
-  background: #00f5ff;
-  box-shadow: 0 0 6px #00f5ff;
+  background: var(--cyber-cyan);
+  box-shadow: var(--cyber-glow);
   animation: ${pulse} 1.2s ease-in-out infinite;
 `;

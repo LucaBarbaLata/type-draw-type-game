@@ -768,11 +768,11 @@ const GameFinished = ({
 const MuteButton = styled.button`
   position: fixed;
   bottom: 2vmin;
-  right: 2vmin;
+  right: 10vmin;
   z-index: 100;
-  background: rgba(8, 8, 24, 0.85);
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
-  color: #00f5ff;
+  background: rgba(var(--cyber-bg-deep-rgb), 0.85);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
+  color: var(--cyber-cyan);
   border-radius: 50%;
   width: 6vmin;
   height: 6vmin;
@@ -788,8 +788,8 @@ const MuteButton = styled.button`
   animation: ${muteIn} 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &:hover {
-    border-color: #00f5ff;
-    box-shadow: 0 0 10px rgba(0, 245, 255, 0.4);
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(var(--cyber-cyan-rgb), 0.4);
     transform: scale(1.1);
   }
 
@@ -833,11 +833,11 @@ const ConnDot = styled.div<{ $status: "connecting" | "connected" | "disconnected
   z-index: 1000;
   pointer-events: none;
   background: ${({ $status }) =>
-    $status === "connected" ? "#00ff88" :
-    $status === "connecting" ? "#ffcc00" : "#ff4444"};
+    $status === "connected" ? "var(--cyber-green)" :
+    $status === "connecting" ? "var(--cyber-yellow)" : "var(--cyber-magenta)"};
   box-shadow: ${({ $status }) =>
-    $status === "connected" ? "0 0 6px #00ff88" :
-    $status === "connecting" ? "0 0 6px #ffcc00" : "0 0 6px #ff4444"};
+    $status === "connected" ? "0 0 6px var(--cyber-green)" :
+    $status === "connecting" ? "0 0 6px var(--cyber-yellow)" : "0 0 6px var(--cyber-magenta)"};
   ${({ $status }) => $status !== "connected" && css`
     animation: ${connPulse} 0.75s ease-in-out infinite;
   `}

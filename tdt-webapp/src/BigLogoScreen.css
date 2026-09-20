@@ -1,11 +1,11 @@
 @keyframes decoFloat {
   0%, 100% {
     transform: translateY(0);
-    text-shadow: 0 0 12px #ff2079, 0 0 35px rgba(255, 32, 121, 0.4), 0 0 60px rgba(255, 32, 121, 0.15);
+    text-shadow: var(--cyber-deco-glow);
   }
   50% {
     transform: translateY(-10px);
-    text-shadow: 0 0 24px #ff2079, 0 0 60px rgba(255, 32, 121, 0.65), 0 0 95px rgba(255, 32, 121, 0.28);
+    text-shadow: var(--cyber-deco-glow-strong);
   }
 }
 
@@ -16,7 +16,7 @@
   color: var(--cyber-magenta);
   margin-left: 3vmin;
   margin-right: 3vmin;
-  text-shadow: 0 0 12px #ff2079, 0 0 35px rgba(255, 32, 121, 0.4), 0 0 60px rgba(255, 32, 121, 0.15);
+  text-shadow: var(--cyber-deco-glow);
   cursor: pointer;
   user-select: none;
   animation: decoFloat 5s ease-in-out infinite;

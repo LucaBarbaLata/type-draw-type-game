@@ -131,11 +131,11 @@ const Shell = styled.div`
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 245, 255, 0.15);
-  border-top-color: #00f5ff;
+  border: 3px solid rgba(var(--cyber-cyan-rgb), 0.15);
+  border-top-color: var(--cyber-cyan);
   border-radius: 50%;
   animation: ${spin} 0.8s linear infinite;
-  box-shadow: 0 0 12px rgba(0, 245, 255, 0.3);
+  box-shadow: 0 0 12px rgba(var(--cyber-cyan-rgb), 0.3);
 `;
 
 const LoadingLabel = styled.div`
@@ -152,17 +152,17 @@ const ErrorCard = styled.div`
   align-items: center;
   gap: 1.5vmin;
   padding: 4vmin 5vmin;
-  border: 1.5px solid rgba(255, 32, 121, 0.4);
+  border: 1.5px solid rgba(var(--cyber-magenta-rgb), 0.4);
   border-radius: 1.2vmin;
-  background: rgba(255, 32, 121, 0.05);
-  box-shadow: 0 0 24px rgba(255, 32, 121, 0.12);
+  background: rgba(var(--cyber-magenta-rgb), 0.05);
+  box-shadow: 0 0 24px rgba(var(--cyber-magenta-rgb), 0.12);
   animation: ${fadeUp} 0.4s ease-out;
 `;
 
 const ErrorTitle = styled.div`
   font-size: 2.4vmin;
-  color: #ff2079;
-  text-shadow: 0 0 8px #ff2079;
+  color: var(--cyber-magenta);
+  text-shadow: var(--cyber-text-glow-magenta);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -170,8 +170,8 @@ const ErrorTitle = styled.div`
 
 const ErrorSub = styled.div`
   font-size: 1.6vmin;
-  color: #6688aa;
-  em { color: #c8d8f0; font-style: normal; }
+  color: var(--cyber-text-soft);
+  em { color: var(--cyber-text); font-style: normal; }
 `;
 
 // ── Layout ───────────────────────────────────────────────────────────────────
@@ -190,8 +190,8 @@ const TopBar = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 1.4vmin 2.5vmin;
-  border-bottom: 1px solid rgba(0, 245, 255, 0.14);
-  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(var(--cyber-cyan-rgb), 0.14);
+  background: rgba(var(--cyber-bg-deep-rgb), 0.3);
   backdrop-filter: blur(8px);
   flex-shrink: 0;
   gap: 2vmin;
@@ -205,7 +205,7 @@ const TopBarLeft = styled.div`
 
 const GameCode = styled.div`
   font-size: 1.6vmin;
-  color: rgba(0, 245, 255, 0.5);
+  color: rgba(var(--cyber-cyan-rgb), 0.5);
   letter-spacing: 0.25em;
   text-transform: uppercase;
   font-weight: 600;
@@ -213,9 +213,9 @@ const GameCode = styled.div`
 
 const HomeBtn = styled.button`
   background: none;
-  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.35);
   border-radius: 0.6vmin;
-  color: rgba(0, 245, 255, 0.7);
+  color: rgba(var(--cyber-cyan-rgb), 0.7);
   font-size: 1.8vmin;
   padding: 0.5vmin 1.4vmin;
   cursor: pointer;
@@ -223,9 +223,9 @@ const HomeBtn = styled.button`
   transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
 
   &:hover {
-    color: #00f5ff;
-    border-color: #00f5ff;
-    box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(var(--cyber-cyan-rgb), 0.3);
   }
 `;
 
@@ -237,19 +237,19 @@ const StoryTabs = styled.div`
 `;
 
 const StoryTab = styled.button<{ $active: boolean }>`
-  background: ${({ $active }) => $active ? "rgba(0,245,255,0.15)" : "none"};
-  border: 1.5px solid ${({ $active }) => $active ? "#00f5ff" : "rgba(0,245,255,0.25)"};
+  background: ${({ $active }) => $active ? "rgba(var(--cyber-cyan-rgb), 0.15)" : "none"};
+  border: 1.5px solid ${({ $active }) => $active ? "var(--cyber-cyan)" : "rgba(var(--cyber-cyan-rgb), 0.25)"};
   border-radius: 0.5vmin;
-  color: ${({ $active }) => $active ? "#00f5ff" : "rgba(0,245,255,0.5)"};
+  color: ${({ $active }) => $active ? "var(--cyber-cyan)" : "rgba(var(--cyber-cyan-rgb), 0.5)"};
   font-size: 1.6vmin;
   padding: 0.4vmin 1.2vmin;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: ${({ $active }) => $active ? "0 0 10px rgba(0,245,255,0.3)" : "none"};
+  box-shadow: ${({ $active }) => $active ? "0 0 10px rgba(var(--cyber-cyan-rgb), 0.3)" : "none"};
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.7);
-    color: #00f5ff;
+    border-color: rgba(var(--cyber-cyan-rgb), 0.7);
+    color: var(--cyber-cyan);
   }
 `;
 
@@ -261,7 +261,7 @@ const ScrollArea = styled.div`
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb {
-    background: rgba(0, 245, 255, 0.2);
+    background: rgba(var(--cyber-cyan-rgb), 0.2);
     border-radius: 2px;
   }
 `;
@@ -304,22 +304,22 @@ const AuthorName = styled.span`
   font-size: 1.5vmin;
   font-weight: 700;
   color: var(--cyber-cyan);
-  text-shadow: 0 0 6px rgba(0, 245, 255, 0.5);
+  text-shadow: var(--cyber-text-glow);
   letter-spacing: 0.06em;
 `;
 
 const AuthorVerb = styled.span`
   font-size: 1.3vmin;
-  color: rgba(0, 245, 255, 0.4);
+  color: rgba(var(--cyber-cyan-rgb), 0.4);
   letter-spacing: 0.06em;
 `;
 
 const DrawingPanel = styled.div`
   width: 100%;
-  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.3);
   border-radius: 1vmin;
   overflow: hidden;
-  box-shadow: 0 0 20px rgba(0, 245, 255, 0.1), 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 20px rgba(var(--cyber-cyan-rgb), 0.1), 0 4px 24px rgba(var(--cyber-bg-deep-rgb), 0.4);
   background: #fff;
 `;
 
@@ -331,16 +331,16 @@ const DrawingImg = styled.img`
 
 const TextPanel = styled.div`
   width: 100%;
-  background: rgba(0, 245, 255, 0.04);
-  border: 1.5px solid rgba(0, 245, 255, 0.18);
+  background: rgba(var(--cyber-cyan-rgb), 0.04);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.18);
   border-radius: 1vmin;
   padding: 2.5vmin 3vmin;
-  box-shadow: inset 0 0 30px rgba(0, 245, 255, 0.03);
+  box-shadow: inset 0 0 30px rgba(var(--cyber-cyan-rgb), 0.03);
 `;
 
 const TextContent = styled.div`
   font-size: 2.2vmin;
-  color: #c8d8f0;
+  color: var(--cyber-text);
   line-height: 1.65;
   letter-spacing: 0.02em;
 `;
@@ -351,9 +351,9 @@ const Connector = styled.div<{ $type: StoryElementType }>`
   background: linear-gradient(
     to bottom,
     ${({ $type }) => $type !== "text"
-      ? "rgba(0,245,255,0.35)"
-      : "rgba(255,32,121,0.35)"},
-    rgba(0, 245, 255, 0.1)
+      ? "rgba(var(--cyber-cyan-rgb), 0.35)"
+      : "rgba(var(--cyber-magenta-rgb), 0.35)"},
+    rgba(var(--cyber-cyan-rgb), 0.1)
   );
   margin: 0.5vmin 0;
 `;

@@ -7,6 +7,7 @@ import { GameMode, PlayerInfo } from "./model";
 import Player from "./Player";
 import Logo from "./Logo";
 import Chat, { type ChatMessage } from "./Chat";
+import { themeVar, useThemeVar } from "./theme";
 export type { ChatMessage };
 
 import logoImg from "./img/logo.svg";
@@ -63,6 +64,9 @@ export const WaitForPlayersScreen = ({
   const [hpInterval, setHpInterval] = React.useState(30);
   const [hpTotal, setHpTotal] = React.useState(180);
   const qrWrapperRef = React.useRef<HTMLDivElement>(null);
+  // The QR code is painted to a canvas, so it can't use the CSS variables directly
+  const qrBg = useThemeVar("--cyber-bg");
+  const qrFg = useThemeVar("--cyber-cyan");
 
   const buildSettings = (
     timerSecs: number, maxP: number, chat: boolean, pub: boolean,
@@ -125,7 +129,14 @@ export const WaitForPlayersScreen = ({
     const creatorName = players.find((p) => p.isCreator)?.name ?? "";
     const modeLabel = GAME_MODE_OPTIONS.find((o) => o.value === localGameMode)?.label ?? localGameMode;
 
-    // Render a fresh high-res QR (dark on off-white) off-screen
+    // Card colors follow the active theme
+    const bgDeep = themeVar("--cyber-bg-deep");
+    const accent = themeVar("--cyber-cyan");
+    const accentRgb = themeVar("--cyber-cyan-rgb");
+    const accentA = (alpha: number) => `rgba(${accentRgb}, ${alpha})`;
+    const logoFill = themeVar("--cyber-logo");
+
+    // Render a fresh high-res QR off-screen
     const tempEl = document.createElement("div");
     tempEl.style.cssText = "position:absolute;left:-9999px;top:-9999px;";
     document.body.appendChild(tempEl);
@@ -133,10 +144,10 @@ export const WaitForPlayersScreen = ({
       width: 240, height: 240, type: "canvas",
       data: link,
       qrOptions: { errorCorrectionLevel: "M" },
-      dotsOptions: { color: "#00f5ff", type: "square" },
-      backgroundOptions: { color: "#060a1a" },
-      cornersSquareOptions: { type: "extra-rounded", color: "#00f5ff" },
-      cornersDotOptions: { type: "dot", color: "#00f5ff" },
+      dotsOptions: { color: accent, type: "square" },
+      backgroundOptions: { color: bgDeep },
+      cornersSquareOptions: { type: "extra-rounded", color: accent },
+      cornersDotOptions: { type: "dot", color: accent },
       margin: 2,
     });
     cardQr.append(tempEl);
@@ -164,12 +175,12 @@ export const WaitForPlayersScreen = ({
       ctx.closePath();
     };
 
-    // ── LEFT PANEL (dark navy) ───────────────────────────────────
-    ctx.fillStyle = "#060a1a";
+    // ── LEFT PANEL ───────────────────────────────────────────────
+    ctx.fillStyle = bgDeep;
     ctx.fillRect(0, 0, splitX, H);
 
     // Dot-grid texture
-    ctx.fillStyle = "rgba(0,245,255,0.07)";
+    ctx.fillStyle = accentA(0.07);
     for (let gx = 11; gx < splitX; gx += 22) {
       for (let gy = 11; gy < H; gy += 22) {
         ctx.beginPath();
@@ -180,22 +191,22 @@ export const WaitForPlayersScreen = ({
 
     // Top accent lines
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.strokeStyle = accentA(0.65);
     ctx.beginPath(); ctx.moveTo(0, 14); ctx.lineTo(splitX, 14); ctx.stroke();
-    ctx.strokeStyle = "rgba(0,245,255,0.2)";
+    ctx.strokeStyle = accentA(0.2);
     ctx.beginPath(); ctx.moveTo(28, 19); ctx.lineTo(splitX - 28, 19); ctx.stroke();
 
     // Bottom accent lines (mirrored)
-    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.strokeStyle = accentA(0.65);
     ctx.beginPath(); ctx.moveTo(0, H - 14); ctx.lineTo(splitX, H - 14); ctx.stroke();
-    ctx.strokeStyle = "rgba(0,245,255,0.2)";
+    ctx.strokeStyle = accentA(0.2);
     ctx.beginPath(); ctx.moveTo(28, H - 19); ctx.lineTo(splitX - 28, H - 19); ctx.stroke();
 
     // Logo (centered in left panel)
     const svgText = await fetch(logoImg as string).then((r) => r.text());
     const fixedSvg = svgText
-      .replace('aria-label="DRAW"', 'aria-label="DRAW" fill="white"')
-      .replace(/aria-label="Type"/g, 'aria-label="Type" fill="white"');
+      .replace('aria-label="DRAW"', `aria-label="DRAW" fill="${logoFill}"`)
+      .replace(/aria-label="Type"/g, `aria-label="Type" fill="${logoFill}"`);
     const svgBlob = new Blob([fixedSvg], { type: "image/svg+xml" });
     const svgUrl = URL.createObjectURL(svgBlob);
     const logo = new Image();
@@ -209,19 +220,19 @@ export const WaitForPlayersScreen = ({
     // "GAME CODE" label
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(0,245,255,0.4)";
+    ctx.fillStyle = accentA(0.4);
     ctx.fillText("GAME  CODE", splitX / 2, 138);
 
     // Game code — large, glowing
     ctx.font = "bold 44px 'Courier New', monospace";
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "#00f5ff";
+    ctx.fillStyle = themeVar("--cyber-text-bright");
+    ctx.shadowColor = accent;
     ctx.shadowBlur = 20;
     ctx.fillText(gameId.split("").join("  "), splitX / 2, 186);
     ctx.shadowBlur = 0;
 
     // Separator
-    ctx.strokeStyle = "rgba(0,245,255,0.18)";
+    ctx.strokeStyle = accentA(0.18);
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(28, 214); ctx.lineTo(splitX - 28, 214); ctx.stroke();
 
@@ -236,15 +247,15 @@ export const WaitForPlayersScreen = ({
       const x = colW * i + colW / 2;
       ctx.textAlign = "center";
       ctx.font = "10px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(0,245,255,0.4)";
+      ctx.fillStyle = accentA(0.4);
       ctx.fillText(stat.label, x, 238);
       ctx.font = "bold 13px 'Courier New', monospace";
-      ctx.fillStyle = "#00f5ff";
+      ctx.fillStyle = accent;
       ctx.fillText(stat.value, x, 256);
     });
 
     // Stat column dividers
-    ctx.strokeStyle = "rgba(0,245,255,0.15)";
+    ctx.strokeStyle = accentA(0.15);
     [colW, colW * 2].forEach((x) => {
       ctx.beginPath();
       ctx.moveTo(x, 228);
@@ -253,19 +264,19 @@ export const WaitForPlayersScreen = ({
     });
 
     // Separator
-    ctx.strokeStyle = "rgba(0,245,255,0.18)";
+    ctx.strokeStyle = accentA(0.18);
     ctx.beginPath(); ctx.moveTo(28, 278); ctx.lineTo(splitX - 28, 278); ctx.stroke();
 
     // URL
     ctx.textAlign = "center";
     ctx.font = "10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(100,136,170,0.6)";
+    ctx.fillStyle = themeVar("--cyber-text-soft");
     const urlText = link.length > 60 ? link.slice(0, 57) + "…" : link;
     ctx.fillText(urlText, splitX / 2, 302);
 
     // ── PERFORATED DIVIDER ───────────────────────────────────────
     ctx.setLineDash([3, 9]);
-    ctx.strokeStyle = "rgba(0,245,255,0.4)";
+    ctx.strokeStyle = accentA(0.4);
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(splitX, 0);
@@ -273,12 +284,12 @@ export const WaitForPlayersScreen = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // ── RIGHT PANEL (dark, same as left) ────────────────────────
-    ctx.fillStyle = "#060a1a";
+    // ── RIGHT PANEL (same as left) ──────────────────────────────
+    ctx.fillStyle = bgDeep;
     ctx.fillRect(splitX, 0, W - splitX, H);
 
     // Dot-grid texture (matches left panel)
-    ctx.fillStyle = "rgba(0,245,255,0.07)";
+    ctx.fillStyle = accentA(0.07);
     for (let gx = splitX + 11; gx < W; gx += 22) {
       for (let gy = 11; gy < H; gy += 22) {
         ctx.beginPath();
@@ -287,25 +298,25 @@ export const WaitForPlayersScreen = ({
       }
     }
 
-    // QR dark container — centered in right panel, matches left-panel aesthetic
+    // QR container — centered in right panel, matches left-panel aesthetic
     const rightW = W - splitX;
     const qrContainerSize = 252;
     const qrContainerX = splitX + Math.round((rightW - qrContainerSize) / 2);
     const qrContainerY = Math.round((H - qrContainerSize) / 2) - 10;
     const qrContainerR = 14;
 
-    // Outer cyan glow
+    // Outer accent glow
     ctx.save();
-    ctx.shadowColor = "#00f5ff";
+    ctx.shadowColor = accent;
     ctx.shadowBlur = 22;
-    ctx.strokeStyle = "rgba(0,245,255,0.65)";
+    ctx.strokeStyle = accentA(0.65);
     ctx.lineWidth = 1.5;
     rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
     ctx.stroke();
     ctx.restore();
 
-    // Dark navy fill
-    ctx.fillStyle = "#060a1a";
+    // Panel fill
+    ctx.fillStyle = bgDeep;
     rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
     ctx.fill();
 
@@ -320,7 +331,7 @@ export const WaitForPlayersScreen = ({
     }
 
     // Thin border on top
-    ctx.strokeStyle = "rgba(0,245,255,0.4)";
+    ctx.strokeStyle = accentA(0.4);
     ctx.lineWidth = 1;
     rrect(qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, qrContainerR);
     ctx.stroke();
@@ -328,7 +339,7 @@ export const WaitForPlayersScreen = ({
     // "SCAN TO JOIN" below container
     ctx.textAlign = "center";
     ctx.font = "bold 10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(0,245,255,0.4)";
+    ctx.fillStyle = accentA(0.4);
     ctx.fillText("SCAN  TO  JOIN", splitX + rightW / 2, qrContainerY + qrContainerSize + 22);
 
     // Cleanup and trigger download
@@ -370,8 +381,8 @@ export const WaitForPlayersScreen = ({
               <CustomQRCode
                 value={link}
                 size={160}
-                bgColor="#080818"
-                fgColor="#00f5ff"
+                bgColor={qrBg}
+                fgColor={qrFg}
               />
             </QRBlock>
             <QRActions>
@@ -649,7 +660,7 @@ const PlayerActions = styled.div`
 
 const KickBtn = styled.button`
   background: none;
-  border: 1.5px solid rgba(255, 32, 121, 0.5);
+  border: 1.5px solid rgba(var(--cyber-magenta-rgb), 0.5);
   border-radius: 50%;
   color: var(--cyber-magenta);
   width: 3.5vmin;
@@ -661,7 +672,7 @@ const KickBtn = styled.button`
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {
-    background: rgba(255, 32, 121, 0.15);
+    background: rgba(var(--cyber-magenta-rgb), 0.15);
     border-color: var(--cyber-magenta);
     box-shadow: var(--cyber-glow-magenta);
   }
@@ -669,9 +680,9 @@ const KickBtn = styled.button`
 
 const BanBtn = styled.button`
   background: none;
-  border: 1.5px solid rgba(255, 160, 0, 0.5);
+  border: 1.5px solid rgba(var(--cyber-orange-rgb), 0.5);
   border-radius: 50%;
-  color: #ffa000;
+  color: var(--cyber-orange);
   width: 3.5vmin;
   height: 3.5vmin;
   font-size: 1.5vmin;
@@ -681,9 +692,9 @@ const BanBtn = styled.button`
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {
-    background: rgba(255, 160, 0, 0.15);
-    border-color: #ffa000;
-    box-shadow: 0 0 8px #ffa000, 0 0 20px rgba(255, 160, 0, 0.2);
+    background: rgba(var(--cyber-orange-rgb), 0.15);
+    border-color: var(--cyber-orange);
+    box-shadow: var(--cyber-glow-orange);
   }
 `;
 
@@ -746,10 +757,10 @@ const QRBlock = styled.div`
   align-items: center;
   justify-content: center;
   padding: 1vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
   border-radius: 1vmin;
-  background: #080818;
-  box-shadow: 0 0 14px rgba(0, 245, 255, 0.12);
+  background: var(--cyber-bg);
+  box-shadow: 0 0 14px rgba(var(--cyber-cyan-rgb), 0.12);
 `;
 
 const QRActions = styled.div`
@@ -758,10 +769,10 @@ const QRActions = styled.div`
 `;
 
 const QRActionBtn = styled.button`
-  background: rgba(0, 245, 255, 0.06);
-  border: 1.5px solid rgba(0, 245, 255, 0.35);
+  background: rgba(var(--cyber-cyan-rgb), 0.06);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.35);
   border-radius: 0.5vmin;
-  color: #00f5ff;
+  color: var(--cyber-cyan);
   font-size: 1.1vmin;
   padding: 0.45vmin 1.1vmin;
   cursor: pointer;
@@ -771,9 +782,9 @@ const QRActionBtn = styled.button`
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 
   &:hover:not(:disabled) {
-    background: rgba(0, 245, 255, 0.13);
-    border-color: rgba(0, 245, 255, 0.75);
-    box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+    background: rgba(var(--cyber-cyan-rgb), 0.13);
+    border-color: rgba(var(--cyber-cyan-rgb), 0.75);
+    box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.2);
   }
 
   &:disabled {
@@ -800,14 +811,14 @@ const StartBlock = styled.div`
 
 const StartNote = styled.div`
   font-size: 1.3vmin;
-  color: #3d5570;
+  color: var(--cyber-text-muted);
   text-align: center;
   letter-spacing: 0.05em;
 `;
 
 const WaitText = styled.div`
   font-size: 2vmin;
-  color: #6688aa;
+  color: var(--cyber-text-soft);
   text-align: center;
   letter-spacing: 0.05em;
 
@@ -822,18 +833,18 @@ const WaitText = styled.div`
 const SettingsSection = styled.div`
   flex: 1;
   padding: 1.5vmin 2vmin;
-  background: rgba(0, 245, 255, 0.03);
-  border: 1.5px solid rgba(0, 245, 255, 0.25);
+  background: rgba(var(--cyber-cyan-rgb), 0.03);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.25);
   border-radius: 1vmin;
-  box-shadow: 0 0 10px rgba(0, 245, 255, 0.06);
+  box-shadow: 0 0 10px rgba(var(--cyber-cyan-rgb), 0.06);
 `;
 
 const SettingsTitle = styled.div`
   font-weight: bold;
   margin-bottom: 1.2vmin;
   font-size: 1.6vmin;
-  color: #00f5ff;
-  text-shadow: 0 0 8px #00f5ff;
+  color: var(--cyber-cyan);
+  text-shadow: var(--cyber-text-glow);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 `;
@@ -848,7 +859,7 @@ const SettingRow = styled.div`
   label {
     font-size: 1.5vmin;
     white-space: nowrap;
-    color: #6688aa;
+    color: var(--cyber-text-soft);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -857,17 +868,17 @@ const SettingRow = styled.div`
     font-size: 1.5vmin;
     padding: 0.4vmin 0.8vmin;
     border-radius: 0.5vmin;
-    border: 1.5px solid rgba(0, 245, 255, 0.4);
-    background: rgba(0, 245, 255, 0.06);
-    color: #00f5ff;
+    border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
+    background: rgba(var(--cyber-cyan-rgb), 0.06);
+    color: var(--cyber-cyan);
     cursor: pointer;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 245, 255, 0.12);
+    box-shadow: 0 0 5px rgba(var(--cyber-cyan-rgb), 0.12);
   }
 
   select option {
-    background: #0c0c20;
-    color: #c8d8f0;
+    background: var(--cyber-bg-panel);
+    color: var(--cyber-text);
   }
 `;
 
@@ -875,7 +886,7 @@ const ChatToggle = styled.input`
   width: 2vmin;
   height: 2vmin;
   cursor: pointer;
-  accent-color: #00f5ff;
+  accent-color: var(--cyber-cyan);
 `;
 
 const LobbyChatWrapper = styled.div`
@@ -884,7 +895,7 @@ const LobbyChatWrapper = styled.div`
 
 const GameModeDescription = styled.div`
   font-size: 1.3vmin;
-  color: rgba(0, 245, 255, 0.6);
+  color: rgba(var(--cyber-cyan-rgb), 0.6);
   font-style: italic;
   margin-top: 0.4vmin;
   line-height: 1.4;
@@ -896,10 +907,10 @@ const GameModeBadge = styled.div`
   align-items: center;
   gap: 0.5vmin;
   padding: 1.5vmin 2.5vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.3);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.3);
   border-radius: 2vmin;
-  background: rgba(0, 245, 255, 0.05);
-  box-shadow: 0 0 10px rgba(0, 245, 255, 0.08);
+  background: rgba(var(--cyber-cyan-rgb), 0.05);
+  box-shadow: 0 0 10px rgba(var(--cyber-cyan-rgb), 0.08);
   max-width: 48vmin;
   width: 100%;
   box-sizing: border-box;

@@ -4,22 +4,22 @@ const Scrollable = styled.div`
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: #080818;
+  background-color: var(--cyber-bg);
 
   /* Cyberpunk scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: #00f5ff #0c0c20;
+  scrollbar-color: var(--cyber-cyan) var(--cyber-bg-panel);
 
   &::-webkit-scrollbar {
     width: 6px;
   }
   &::-webkit-scrollbar-track {
-    background: #0c0c20;
+    background: var(--cyber-bg-panel);
   }
   &::-webkit-scrollbar-thumb {
-    background: #00f5ff;
+    background: var(--cyber-cyan);
     border-radius: 3px;
-    box-shadow: 0 0 6px #00f5ff;
+    box-shadow: var(--cyber-glow);
   }
 `;
 

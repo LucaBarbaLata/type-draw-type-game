@@ -90,7 +90,7 @@ export default Chat;
 export const ChatBox = styled.div`
   display: flex;
   flex-direction: column;
-  border-top: 1.5px solid rgba(0, 245, 255, 0.2);
+  border-top: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.2);
   flex: 0 0 auto;
   height: 28vh;
   animation: ${chatBoxEnter} 0.35s ease-out;
@@ -117,7 +117,7 @@ const ChatMessages = styled.div`
     width: 3px;
   }
   &::-webkit-scrollbar-thumb {
-    background: rgba(0, 245, 255, 0.3);
+    background: rgba(var(--cyber-cyan-rgb), 0.3);
     border-radius: 2px;
   }
 `;
@@ -169,7 +169,7 @@ const ChatEmpty = styled.div`
 
 const ChatDisabled = styled.div`
   font-size: 1.3vmin;
-  color: rgba(255, 32, 121, 0.6);
+  color: rgba(var(--cyber-magenta-rgb), 0.6);
   font-style: italic;
   padding: 1vmin 0;
 `;
@@ -178,15 +178,15 @@ const ChatInputRow = styled.div`
   display: flex;
   gap: 1vmin;
   padding: 1vmin 2vmin;
-  border-top: 1px solid rgba(0, 245, 255, 0.1);
+  border-top: 1px solid rgba(var(--cyber-cyan-rgb), 0.1);
 `;
 
 const ChatInput = styled.input`
   flex: 1;
   font-size: 1.4vmin;
   padding: 0.6vmin 1vmin;
-  background: rgba(0, 245, 255, 0.04);
-  border: 1px solid rgba(0, 245, 255, 0.25);
+  background: rgba(var(--cyber-cyan-rgb), 0.04);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.25);
   border-radius: 0.5vmin;
   color: var(--cyber-text);
   outline: none;
@@ -199,16 +199,16 @@ const ChatInput = styled.input`
   }
 
   &:focus {
-    border-color: rgba(0, 245, 255, 0.6);
-    box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+    border-color: rgba(var(--cyber-cyan-rgb), 0.6);
+    box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.2);
   }
 `;
 
 const ChatSendBtn = styled.button`
   font-size: 1.6vmin;
   padding: 0.5vmin 1.2vmin;
-  background: rgba(0, 245, 255, 0.08);
-  border: 1px solid rgba(0, 245, 255, 0.35);
+  background: rgba(var(--cyber-cyan-rgb), 0.08);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.35);
   border-radius: 0.5vmin;
   color: var(--cyber-cyan);
   cursor: pointer;
@@ -216,8 +216,8 @@ const ChatSendBtn = styled.button`
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
-    background: rgba(0, 245, 255, 0.2);
-    box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+    background: rgba(var(--cyber-cyan-rgb), 0.2);
+    box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.3);
   }
 
   &:active:not(:disabled) {

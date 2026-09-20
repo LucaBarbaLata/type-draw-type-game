@@ -7,6 +7,7 @@ import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 import DrawingReplay from "./replay/DrawingReplay";
 import { EmojiCascade } from "./EmojiCascade";
+import { themeVar } from "./theme";
 
 const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮", "🤯", "💕"];
 
@@ -263,7 +264,11 @@ async function exportStory(story: StoryContent, storyIndex: number) {
   canvas.height = totalH;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = "#080818";
+  const accent = themeVar("--cyber-cyan");
+  const accentRgb = themeVar("--cyber-cyan-rgb");
+  const textColor = themeVar("--cyber-text");
+
+  ctx.fillStyle = themeVar("--cyber-bg");
   ctx.fillRect(0, 0, W, totalH);
 
   let y = PAD;
@@ -271,7 +276,7 @@ async function exportStory(story: StoryContent, storyIndex: number) {
     const e = story.elements[i];
 
     if (i > 0) {
-      ctx.strokeStyle = "rgba(0, 245, 255, 0.2)";
+      ctx.strokeStyle = `rgba(${accentRgb}, 0.2)`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(PAD, y - ELEMENT_GAP / 2);
@@ -280,8 +285,8 @@ async function exportStory(story: StoryContent, storyIndex: number) {
     }
 
     ctx.font = "bold 14px monospace";
-    ctx.fillStyle = "#00f5ff";
-    ctx.shadowColor = "#00f5ff";
+    ctx.fillStyle = accent;
+    ctx.shadowColor = accent;
     ctx.shadowBlur = 6;
     ctx.fillText(`${e.player.name} ${elementVerb(e)}`, PAD, y + 22);
     ctx.shadowBlur = 0;
@@ -306,7 +311,7 @@ async function exportStory(story: StoryContent, storyIndex: number) {
         ctx.clip();
         ctx.drawImage(img, PAD, y, contentW, imgH);
         ctx.restore();
-        ctx.strokeStyle = "rgba(0, 245, 255, 0.5)";
+        ctx.strokeStyle = `rgba(${accentRgb}, 0.5)`;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(PAD + r, y); ctx.lineTo(PAD + contentW - r, y);
@@ -323,7 +328,7 @@ async function exportStory(story: StoryContent, storyIndex: number) {
       }
     } else {
       ctx.font = "16px monospace";
-      ctx.fillStyle = "#c8d8f0";
+      ctx.fillStyle = textColor;
       const lines = wrapText(ctx, e.content, contentW);
       for (const line of lines) {
         ctx.fillText(line, PAD, y + 16);
@@ -377,7 +382,13 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = "#080818";
+  const accent = themeVar("--cyber-cyan");
+  const accentRgb = themeVar("--cyber-cyan-rgb");
+  const secondary = themeVar("--cyber-magenta");
+  const secondaryRgb = themeVar("--cyber-magenta-rgb");
+  const textColor = themeVar("--cyber-text");
+
+  ctx.fillStyle = themeVar("--cyber-bg");
   ctx.fillRect(0, 0, W, H);
 
   for (let i = 0; i < story.elements.length; i++) {
@@ -385,17 +396,17 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
     const x = i * (PANEL_W + GAP);
 
     // Panel background
-    ctx.fillStyle = i % 2 === 0 ? "rgba(0,245,255,0.04)" : "rgba(255,32,121,0.04)";
+    ctx.fillStyle = i % 2 === 0 ? `rgba(${accentRgb}, 0.04)` : `rgba(${secondaryRgb}, 0.04)`;
     ctx.fillRect(x, 0, PANEL_W, H);
 
     // Panel border
-    ctx.strokeStyle = i % 2 === 0 ? "rgba(0,245,255,0.35)" : "rgba(255,32,121,0.35)";
+    ctx.strokeStyle = i % 2 === 0 ? `rgba(${accentRgb}, 0.35)` : `rgba(${secondaryRgb}, 0.35)`;
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, 0.5, PANEL_W - 1, H - 1);
 
     // Player name
     ctx.font = "bold 13px 'Courier New', monospace";
-    ctx.fillStyle = i % 2 === 0 ? "#00f5ff" : "#ff2079";
+    ctx.fillStyle = i % 2 === 0 ? accent : secondary;
     ctx.shadowColor = ctx.fillStyle;
     ctx.shadowBlur = 6;
     ctx.textAlign = "left";
@@ -419,7 +430,7 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
       }
     } else {
       ctx.font = "15px 'Courier New', monospace";
-      ctx.fillStyle = "#c8d8f0";
+      ctx.fillStyle = textColor;
       ctx.textAlign = "center";
       const words = e.content.split(" ");
       const maxW = PANEL_W - PAD * 2;
@@ -474,7 +485,7 @@ const PlayAgainButton = styled.button`
 
 const RematchVoteStatus = styled.div`
   font-size: 1.8vmin;
-  color: #6688aa;
+  color: var(--cyber-text-soft);
   text-align: center;
   letter-spacing: 0.05em;
   margin-bottom: 2vmin;
@@ -491,9 +502,9 @@ const ExportRow = styled.div`
 
 const ExportButton = styled.button`
   background: none;
-  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.4);
   border-radius: 0.8vmin;
-  color: rgba(0, 245, 255, 0.7);
+  color: rgba(var(--cyber-cyan-rgb), 0.7);
   font-size: 1.8vmin;
   padding: 1vmin 2.5vmin;
   cursor: pointer;
@@ -502,9 +513,9 @@ const ExportButton = styled.button`
   transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
 
   &:hover {
-    color: #00f5ff;
-    border-color: #00f5ff;
-    box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(var(--cyber-cyan-rgb), 0.3);
   }
 `;
 
@@ -519,7 +530,7 @@ const RevealControls = styled.div`
 const SkipButton = styled.button`
   background: none;
   border: none;
-  color: #3d5570;
+  color: var(--cyber-text-muted);
   font-size: 1.8vmin;
   cursor: pointer;
   text-decoration: underline;
@@ -527,7 +538,7 @@ const SkipButton = styled.button`
   transition: color 0.15s;
 
   &:hover {
-    color: #6688aa;
+    color: var(--cyber-text-soft);
   }
 `;
 
@@ -652,16 +663,16 @@ const ImageStoryElement = styled.div`
     margin-top: 1vmin;
     max-height: 100vh;
     max-width: 80vw;
-    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
     border-radius: 1vmin;
-    box-shadow: 0 0 16px rgba(0, 245, 255, 0.2), 0 0 40px rgba(0, 245, 255, 0.06);
+    box-shadow: 0 0 16px rgba(var(--cyber-cyan-rgb), 0.2), 0 0 40px rgba(var(--cyber-cyan-rgb), 0.06);
   }
 `;
 
 const PhotoStoryElement = styled(ImageStoryElement)`
   img {
-    border-color: rgba(255, 32, 121, 0.5);
-    box-shadow: 0 0 16px rgba(255, 32, 121, 0.2), 0 0 40px rgba(255, 32, 121, 0.06);
+    border-color: rgba(var(--cyber-magenta-rgb), 0.5);
+    box-shadow: 0 0 16px rgba(var(--cyber-magenta-rgb), 0.2), 0 0 40px rgba(var(--cyber-magenta-rgb), 0.06);
   }
 `;
 
@@ -701,26 +712,26 @@ const ReactionButton = styled.button<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 0.4em;
-  background: ${({ $active }) => $active ? "rgba(0, 245, 255, 0.15)" : "none"};
-  border: 1.5px solid ${({ $active }) => $active ? "rgba(0, 245, 255, 0.8)" : "rgba(0, 245, 255, 0.3)"};
+  background: ${({ $active }) => $active ? "rgba(var(--cyber-cyan-rgb), 0.15)" : "none"};
+  border: 1.5px solid ${({ $active }) => $active ? "rgba(var(--cyber-cyan-rgb), 0.8)" : "rgba(var(--cyber-cyan-rgb), 0.3)"};
   border-radius: 2vmin;
   font-size: 2.2vmin;
   padding: 0.4vmin 1.2vmin;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-  box-shadow: ${({ $active }) => $active ? "0 0 10px rgba(0, 245, 255, 0.35)" : "none"};
+  box-shadow: ${({ $active }) => $active ? "0 0 10px rgba(var(--cyber-cyan-rgb), 0.35)" : "none"};
 
   &:hover {
-    background: rgba(0, 245, 255, 0.12);
-    border-color: rgba(0, 245, 255, 0.7);
-    box-shadow: 0 0 8px rgba(0, 245, 255, 0.25);
+    background: rgba(var(--cyber-cyan-rgb), 0.12);
+    border-color: rgba(var(--cyber-cyan-rgb), 0.7);
+    box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.25);
   }
 `;
 
 const ReactionCount = styled.span`
   font-size: 1.6vmin;
   color: var(--cyber-cyan);
-  text-shadow: 0 0 6px rgba(0, 245, 255, 0.5);
+  text-shadow: var(--cyber-text-glow);
   min-width: 1.5ch;
   line-height: 1;
 `;

@@ -1,0 +1,332 @@
+/*
+ * Theme tokens.
+ *
+ * Every color the UI uses is defined here as a custom property. The names keep the
+ * historical `--cyber-*` prefix (the app started with a single cyberpunk look) but
+ * the roles are generic:
+ *
+ *   --cyber-cyan     primary accent   (buttons, borders, headings, links, brush tools)
+ *   --cyber-magenta  secondary accent (faces, decorations, eraser/help, danger buttons)
+ *   --cyber-green    success          (done button, connected indicator)
+ *   --cyber-yellow   warning          (fill tool, timer warning)
+ *   --cyber-orange   alert            (ban button, partner cursor)
+ *
+ * Each accent also has an `-rgb` triplet so translucent fills can be written as
+ * `rgba(var(--cyber-cyan-rgb), 0.12)`.
+ *
+ * The active theme is selected with `data-theme` on <html> (see theme.ts). The
+ * `:root` block is the default Cyberpunk theme; every other theme overrides the
+ * same set of tokens. Glow tokens are neon box/text shadows on dark themes and
+ * soft drop shadows on light ones.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --cyber-bg: #080818;
+  --cyber-bg-rgb: 8, 8, 24;
+  --cyber-bg-panel: #0c0c20;
+  --cyber-bg-deep: #060a1a;
+  --cyber-bg-deep-rgb: 6, 10, 26;
+  --cyber-overlay: rgba(0, 0, 10, 0.75);
+  --cyber-grid: rgba(0, 245, 255, 0.04);
+  --cyber-surface: rgba(0, 245, 255, 0.03);
+
+  /* Accents */
+  --cyber-cyan: #00f5ff;
+  --cyber-cyan-rgb: 0, 245, 255;
+  --cyber-magenta: #ff2079;
+  --cyber-magenta-rgb: 255, 32, 121;
+  --cyber-green: #39ff14;
+  --cyber-green-rgb: 57, 255, 20;
+  --cyber-yellow: #f7c800;
+  --cyber-yellow-rgb: 247, 200, 0;
+  --cyber-orange: #ffa000;
+  --cyber-orange-rgb: 255, 160, 0;
+
+  /* Text */
+  --cyber-text: #c8d8f0;
+  --cyber-text-rgb: 200, 216, 240;
+  --cyber-text-bright: #f0f0ff;
+  --cyber-text-soft: #6688aa;
+  --cyber-text-muted: #3d5570;
+  --cyber-text-disabled: #1e2c3a;
+
+  /* Logo & icons */
+  --cyber-logo: #ffffff;
+  --cyber-logo-glow: drop-shadow(0 0 10px var(--cyber-cyan)) drop-shadow(0 0 20px rgba(var(--cyber-cyan-rgb), 0.4));
+  --cyber-logo-glow-strong: drop-shadow(0 0 20px var(--cyber-cyan)) drop-shadow(0 0 45px rgba(var(--cyber-cyan-rgb), 0.65)) drop-shadow(0 0 70px rgba(var(--cyber-cyan-rgb), 0.2));
+  --cyber-icon-glow: drop-shadow(0 0 3px currentColor);
+
+  /* Glows (box-shadow) */
+  --cyber-glow: 0 0 8px var(--cyber-cyan), 0 0 20px rgba(var(--cyber-cyan-rgb), 0.2);
+  --cyber-glow-strong: 0 0 18px var(--cyber-cyan), 0 0 50px rgba(var(--cyber-cyan-rgb), 0.3);
+  --cyber-glow-magenta: 0 0 8px var(--cyber-magenta), 0 0 20px rgba(var(--cyber-magenta-rgb), 0.2);
+  --cyber-glow-magenta-strong: 0 0 18px var(--cyber-magenta), 0 0 50px rgba(var(--cyber-magenta-rgb), 0.3);
+  --cyber-glow-green: 0 0 8px var(--cyber-green), 0 0 20px rgba(var(--cyber-green-rgb), 0.2);
+  --cyber-glow-green-strong: 0 0 16px var(--cyber-green), 0 0 40px rgba(var(--cyber-green-rgb), 0.3);
+  --cyber-glow-yellow: 0 0 8px var(--cyber-yellow), 0 0 20px rgba(var(--cyber-yellow-rgb), 0.2);
+  --cyber-glow-yellow-strong: 0 0 16px var(--cyber-yellow), 0 0 40px rgba(var(--cyber-yellow-rgb), 0.4);
+  --cyber-glow-orange: 0 0 8px var(--cyber-orange), 0 0 20px rgba(var(--cyber-orange-rgb), 0.2);
+  --cyber-glow-dialog: 0 0 20px var(--cyber-cyan), 0 0 60px rgba(var(--cyber-cyan-rgb), 0.15), inset 0 0 40px rgba(var(--cyber-cyan-rgb), 0.02);
+  --cyber-deco-glow: 0 0 12px var(--cyber-magenta), 0 0 35px rgba(var(--cyber-magenta-rgb), 0.4), 0 0 60px rgba(var(--cyber-magenta-rgb), 0.15);
+  --cyber-deco-glow-strong: 0 0 24px var(--cyber-magenta), 0 0 60px rgba(var(--cyber-magenta-rgb), 0.65), 0 0 95px rgba(var(--cyber-magenta-rgb), 0.28);
+
+  /* Glows (text-shadow) */
+  --cyber-text-glow: 0 0 8px var(--cyber-cyan);
+  --cyber-text-glow-strong: 0 0 12px var(--cyber-cyan), 0 0 30px rgba(var(--cyber-cyan-rgb), 0.4);
+  --cyber-text-glow-magenta: 0 0 8px var(--cyber-magenta);
+  --cyber-text-glow-magenta-strong: 0 0 18px var(--cyber-magenta), 0 0 45px rgba(var(--cyber-magenta-rgb), 0.7);
+  --cyber-text-glow-green: 0 0 8px var(--cyber-green);
+  --cyber-text-glow-yellow: 0 0 8px var(--cyber-yellow);
+  --cyber-text-glow-orange: 0 0 4px rgba(var(--cyber-orange-rgb), 0.8);
+}
+
+/* ── Blue Eclipse (dark) ─────────────────────────────────────────────────────
+ * Palette: #0F0E47 · #272757 · #505081 · #8686AC
+ * Deep indigo night with muted lavender; a soft rose stands in for the corona.
+ */
+:root[data-theme="blue-eclipse"] {
+  color-scheme: dark;
+
+  --cyber-bg: #0f0e47;
+  --cyber-bg-rgb: 15, 14, 71;
+  --cyber-bg-panel: #272757;
+  --cyber-bg-deep: #0a0935;
+  --cyber-bg-deep-rgb: 10, 9, 53;
+  --cyber-overlay: rgba(10, 9, 53, 0.78);
+  --cyber-grid: rgba(134, 134, 172, 0.07);
+  --cyber-surface: rgba(80, 80, 129, 0.22);
+
+  --cyber-cyan: #8686ac;
+  --cyber-cyan-rgb: 134, 134, 172;
+  --cyber-magenta: #f4a0b9;
+  --cyber-magenta-rgb: 244, 160, 185;
+  --cyber-green: #7fe0a8;
+  --cyber-green-rgb: 127, 224, 168;
+  --cyber-yellow: #f5d078;
+  --cyber-yellow-rgb: 245, 208, 120;
+  --cyber-orange: #f5a66d;
+  --cyber-orange-rgb: 245, 166, 109;
+
+  --cyber-text: #e4e4f5;
+  --cyber-text-rgb: 228, 228, 245;
+  --cyber-text-bright: #ffffff;
+  --cyber-text-soft: #b3b3d9;
+  --cyber-text-muted: #6e6e9c;
+  --cyber-text-disabled: #3a3a6e;
+
+  --cyber-logo: #ffffff;
+}
+
+/* ── Blooming Romance (dark) ─────────────────────────────────────────────────
+ * Palette: #660033 · #E673AC · #469110 · #00520A
+ * Burgundy petals, pink blossom, leaf green (secondary role) for the foliage.
+ */
+:root[data-theme="blooming-romance"] {
+  color-scheme: dark;
+
+  --cyber-bg: #4d0026;
+  --cyber-bg-rgb: 77, 0, 38;
+  --cyber-bg-panel: #660033;
+  --cyber-bg-deep: #33001a;
+  --cyber-bg-deep-rgb: 51, 0, 26;
+  --cyber-overlay: rgba(40, 0, 20, 0.78);
+  --cyber-grid: rgba(230, 115, 172, 0.06);
+  --cyber-surface: rgba(102, 0, 51, 0.55);
+
+  --cyber-cyan: #e673ac;
+  --cyber-cyan-rgb: 230, 115, 172;
+  --cyber-magenta: #7ccb4a;
+  --cyber-magenta-rgb: 124, 203, 74;
+  --cyber-green: #56b01c;
+  --cyber-green-rgb: 86, 176, 28;
+  --cyber-yellow: #f6c453;
+  --cyber-yellow-rgb: 246, 196, 83;
+  --cyber-orange: #ff9a5c;
+  --cyber-orange-rgb: 255, 154, 92;
+
+  --cyber-text: #ffe3ef;
+  --cyber-text-rgb: 255, 227, 239;
+  --cyber-text-bright: #ffffff;
+  --cyber-text-soft: #e9a9c9;
+  --cyber-text-muted: #b0678e;
+  --cyber-text-disabled: #6b2a4c;
+
+  --cyber-logo: #ffffff;
+  --cyber-glow-green: 0 0 8px var(--cyber-green), 0 0 20px rgba(0, 82, 10, 0.6);
+}
+
+/* ── Cobalt Sky (dark) ───────────────────────────────────────────────────────
+ * Palette: #0047AB · #000080 · #82C8E5 · #6D8196
+ * Navy night, cobalt panels, sky-blue accents, slate for the quiet parts.
+ */
+:root[data-theme="cobalt-sky"] {
+  color-scheme: dark;
+
+  --cyber-bg: #000080;
+  --cyber-bg-rgb: 0, 0, 128;
+  --cyber-bg-panel: #0047ab;
+  --cyber-bg-deep: #00004d;
+  --cyber-bg-deep-rgb: 0, 0, 77;
+  --cyber-overlay: rgba(0, 0, 60, 0.78);
+  --cyber-grid: rgba(130, 200, 229, 0.07);
+  --cyber-surface: rgba(0, 71, 171, 0.35);
+
+  --cyber-cyan: #82c8e5;
+  --cyber-cyan-rgb: 130, 200, 229;
+  --cyber-magenta: #8fa3b8;
+  --cyber-magenta-rgb: 143, 163, 184;
+  --cyber-green: #5fd39a;
+  --cyber-green-rgb: 95, 211, 154;
+  --cyber-yellow: #f5c85a;
+  --cyber-yellow-rgb: 245, 200, 90;
+  --cyber-orange: #f5a25a;
+  --cyber-orange-rgb: 245, 162, 90;
+
+  --cyber-text: #e6f1fa;
+  --cyber-text-rgb: 230, 241, 250;
+  --cyber-text-bright: #ffffff;
+  --cyber-text-soft: #a9c4d9;
+  --cyber-text-muted: #6d8196;
+  --cyber-text-disabled: #3b4aa0;
+
+  --cyber-logo: #ffffff;
+}
+
+/* ── Light themes share the same soft-shadow treatment instead of neon glows ── */
+:root[data-theme="stormy-morning"],
+:root[data-theme="country-garden"],
+:root[data-theme="cappuccino"] {
+  color-scheme: light;
+
+  --cyber-bg-deep: #ffffff;
+  --cyber-bg-deep-rgb: 255, 255, 255;
+
+  --cyber-logo-glow: drop-shadow(0 2px 6px rgba(var(--cyber-cyan-rgb), 0.3));
+  --cyber-logo-glow-strong: drop-shadow(0 4px 14px rgba(var(--cyber-cyan-rgb), 0.45));
+  --cyber-icon-glow: none;
+
+  --cyber-glow: 0 2px 8px rgba(var(--cyber-cyan-rgb), 0.22);
+  --cyber-glow-strong: 0 4px 16px rgba(var(--cyber-cyan-rgb), 0.35);
+  --cyber-glow-magenta: 0 2px 8px rgba(var(--cyber-magenta-rgb), 0.22);
+  --cyber-glow-magenta-strong: 0 4px 16px rgba(var(--cyber-magenta-rgb), 0.35);
+  --cyber-glow-green: 0 2px 8px rgba(var(--cyber-green-rgb), 0.22);
+  --cyber-glow-green-strong: 0 4px 16px rgba(var(--cyber-green-rgb), 0.35);
+  --cyber-glow-yellow: 0 2px 8px rgba(var(--cyber-yellow-rgb), 0.22);
+  --cyber-glow-yellow-strong: 0 4px 16px rgba(var(--cyber-yellow-rgb), 0.4);
+  --cyber-glow-orange: 0 2px 8px rgba(var(--cyber-orange-rgb), 0.22);
+  --cyber-glow-dialog: 0 12px 40px rgba(var(--cyber-cyan-rgb), 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --cyber-deco-glow: 0 2px 6px rgba(var(--cyber-magenta-rgb), 0.25);
+  --cyber-deco-glow-strong: 0 8px 16px rgba(var(--cyber-magenta-rgb), 0.35);
+
+  --cyber-text-glow: none;
+  --cyber-text-glow-strong: none;
+  --cyber-text-glow-magenta: none;
+  --cyber-text-glow-magenta-strong: none;
+  --cyber-text-glow-green: none;
+  --cyber-text-glow-yellow: none;
+  --cyber-text-glow-orange: none;
+}
+
+/* ── Stormy Morning (light) ──────────────────────────────────────────────────
+ * Palette: #6A89A7 · #BDDDFC · #88BDF2 · #384959
+ * Pale sky, steel-blue accents, slate text.
+ */
+:root[data-theme="stormy-morning"] {
+  --cyber-bg: #dcebfb;
+  --cyber-bg-rgb: 220, 235, 251;
+  --cyber-bg-panel: #eaf3fd;
+  --cyber-overlay: rgba(56, 73, 89, 0.45);
+  --cyber-grid: rgba(136, 189, 242, 0.28);
+  --cyber-surface: rgba(189, 221, 252, 0.65);
+
+  --cyber-cyan: #4e6d8d;
+  --cyber-cyan-rgb: 78, 109, 141;
+  --cyber-magenta: #384959;
+  --cyber-magenta-rgb: 56, 73, 89;
+  --cyber-green: #2e8b57;
+  --cyber-green-rgb: 46, 139, 87;
+  --cyber-yellow: #c58a00;
+  --cyber-yellow-rgb: 197, 138, 0;
+  --cyber-orange: #d9772b;
+  --cyber-orange-rgb: 217, 119, 43;
+
+  --cyber-text: #24323f;
+  --cyber-text-rgb: 36, 50, 63;
+  --cyber-text-bright: #14202b;
+  --cyber-text-soft: #5a7a98;
+  --cyber-text-muted: #6a89a7;
+  --cyber-text-disabled: #a9c4dd;
+
+  --cyber-logo: #384959;
+}
+
+/* ── Country Garden (light) ──────────────────────────────────────────────────
+ * Palette: #FFFFE3 · #DBD4FF · #808034 · #723480
+ * Cream paper, lavender panels, olive and plum accents.
+ */
+:root[data-theme="country-garden"] {
+  --cyber-bg: #ffffe3;
+  --cyber-bg-rgb: 255, 255, 227;
+  --cyber-bg-panel: #dbd4ff;
+  --cyber-overlay: rgba(60, 40, 70, 0.45);
+  --cyber-grid: rgba(114, 52, 128, 0.06);
+  --cyber-surface: rgba(219, 212, 255, 0.55);
+
+  --cyber-cyan: #723480;
+  --cyber-cyan-rgb: 114, 52, 128;
+  --cyber-magenta: #808034;
+  --cyber-magenta-rgb: 128, 128, 52;
+  --cyber-green: #4e7d22;
+  --cyber-green-rgb: 78, 125, 34;
+  --cyber-yellow: #c9a227;
+  --cyber-yellow-rgb: 201, 162, 39;
+  --cyber-orange: #d2691e;
+  --cyber-orange-rgb: 210, 105, 30;
+
+  --cyber-text: #2f2838;
+  --cyber-text-rgb: 47, 40, 56;
+  --cyber-text-bright: #1b1622;
+  --cyber-text-soft: #6b6485;
+  --cyber-text-muted: #8e88a8;
+  --cyber-text-disabled: #c9c4dd;
+
+  --cyber-logo: #723480;
+}
+
+/* ── Cappuccino (light) ──────────────────────────────────────────────────────
+ * Palette: #D6B588 · #C6C0B9 · #705E46 · #422701
+ * Milk-foam page, tan panels, brown accents, coffee-dark text.
+ */
+:root[data-theme="cappuccino"] {
+  --cyber-bg: #e9e4dd;
+  --cyber-bg-rgb: 233, 228, 221;
+  --cyber-bg-panel: #c6c0b9;
+  --cyber-bg-deep: #fffdf9;
+  --cyber-bg-deep-rgb: 255, 253, 249;
+  --cyber-overlay: rgba(66, 39, 1, 0.45);
+  --cyber-grid: rgba(112, 94, 70, 0.07);
+  --cyber-surface: rgba(214, 181, 136, 0.35);
+
+  --cyber-cyan: #705e46;
+  --cyber-cyan-rgb: 112, 94, 70;
+  --cyber-magenta: #422701;
+  --cyber-magenta-rgb: 66, 39, 1;
+  --cyber-green: #5c7f3a;
+  --cyber-green-rgb: 92, 127, 58;
+  --cyber-yellow: #b8860b;
+  --cyber-yellow-rgb: 184, 134, 11;
+  --cyber-orange: #c4692a;
+  --cyber-orange-rgb: 196, 105, 42;
+
+  --cyber-text: #2e1d0e;
+  --cyber-text-rgb: 46, 29, 14;
+  --cyber-text-bright: #1a1006;
+  --cyber-text-soft: #7a6a55;
+  --cyber-text-muted: #9a8b78;
+  --cyber-text-disabled: #cfc5b8;
+
+  --cyber-logo: #422701;
+}

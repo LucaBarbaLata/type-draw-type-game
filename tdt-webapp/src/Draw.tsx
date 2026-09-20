@@ -326,7 +326,7 @@ const ReferencePanel = styled.div`
 `;
 
 const ReferenceCaption = styled.div`
-  color: rgba(0, 245, 255, 0.8);
+  color: rgba(var(--cyber-cyan-rgb), 0.8);
   font-size: 1.8vmin;
   letter-spacing: 0.06em;
   text-align: center;
@@ -337,8 +337,8 @@ const ReferenceImage = styled.img`
   max-height: 60vh;
   object-fit: contain;
   border-radius: 0.5vmin;
-  border: 1.5px solid rgba(0, 245, 255, 0.5);
-  box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+  border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
+  box-shadow: 0 0 16px rgba(var(--cyber-cyan-rgb), 0.2);
   cursor: zoom-in;
 `;
 
@@ -361,7 +361,7 @@ const ReferenceLarge = styled.div`
     max-width: 85vw;
     max-height: 75vh;
     object-fit: contain;
-    border: 1.5px solid rgba(0, 245, 255, 0.5);
+    border: 1.5px solid rgba(var(--cyber-cyan-rgb), 0.5);
     border-radius: 1vmin;
     box-shadow: var(--cyber-glow);
   }
@@ -372,9 +372,9 @@ const SpectatorBadge = styled.div`
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(8, 8, 24, 0.85);
-  border: 1px solid rgba(0, 245, 255, 0.4);
-  color: rgba(0, 245, 255, 0.8);
+  background: rgba(var(--cyber-bg-deep-rgb), 0.85);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.4);
+  color: rgba(var(--cyber-cyan-rgb), 0.8);
   font-size: 1.6vmin;
   padding: 2px 10px;
   border-radius: 20px;
@@ -420,14 +420,14 @@ const NotifCard = styled.div<{ $exiting: boolean }>`
   width: 370px;
   font-size: 15px;
   overflow: hidden;
-  background: linear-gradient(150deg, rgba(18, 14, 38, 0.98) 0%, rgba(10, 10, 24, 0.98) 100%);
-  border: 1px solid rgba(0, 245, 255, 0.28);
+  background: linear-gradient(150deg, rgba(var(--cyber-bg-deep-rgb), 0.98) 0%, rgba(var(--cyber-bg-rgb), 0.98) 100%);
+  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.28);
   border-radius: 18px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.72),
-    0 0 0 0.5px rgba(0, 245, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 20px rgba(0, 245, 255, 0.05);
+    0 0 0 0.5px rgba(var(--cyber-cyan-rgb), 0.08),
+    inset 0 1px 0 rgba(var(--cyber-text-rgb), 0.05),
+    0 0 20px rgba(var(--cyber-cyan-rgb), 0.05);
   backdrop-filter: blur(24px);
   cursor: pointer;
   user-select: none;
@@ -437,12 +437,12 @@ const NotifCard = styled.div<{ $exiting: boolean }>`
       : css`${notifIn} 0.36s cubic-bezier(0.22, 1.4, 0.36, 1) forwards`};
 
   &:hover {
-    border-color: rgba(0, 245, 255, 0.45);
+    border-color: rgba(var(--cyber-cyan-rgb), 0.45);
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.72),
-      0 0 0 0.5px rgba(0, 245, 255, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      0 0 28px rgba(0, 245, 255, 0.1);
+      0 0 0 0.5px rgba(var(--cyber-cyan-rgb), 0.15),
+      inset 0 1px 0 rgba(var(--cyber-text-rgb), 0.05),
+      0 0 28px rgba(var(--cyber-cyan-rgb), 0.1);
   }
 `;
 
@@ -451,14 +451,14 @@ const NotifFace = styled.div`
   font-size: 50px;
   border: 1.5px solid var(--cyber-magenta);
   border-radius: 50%;
-  background-color: rgba(255, 32, 121, 0.07);
+  background-color: rgba(var(--cyber-magenta-rgb), 0.07);
   width: 40px;
   height: 40px;
   line-height: 35px;
   text-align: center;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 0 10px rgba(255, 32, 121, 0.35), inset 0 0 8px rgba(255, 32, 121, 0.07);
+  box-shadow: 0 0 10px rgba(var(--cyber-magenta-rgb), 0.35), inset 0 0 8px rgba(var(--cyber-magenta-rgb), 0.07);
   color: var(--cyber-magenta);
 `;
 
@@ -468,7 +468,7 @@ const NotifBody = styled.div`
 `;
 
 const NotifName = styled.div`
-  color: #f0f0ff;
+  color: var(--cyber-text-bright);
   font-weight: 700;
   font-size: 1em;
   white-space: nowrap;
@@ -479,7 +479,7 @@ const NotifName = styled.div`
 `;
 
 const NotifSub = styled.div`
-  color: rgba(0, 245, 255, 0.65);
+  color: rgba(var(--cyber-cyan-rgb), 0.65);
   font-size: 0.85em;
   margin-top: 3px;
   letter-spacing: 0.03em;
@@ -492,11 +492,11 @@ const NotifBar = styled.div`
   left: 0;
   right: 0;
   height: 2.5px;
-  background: linear-gradient(90deg, var(--cyber-cyan), rgba(0, 245, 255, 0.4));
+  background: linear-gradient(90deg, var(--cyber-cyan), rgba(var(--cyber-cyan-rgb), 0.4));
   border-radius: 0 0 18px 18px;
   transform-origin: left center;
   animation: ${drainBar} 3s linear forwards;
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
+  box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.6);
 `;
 
 const FinishedNotification = ({

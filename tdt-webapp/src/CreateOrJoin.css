@@ -30,7 +30,7 @@
   flex-grow: 0;
 }
 
-.Join-logo .Logo img {
+.Join-logo .Logo .ThemedIcon {
   max-height: 75vh;
   width: 40vw;
 }
@@ -69,6 +69,6 @@
 }
 
 .SelectFace:hover .Face {
-  box-shadow: var(--cyber-glow-magenta), inset 0 0 14px rgba(255, 32, 121, 0.08), 0 0 35px rgba(255, 32, 121, 0.4);
+  box-shadow: var(--cyber-glow-magenta), inset 0 0 14px rgba(var(--cyber-magenta-rgb), 0.08), 0 0 35px rgba(var(--cyber-magenta-rgb), 0.4);
   transform: scale(1.04);
 }

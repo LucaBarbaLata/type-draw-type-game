@@ -71,7 +71,8 @@ Select a mode when creating a lobby. All players see the active mode before the 
 - Global mute toggle
 
 ### UI
-- Cyberpunk aesthetic — dark background, cyan/magenta glows, responsive vmin-based layout
+- Cyberpunk aesthetic by default — dark background, cyan/magenta glows, responsive vmin-based layout
+- **Themes** — switch the whole look from the palette button in the corner (saved per browser): Cyberpunk, Blue Eclipse, Blooming Romance and Cobalt Sky (dark), Stormy Morning, Country Garden and Cappuccino (light)
 - Works on desktop and mobile; can be added to the home screen (PWA-ready)
 
 ---
