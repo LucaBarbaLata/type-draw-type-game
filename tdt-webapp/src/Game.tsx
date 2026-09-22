@@ -41,6 +41,7 @@ import { Join } from "./CreateOrJoin";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 import { useAudio } from "./audio/useAudio";
 import { type ChatMessage } from "./Chat";
+import ThemedIcon from "./ThemedIcon";
 
 interface PlayerState {
   state: string;
@@ -727,7 +728,7 @@ const Game = () => {
           onClick={toggleMute}
           title={muted ? "Unmute sounds" : "Mute sounds"}
         >
-          {muted ? "🔇" : "🔊"}
+          <ThemedIcon name={muted ? "volumeOff" : "volumeOn"} label={null} />
         </MuteButton>
       )}
       {ReactDOM.createPortal(
@@ -842,6 +843,11 @@ const MuteButton = styled.button`
   backdrop-filter: blur(4px);
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
   animation: ${muteIn} 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  & .ThemedIcon {
+    width: 50%;
+    height: 50%;
+  }
 
   &:hover {
     border-color: var(--cyber-cyan);

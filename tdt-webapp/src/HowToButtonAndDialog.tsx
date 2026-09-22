@@ -3,6 +3,7 @@ import styled, { css, keyframes } from "styled-components";
 
 import Dialog from "./Dialog";
 import Scrollable from "./Scrollable";
+import ThemedIcon from "./ThemedIcon";
 
 // ── Animations ────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,9 @@ const HowToButtonAndDialog = () => {
                 <ProgressFill style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
               </ProgressTrack>
               <StepCounter>{step + 1} / {STEPS.length}</StepCounter>
-              <CloseBtn onClick={close} title="Close">✕</CloseBtn>
+              <CloseBtn onClick={close} title="Close" aria-label="Close">
+                <ThemedIcon name="close" label={null} />
+              </CloseBtn>
             </TopRow>
 
             <SlideArea key={animKey} dir={dir}>
@@ -116,11 +119,13 @@ const HowToButtonAndDialog = () => {
                   disabled={step === 0}
                   onClick={() => go(step - 1)}
                 >
-                  ← Back
+                  <ThemedIcon name="arrowLeft" label={null} className="ThemedIcon-leading" />
+                  Back
                 </NavBtn>
                 {step < STEPS.length - 1 ? (
                   <button className="button" onClick={() => go(step + 1)}>
-                    Next →
+                    Next
+                    <ThemedIcon name="arrowRight" label={null} className="ThemedIcon-trailing" />
                   </button>
                 ) : (
                   <button className="button" onClick={close}>

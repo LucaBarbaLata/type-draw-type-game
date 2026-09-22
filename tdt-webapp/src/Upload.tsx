@@ -3,6 +3,7 @@ import styled, { keyframes } from "styled-components";
 
 import Scrollable from "./Scrollable";
 import RoundTimer from "./RoundTimer";
+import ThemedIcon from "./ThemedIcon";
 import { blobToDataURL, makePlaceholderImage, prepareUploadImage, UploadImageError } from "./imageUtils";
 
 import "./Upload.css";
@@ -127,7 +128,7 @@ const Upload = ({
             Round {round} of {rounds}
           </div>
           <h1>
-            <CameraIcon aria-hidden="true">📷</CameraIcon> Upload
+            <CameraIcon aria-hidden="true"><ThemedIcon name="camera" label={null} /></CameraIcon> Upload
           </h1>
           <div>... a photo. Another player will have to redraw it by hand!</div>
         </div>

@@ -8,6 +8,7 @@ import Player from "./Player";
 import Logo from "./Logo";
 import Chat, { type ChatMessage } from "./Chat";
 import { themeVar, useThemeVar } from "./theme";
+import ThemedIcon from "./ThemedIcon";
 export type { ChatMessage };
 
 import logoImg from "./img/logo.svg";
@@ -387,10 +388,20 @@ export const WaitForPlayersScreen = ({
             </QRBlock>
             <QRActions>
               <QRActionBtn onClick={handleShare}>
-                {copied ? "✓ Copied!" : ((navigator as any).share ? "Share" : "Copy Link")}
+                {copied ? (
+                  <>
+                    <ThemedIcon name="check" label={null} className="ThemedIcon-leading" />
+                    Copied!
+                  </>
+                ) : ((navigator as any).share ? "Share" : "Copy Link")}
               </QRActionBtn>
               <QRActionBtn onClick={handleDownloadCard} disabled={downloading}>
-                {downloading ? "Building..." : "↓ Card"}
+                {downloading ? "Building..." : (
+                  <>
+                    <ThemedIcon name="download" label={null} className="ThemedIcon-leading" />
+                    Card
+                  </>
+                )}
               </QRActionBtn>
             </QRActions>
           </QRWrapper>
@@ -617,13 +628,13 @@ const BeforeGameStartScreen = ({
               {!player.isCreator && (onKickPlayer || onBanPlayer) && (
                 <PlayerActions>
                   {onKickPlayer && (
-                    <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player">
-                      ✕
+                    <KickBtn onClick={() => onKickPlayer(player.name)} title="Kick player" aria-label={`Kick ${player.name}`}>
+                      <ThemedIcon name="close" label={null} />
                     </KickBtn>
                   )}
                   {onBanPlayer && (
-                    <BanBtn onClick={() => onBanPlayer(player.name)} title="Ban player">
-                      ⊘
+                    <BanBtn onClick={() => onBanPlayer(player.name)} title="Ban player" aria-label={`Ban ${player.name}`}>
+                      <ThemedIcon name="ban" label={null} />
                     </BanBtn>
                   )}
                 </PlayerActions>
@@ -669,6 +680,14 @@ const KickBtn = styled.button`
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  & .ThemedIcon {
+    width: 58%;
+    height: 58%;
+  }
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {
@@ -689,6 +708,14 @@ const BanBtn = styled.button`
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  & .ThemedIcon {
+    width: 58%;
+    height: 58%;
+  }
   transition: background 0.1s, border-color 0.1s;
 
   &:hover {

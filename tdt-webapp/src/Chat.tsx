@@ -13,6 +13,7 @@ const chatBoxEnter = keyframes`
 
 import { PlayerInfo } from "./model";
 import Face from "./Face";
+import ThemedIcon from "./ThemedIcon";
 
 export interface ChatMessage {
   sender: PlayerInfo;
@@ -78,7 +79,7 @@ const Chat = ({
           onKeyDown={handleKeyDown}
         />
         <ChatSendBtn onClick={handleSend} disabled={!enabled || !draft.trim()}>
-          ↵
+          <ThemedIcon name="send" label="Send" />
         </ChatSendBtn>
       </ChatInputRow>
     </ChatBox>
@@ -207,6 +208,14 @@ const ChatInput = styled.input`
 const ChatSendBtn = styled.button`
   font-size: 1.6vmin;
   padding: 0.5vmin 1.2vmin;
+  display: flex;
+  align-items: center;
+
+  /* Icon-only button, so the icon carries it rather than matching a label */
+  & .ThemedIcon {
+    width: 1.5em;
+    height: 1.5em;
+  }
   background: rgba(var(--cyber-cyan-rgb), 0.08);
   border: 1px solid rgba(var(--cyber-cyan-rgb), 0.35);
   border-radius: 0.5vmin;

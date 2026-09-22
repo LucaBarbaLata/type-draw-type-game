@@ -8,6 +8,7 @@ import NewlineToBreak from "./NewLineToBreak";
 import DrawingReplay from "./replay/DrawingReplay";
 import { EmojiCascade } from "./EmojiCascade";
 import { themeVar } from "./theme";
+import ThemedIcon from "./ThemedIcon";
 
 const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮", "🤯", "💕"];
 
@@ -131,7 +132,7 @@ const Stories = ({
             className="button"
             onClick={() => { onReveal?.(); setRevealedCount((c) => Math.min(c + 1, totalElements)); }}
           >
-            Reveal next ▼
+            Reveal next <ThemedIcon name="chevronDown" label={null} />
           </button>
           <SkipButton onClick={() => setRevealedCount(totalElements)}>
             Reveal all
@@ -141,10 +142,12 @@ const Stories = ({
       {allRevealed && (
         <ExportRow>
           <ExportButton onClick={() => exportStory(currentStory, selectedStory)}>
-            ↓ Download story
+            <ThemedIcon name="download" label={null} className="ThemedIcon-leading" />
+            Download story
           </ExportButton>
           <ExportButton onClick={() => exportStoryStrip(currentStory, selectedStory)}>
-            ↔ Share strip
+            <ThemedIcon name="share" label={null} className="ThemedIcon-leading" />
+            Share strip
           </ExportButton>
         </ExportRow>
       )}
@@ -152,12 +155,14 @@ const Stories = ({
       <EndButtons>
         {onMainMenu && (
           <button className="button" onClick={onMainMenu}>
-            ⌂ Main Menu
+            <ThemedIcon name="home" label={null} className="ThemedIcon-leading" />
+            Main Menu
           </button>
         )}
         {onViewGallery && (
           <button className="button" onClick={onViewGallery}>
-            📖 Gallery
+            <ThemedIcon name="gallery" label={null} className="ThemedIcon-leading" />
+            Gallery
           </button>
         )}
         {onRematch && (
@@ -166,7 +171,12 @@ const Stories = ({
             onClick={() => { if (!hasVotedRematch) { setHasVotedRematch(true); onRematch(); } }}
             disabled={hasVotedRematch}
           >
-            {hasVotedRematch ? "Waiting for others..." : "▶ Play Again"}
+            {hasVotedRematch ? "Waiting for others..." : (
+              <>
+                <ThemedIcon name="play" label={null} className="ThemedIcon-leading" />
+                Play Again
+              </>
+            )}
           </PlayAgainButton>
         )}
       </EndButtons>
@@ -759,8 +769,9 @@ const StoryNavButtons = ({
       className="button"
       onClick={() => handleNav(selectedIndex - 1)}
       disabled={selectedIndex === 0}
+      aria-label="Previous story"
     >
-      ⇦
+      <ThemedIcon name="chevronLeft" label={null} />
     </button>
     {items.map((_item, index) => (
       <button
@@ -776,8 +787,9 @@ const StoryNavButtons = ({
       className="button"
       onClick={() => handleNav(selectedIndex + 1)}
       disabled={selectedIndex === items.length - 1}
+      aria-label="Next story"
     >
-      ⇨
+      <ThemedIcon name="chevronRight" label={null} />
     </button>
   </NavButtons>
 );

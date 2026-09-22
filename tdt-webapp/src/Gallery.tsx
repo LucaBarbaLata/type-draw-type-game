@@ -4,6 +4,7 @@ import styled, { keyframes } from "styled-components";
 
 import { StoryContent, StoryElementType } from "./model";
 import NewlineToBreak from "./NewLineToBreak";
+import ThemedIcon from "./ThemedIcon";
 
 const Gallery = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -28,7 +29,10 @@ const Gallery = () => {
           <ErrorSub>
             <em>{gameId}</em> doesn't exist or hasn't finished yet.
           </ErrorSub>
-          <HomeBtn onClick={() => navigate("/")}>⌂ Go home</HomeBtn>
+          <HomeBtn onClick={() => navigate("/")}>
+            <ThemedIcon name="home" label={null} className="ThemedIcon-leading" />
+            Go home
+          </HomeBtn>
         </ErrorCard>
       </Shell>
     );
@@ -49,7 +53,9 @@ const Gallery = () => {
     <Root>
       <TopBar>
         <TopBarLeft>
-          <HomeBtn onClick={() => navigate("/")}>⌂</HomeBtn>
+          <HomeBtn onClick={() => navigate("/")} aria-label="Go home">
+            <ThemedIcon name="home" label={null} />
+          </HomeBtn>
           <GameCode>{gameId}</GameCode>
         </TopBarLeft>
         <StoryTabs>

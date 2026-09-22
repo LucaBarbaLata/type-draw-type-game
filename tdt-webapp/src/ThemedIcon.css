@@ -5,6 +5,29 @@
   display: inline-block;
   line-height: 0;
   vertical-align: middle;
+  /* The glyphs these icons replaced picked up the glow from the text-shadow
+     around them; a mask cannot, so it takes the equivalent filter. Light
+     themes set this token to `none`. */
+  filter: var(--cyber-icon-glow);
+}
+
+/* Pack icons are square and default to the size of the text they sit in, which
+   is what an icon beside a button label wants. Kept at one-class specificity so
+   the toolbar rules (.tool-button .ThemedIcon etc.) still win. The wordmarks do
+   not get this: they are sized by one dimension plus their aspect ratio. */
+.ThemedIcon-square {
+  width: 1em;
+  height: 1em;
+}
+
+/* Icon + label in a button or a line of text. The gap belongs to the icon so
+   call sites stay `<ThemedIcon …/> Label` with no wrapper. */
+.ThemedIcon-leading {
+  margin-right: 0.45em;
+}
+
+.ThemedIcon-trailing {
+  margin-left: 0.45em;
 }
 
 .ThemedIcon-shape {

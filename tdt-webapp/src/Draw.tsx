@@ -9,6 +9,7 @@ import Dialog from "./Dialog";
 import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
+import ThemedIcon from "./ThemedIcon";
 import WaitingMessage from "./WaitingMessage";
 
 import "./Draw.css";
@@ -305,7 +306,10 @@ const Draw = ({
         <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
       )}
       {spectatorCount != null && spectatorCount > 0 && (
-        <SpectatorBadge>👁 {spectatorCount} watching</SpectatorBadge>
+        <SpectatorBadge>
+          <ThemedIcon name="eye" label={null} className="ThemedIcon-leading" />
+          {spectatorCount} watching
+        </SpectatorBadge>
       )}
       <DrawCanvas
         color={color}
@@ -332,13 +336,15 @@ const Draw = ({
             </>
           ) : (
             <span>
-              ✓ {teamPartner!.name} is ready — press ✓ when you are too
+              <ThemedIcon name="check" label={null} className="ThemedIcon-leading" />
+              {teamPartner!.name} is ready — press{" "}
+              <ThemedIcon name="check" label="the done button" /> when you are too
             </span>
           )}
         </TeamApprovalBar>
       )}
       {referenceImageSrc && (
-        <ReferencePanel className="Draw-reference">
+        <ReferencePanel>
           <ReferenceCaption>Photo by {textWriter.name}</ReferenceCaption>
           <ReferenceImage
             src={referenceImageSrc}

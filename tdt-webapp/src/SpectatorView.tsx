@@ -6,6 +6,7 @@ import Player from "./Player";
 import Scrollable from "./Scrollable";
 import NewlineToBreak from "./NewLineToBreak";
 import Chat, { ChatMessage } from "./Chat";
+import ThemedIcon from "./ThemedIcon";
 
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
@@ -53,7 +54,10 @@ const SpectatorView = ({
   return (
     <Scrollable ref={scrollableRef}>
       <Header>
-        <StatusBadge>👀 SPECTATING</StatusBadge>
+        <StatusBadge>
+          <ThemedIcon name="eye" label={null} className="ThemedIcon-leading" />
+          SPECTATING
+        </StatusBadge>
         <RoundInfo>
           Round {round} of {rounds} —{" "}
           {stillDrawing
@@ -64,7 +68,11 @@ const SpectatorView = ({
           {players.map((p, i) => (
             <Player key={i} face={p.face}>
               {p.name}
-              {waitingForPlayers.some((w) => w.name === p.name) ? " ✏️" : " ✓"}
+              {waitingForPlayers.some((w) => w.name === p.name) ? (
+                <ThemedIcon name="pen" label="still working" className="ThemedIcon-trailing" />
+              ) : (
+                <ThemedIcon name="check" label="done" className="ThemedIcon-trailing" />
+              )}
             </Player>
           ))}
         </PlayerRow>
@@ -108,8 +116,9 @@ const SpectatorView = ({
               className="button"
               onClick={() => setStoryAndScroll(selectedStory - 1)}
               disabled={selectedStory === 0}
+              aria-label="Previous story"
             >
-              ⇦
+              <ThemedIcon name="chevronLeft" label={null} />
             </button>
             {stories.map((_s, i) => (
               <button
@@ -125,8 +134,9 @@ const SpectatorView = ({
               className="button"
               onClick={() => setStoryAndScroll(selectedStory + 1)}
               disabled={selectedStory === stories.length - 1}
+              aria-label="Next story"
             >
-              ⇨
+              <ThemedIcon name="chevronRight" label={null} />
             </button>
           </NavButtons>
 

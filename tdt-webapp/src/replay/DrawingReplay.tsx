@@ -1,5 +1,6 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
+import ThemedIcon from "../ThemedIcon";
 
 interface DrawingReplayProps {
   replayUrl: string;
@@ -87,7 +88,7 @@ const DrawingReplay = ({
       )}
 
       {hasReplay && playState === "paused" && (
-        <CornerOverlay><ResumeLabel>▶</ResumeLabel></CornerOverlay>
+        <CornerOverlay><ResumeLabel><ThemedIcon name="play" label="Resume replay" /></ResumeLabel></CornerOverlay>
       )}
     </ReplayContainer>
   );

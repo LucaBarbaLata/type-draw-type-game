@@ -1,5 +1,6 @@
 import React from "react";
 import styled, { css, keyframes } from "styled-components";
+import ThemedIcon from "./ThemedIcon";
 
 const timerIn = keyframes`
   from { opacity: 0; transform: translateY(-2vmin) scale(0.85); }
@@ -64,7 +65,8 @@ const RoundTimer = ({
 
   return (
     <TimerContainer level={level}>
-      ⏱ {remaining}s
+      <ThemedIcon name="timer" label={null} className="ThemedIcon-leading" />
+      {remaining}s
     </TimerContainer>
   );
 };

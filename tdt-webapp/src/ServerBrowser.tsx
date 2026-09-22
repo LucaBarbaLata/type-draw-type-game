@@ -26,6 +26,7 @@ import {
 } from "./helpers";
 import Face from "./Face";
 import { ConnectionLostErrorDialog } from "./ErrorDialogs";
+import ThemedIcon from "./ThemedIcon";
 
 interface PublicGameInfo {
   gameId: string;
@@ -110,7 +111,8 @@ const ServerBrowser = () => {
         <TopBar>
           <BrowserTitle>Server Browser</BrowserTitle>
           <button className="button button-blue" onClick={() => navigate("/")}>
-            ← Back
+            <ThemedIcon name="arrowLeft" label={null} className="ThemedIcon-leading" />
+            Back
           </button>
         </TopBar>
 
