@@ -33,6 +33,7 @@ import net.czedik.hermann.tdt.actions.SpectatorSnapshotAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
+import net.czedik.hermann.tdt.actions.TeamReadyAction;
 import net.czedik.hermann.tdt.actions.TypeAction;
 import net.czedik.hermann.tdt.actions.RateDrawingAction;
 import net.czedik.hermann.tdt.actions.VoteAction;
@@ -438,6 +439,17 @@ public class GameManager {
         }
         gameRef.useGame(game -> {
             game.teamCanvasSync(client, action);
+        });
+    }
+
+    public void handleTeamReadyAction(Client client, TeamReadyAction action) {
+        GameRef gameRef = getGameRefForClient(client);
+        if (gameRef == null) {
+            log.warn("Cannot handle teamReady. Client {} unknown", client.getId());
+            return;
+        }
+        gameRef.useGame(game -> {
+            game.teamReady(client, action);
         });
     }
 

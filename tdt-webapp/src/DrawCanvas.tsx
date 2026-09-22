@@ -124,6 +124,7 @@ const DrawCanvas = ({
   onStrokeSegment,
   initialImageUrl,
   partnerCursor,
+  locked,
 }: {
   color: string;
   brushPixelSize: number;
@@ -136,6 +137,8 @@ const DrawCanvas = ({
   onStrokeSegment?: (seg: StrokeSegment) => void;
   initialImageUrl?: string;
   partnerCursor?: { x: number; y: number; name: string } | null;
+  /** Blocks all input on the canvas (TEAM mode: while waiting for the partner's approval) */
+  locked?: boolean;
 }) => {
   const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
@@ -583,7 +586,7 @@ const DrawCanvas = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         ref={canvasRefCallback}
-        style={{ cursor: cursorStyle }}
+        style={{ cursor: locked ? "not-allowed" : cursorStyle, pointerEvents: locked ? "none" : undefined }}
       />
       {gameMode === "FOG_OF_WAR" && (
         <canvas

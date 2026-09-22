@@ -117,6 +117,10 @@ interface DrawState extends PlayerState {
   roundTimerSeconds: number;
   gameMode: GameMode;
   teamPartner?: PlayerInfo;
+  /** TEAM mode: whether this player has already approved the team's drawing */
+  teamSelfReady?: boolean;
+  /** TEAM mode: whether the team partner has already approved the team's drawing */
+  teamPartnerReady?: boolean;
   spectatorCount?: number;
   finishedPlayers?: PlayerInfo[];
 }
@@ -226,6 +230,8 @@ const Game = () => {
   // Team mode: partner cursor position (canvas coordinates) and draw canvas ref
   const [partnerCursor, setPartnerCursor] = React.useState<{ x: number; y: number; name: string } | null>(null);
   const imageProviderRef = React.useRef<import("./DrawCanvas").ImageProvider | undefined>();
+  // Team mode: round for which the server asked us (rather than our partner) to upload the team's drawing
+  const [teamSubmitRound, setTeamSubmitRound] = React.useState<number | null>(null);
   // Team mode: track the current draw round so teamStroke messages include the correct round number
   const currentDrawRoundRef = React.useRef<number>(0);
   const sentCanvasRequestForRoundRef = React.useRef<number>(-1);
@@ -271,6 +277,7 @@ const Game = () => {
     let closed = false;
 
     setConnectionStatus("connecting");
+    setTeamSubmitRound(null);
 
     socket.onopen = () => {
       console.log("Websocket opened. Sending access action.");
@@ -302,6 +309,11 @@ const Game = () => {
       }
       if (msg.state === "teamCanvasRequest") {
         handleTeamCanvasRequest();
+        return;
+      }
+      if (msg.state === "teamSubmit") {
+        const submitMsg = msg as unknown as { state: string; round: number };
+        setTeamSubmitRound(submitMsg.round);
         return;
       }
       if (msg.state === "teamCanvasSync") {
@@ -394,6 +406,13 @@ const Game = () => {
     socketRef.current?.send(JSON.stringify({
       action: "teamCanvasSync",
       content: { round: currentDrawRoundRef.current, imageDataUrl: dataUrl },
+    }));
+  }, []);
+
+  const handleTeamReady = React.useCallback((ready: boolean) => {
+    socketRef.current?.send(JSON.stringify({
+      action: "teamReady",
+      content: { round: currentDrawRoundRef.current, ready },
     }));
   }, []);
 
@@ -549,6 +568,11 @@ const Game = () => {
           onSendReplay={handleSendReplay}
           onStrokeSegment={isTeam ? handleStrokeSegment : undefined}
           onTeamSync={isTeam ? handleTeamCanvasRequest : undefined}
+          teamPartner={isTeam ? playerState.teamPartner : undefined}
+          teamSelfReady={playerState.teamSelfReady}
+          teamPartnerReady={playerState.teamPartnerReady}
+          onTeamReady={isTeam ? handleTeamReady : undefined}
+          teamSubmitRequested={isTeam && teamSubmitRound === playerState.round}
           cacheKey={`draw-${gameIdNotNull}-r${playerState.round}`}
           partnerCursor={isTeam ? partnerCursor : null}
           imageProviderRef={isTeam ? imageProviderRef : undefined}

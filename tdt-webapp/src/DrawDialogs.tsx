@@ -11,6 +11,7 @@ export const ConfirmDrawingDialog = ({
   referenceImageSrc,
   show,
   drawingDataUrl,
+  teamPartnerName,
   handleDone,
   handleContinue,
 }: {
@@ -18,13 +19,19 @@ export const ConfirmDrawingDialog = ({
   referenceImageSrc?: string;
   show: boolean;
   drawingDataUrl?: string;
+  /** TEAM mode: name of the partner who also has to approve before the drawing is submitted */
+  teamPartnerName?: string;
   handleDone: () => void;
   handleContinue: () => void;
 }) => {
   return (
     <Dialog show={show}>
       <ConfirmDrawingDialogContent>
-        <h1>Are you finished with your drawing?</h1>
+        <h1>
+          {teamPartnerName
+            ? "Are you finished with your team's drawing?"
+            : "Are you finished with your drawing?"}
+        </h1>
         {referenceImageSrc ? (
           <Comparison>
             <img src={referenceImageSrc} alt="Photo" />
@@ -39,6 +46,11 @@ export const ConfirmDrawingDialog = ({
               <img src={drawingDataUrl} alt="Drawing" />
             </div>
           </>
+        )}
+        {teamPartnerName && (
+          <div className="small">
+            {teamPartnerName} has to approve it as well before it is submitted.
+          </div>
         )}
         <div className="buttons">
           <button className="button" onClick={handleDone}>

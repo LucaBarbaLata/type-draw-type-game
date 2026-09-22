@@ -34,6 +34,7 @@ import net.czedik.hermann.tdt.actions.SpectatorSnapshotAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
+import net.czedik.hermann.tdt.actions.TeamReadyAction;
 import net.czedik.hermann.tdt.GameMode;
 import net.czedik.hermann.tdt.actions.ChatAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
@@ -53,6 +54,7 @@ import net.czedik.hermann.tdt.playerstate.HotPotatoDrawState;
 import net.czedik.hermann.tdt.playerstate.TeamStrokeEvent;
 import net.czedik.hermann.tdt.playerstate.TeamCanvasRequestEvent;
 import net.czedik.hermann.tdt.playerstate.TeamCanvasSyncEvent;
+import net.czedik.hermann.tdt.playerstate.TeamSubmitEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
 import net.czedik.hermann.tdt.playerstate.RematchState;
@@ -104,6 +106,9 @@ public class Game {
 
     // Runtime-only: latest canvas snapshot per player ID, used to show spectators live drawing progress
     private final Map<String, String> latestSpectatorSnapshots = new HashMap<>();
+
+    // Runtime-only (TEAM mode): IDs of players who approved their team's drawing for the current round
+    private final Set<String> teamReadyPlayerIds = new HashSet<>();
 
     public Game(String gameId, Path gameDir, Player creator, TdtProperties.Limits limits, boolean publicGamesEnabled) {
         this(gameId, gameDir, new GameState(), limits, publicGamesEnabled);
@@ -671,21 +676,26 @@ public class Game {
         Player previousPlayer = getPreviousPlayerForStory(storyIndex);
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         PlayerInfo teamPartner = null;
+        boolean selfReady = false;
+        boolean partnerReady = false;
         if (mode == GameMode.TEAM) {
             int playerIndex = gameState.players.indexOf(player);
             int[] pair = getTeamPairForPlayer(playerIndex);
             if (pair != null) {
                 for (int partnerIdx : pair) {
                     if (partnerIdx != playerIndex) {
-                        teamPartner = mapPlayerToPlayerInfo(gameState.players.get(partnerIdx));
+                        Player partner = gameState.players.get(partnerIdx);
+                        teamPartner = mapPlayerToPlayerInfo(partner);
+                        partnerReady = teamReadyPlayerIds.contains(partner.id());
                         break;
                     }
                 }
             }
+            selfReady = teamReadyPlayerIds.contains(player.id());
         }
         return new DrawState(gameState.round + 1, gameState.gameMatrix.length, text, referenceImageSrc,
                 mapPlayerToPlayerInfo(previousPlayer), gameState.roundTimerSeconds, mode, teamPartner,
-                spectatorClients.size(), getOtherFinishedPlayers(player));
+                selfReady, partnerReady, spectatorClients.size(), getOtherFinishedPlayers(player));
     }
 
     private PlayerState getTypeState(Player player) {
@@ -833,6 +843,15 @@ public class Game {
 
         Set<Client> clientsOfPlayer = playerToClients.get(player);
         clientsOfPlayer.remove(client);
+
+        // A team whose remaining members have all approved must not wait for the member that just left
+        if (gameState.state == GameState.State.Started && gameState.gameMode == GameMode.TEAM
+                && isDrawRound() && clientsOfPlayer.isEmpty()) {
+            int[] pair = getTeamPairForPlayer(gameState.players.indexOf(player));
+            if (pair != null && getCurrentStoryForPlayer(player).elements[gameState.round] == null) {
+                directTeamSubmitIfApproved(pair, null);
+            }
+        }
 
         if (gameState.state == GameState.State.WaitingForPlayers) {
             if (clientsOfPlayer.isEmpty()) {
@@ -1295,6 +1314,81 @@ public class Game {
         }
     }
 
+    /**
+     * Records (or withdraws) a player's approval of their team's drawing. The drawing itself is not submitted
+     * here: once every connected member of the team has approved, one of them is asked to upload its canvas
+     * (see {@link #directTeamSubmitIfApproved(int[], Player)}).
+     */
+    public void teamReady(Client senderClient, TeamReadyAction action) {
+        Player player = clientToPlayer.get(senderClient);
+        if (player == null) {
+            log.warn("Game {}: teamReady from unknown client {}", gameId, senderClient.getId());
+            return;
+        }
+        if (gameState.gameMode != GameMode.TEAM || gameState.state != GameState.State.Started) return;
+        if (!isDrawRound()) return;
+        if (action.round() != gameState.round + 1) {
+            log.warn("Game {}: teamReady ignored — wrong round {} (current={})", gameId, action.round(), gameState.round + 1);
+            return;
+        }
+        int playerIndex = gameState.players.indexOf(player);
+        int[] pair = getTeamPairForPlayer(playerIndex);
+        if (pair == null) return;
+        if (getCurrentStoryForPlayer(player).elements[gameState.round] != null) {
+            return; // team already submitted this round
+        }
+
+        if (action.ready()) {
+            teamReadyPlayerIds.add(player.id());
+        } else {
+            teamReadyPlayerIds.remove(player.id());
+        }
+        log.info("Game {}: Player {} {} the team drawing for round {}", gameId, player.id(),
+                action.ready() ? "approved" : "un-approved", gameState.round + 1);
+
+        // The approving player uploads when their approval completes the team, so their canvas is the one submitted
+        if (action.ready() && directTeamSubmitIfApproved(pair, player)) {
+            return; // no state update needed: the upload transitions the whole team anyway
+        }
+        updateStateForTeam(pair);
+    }
+
+    /**
+     * Asks one member of the team to upload its canvas, if every connected member has approved the drawing.
+     * Members without a connected client are not waited for, so a team is never blocked by someone who left.
+     *
+     * @param preferredSubmitter member that should upload if it is connected and has approved, may be null
+     * @return whether a member was asked to upload
+     */
+    private boolean directTeamSubmitIfApproved(int[] pair, Player preferredSubmitter) {
+        List<Player> connected = new ArrayList<>();
+        for (int memberIndex : pair) {
+            Player member = gameState.players.get(memberIndex);
+            if (!playerToClients.getOrDefault(member, Collections.emptySet()).isEmpty()) {
+                connected.add(member);
+            }
+        }
+        if (connected.isEmpty()) return false;
+        if (!connected.stream().allMatch(p -> teamReadyPlayerIds.contains(p.id()))) return false;
+
+        Player submitter = connected.contains(preferredSubmitter) ? preferredSubmitter : connected.get(0);
+        log.info("Game {}: Team approved the drawing for round {} — asking player {} to submit it",
+                gameId, gameState.round + 1, submitter.id());
+        TeamSubmitEvent event = new TeamSubmitEvent(gameState.round + 1);
+        for (Client client : playerToClients.getOrDefault(submitter, Collections.emptySet())) {
+            client.send(event);
+        }
+        return true;
+    }
+
+    /** Pushes fresh player states to the members of one team only (approvals do not concern the other teams). */
+    private void updateStateForTeam(int[] pair) {
+        for (int memberIndex : pair) {
+            updateStateForPlayer(gameState.players.get(memberIndex));
+        }
+        updateStateForSpectators();
+    }
+
     public void type(Client client, TypeAction typeAction) {
         Player player = clientToPlayer.get(client);
         if (player == null) {
@@ -1539,6 +1633,7 @@ public class Game {
     private void checkAndHandleRoundFinished() {
         if (isCurrentRoundFinished()) {
             latestSpectatorSnapshots.clear();
+            teamReadyPlayerIds.clear();
             roundChatMessages.clear();
             gameState.round++;
 

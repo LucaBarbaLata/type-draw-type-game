@@ -28,6 +28,7 @@ import net.czedik.hermann.tdt.actions.DrawingReplayAction;
 import net.czedik.hermann.tdt.actions.TeamStrokeAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasRequestAction;
 import net.czedik.hermann.tdt.actions.TeamCanvasSyncAction;
+import net.czedik.hermann.tdt.actions.TeamReadyAction;
 import net.czedik.hermann.tdt.actions.JoinAction;
 import net.czedik.hermann.tdt.actions.SettingsAction;
 import net.czedik.hermann.tdt.actions.StartAction;
@@ -131,6 +132,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         } else if ("teamCanvasSync".equals(action)) {
             TeamCanvasSyncAction teamCanvasSyncAction = JSONHelper.objectMapper.treeToValue(content, TeamCanvasSyncAction.class);
             gameManager.handleTeamCanvasSyncAction(client, teamCanvasSyncAction);
+        } else if ("teamReady".equals(action)) {
+            TeamReadyAction teamReadyAction = JSONHelper.objectMapper.treeToValue(content, TeamReadyAction.class);
+            gameManager.handleTeamReadyAction(client, teamReadyAction);
         } else if ("rematch".equals(action)) {
             gameManager.handleRematchAction(client);
         } else if ("spectatorSnapshot".equals(action)) {

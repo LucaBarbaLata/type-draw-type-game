@@ -25,6 +25,9 @@ const DrawTools = ({
   onUndo,
   onRedo,
   onDone,
+  doneWaiting,
+  doneHighlighted,
+  doneTooltip,
 }: {
   color: string;
   brushes: Brush[];
@@ -38,6 +41,11 @@ const DrawTools = ({
   onUndo: () => void;
   onRedo: () => void;
   onDone: () => void;
+  /** TEAM mode: this player approved the drawing and waits for their partner */
+  doneWaiting?: boolean;
+  /** TEAM mode: the partner approved already, so pressing done submits the drawing */
+  doneHighlighted?: boolean;
+  doneTooltip?: string;
 }) => {
   const isNoir = gameMode === "TELEPHONE_NOIR";
   const brushButton = React.useRef<HTMLDivElement>(null);
@@ -148,7 +156,15 @@ const DrawTools = ({
         </>
       )}
 
-      <div className="tool-button tool-button-done" onClick={onDone}>
+      <div
+        className={
+          "tool-button tool-button-done" +
+          (doneWaiting ? " tool-button-done-waiting" : "") +
+          (doneHighlighted ? " tool-button-done-highlighted" : "")
+        }
+        onClick={onDone}
+        data-tooltip={doneTooltip}
+      >
         <ThemedIcon name="check" label="Done" />
       </div>
     </div>

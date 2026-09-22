@@ -18,6 +18,8 @@ import net.czedik.hermann.tdt.PlayerInfo;
  * @param roundTimerSeconds seconds allowed per round, 0 means no timer
  * @param gameMode          the active game mode
  * @param teamPartner       team partner info (only set in TEAM mode)
+ * @param teamSelfReady     TEAM mode: whether this player has already approved the drawing
+ * @param teamPartnerReady  TEAM mode: whether the team partner has already approved the drawing
  * @param finishedPlayers   players who have already submitted their drawing this round
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,6 +32,8 @@ public record DrawState(
         int roundTimerSeconds,
         GameMode gameMode,
         PlayerInfo teamPartner,
+        boolean teamSelfReady,
+        boolean teamPartnerReady,
         int spectatorCount,
         List<PlayerInfo> finishedPlayers) implements PlayerState {
 

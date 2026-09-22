@@ -51,6 +51,11 @@ const Draw = ({
   onSendReplay,
   onStrokeSegment,
   onTeamSync,
+  teamPartner,
+  teamSelfReady,
+  teamPartnerReady,
+  onTeamReady,
+  teamSubmitRequested,
   onSpectatorSnapshot,
   cacheKey,
   initialImageUrl: initialImageUrlProp,
@@ -75,6 +80,13 @@ const Draw = ({
   onSendReplay?: (round: number, frames: string[]) => void;
   onStrokeSegment?: (seg: StrokeSegment) => void;
   onTeamSync?: () => void;
+  /** TEAM mode: the partner sharing this canvas — their approval is required to submit */
+  teamPartner?: PlayerInfo;
+  teamSelfReady?: boolean;
+  teamPartnerReady?: boolean;
+  onTeamReady?: (ready: boolean) => void;
+  /** TEAM mode: set once the whole team approved and the server picked this client to upload */
+  teamSubmitRequested?: boolean;
   onSpectatorSnapshot?: (dataUrl: string) => void;
   cacheKey?: string;
   initialImageUrl?: string;
@@ -84,6 +96,9 @@ const Draw = ({
   finishedPlayers?: PlayerInfo[];
 }) => {
   const isHotPotato = gameMode === "HOT_POTATO";
+  // In TEAM mode a drawing is only submitted once both partners have approved it
+  const needsTeamApproval = onTeamReady != null && teamPartner != null;
+  const awaitingPartnerApproval = needsTeamApproval && !!teamSelfReady;
   const [cachedImageUrl] = React.useState<string | undefined>(() =>
     cacheKey ? (sessionStorage.getItem(cacheKey) ?? undefined) : undefined
   );
@@ -199,13 +214,30 @@ const Draw = ({
       .then((image) => handleDone(image));
   }, [handleDone, onSubmit, onSendReplay, round, captureFrame, cacheKey]);
 
+  // The whole team approved and the server picked us to upload the shared canvas
+  React.useEffect(() => {
+    if (teamSubmitRequested) submitDrawing();
+  }, [teamSubmitRequested, submitDrawing]);
+
   const handleClickDone = () => {
     if (isHotPotato) {
       submitDrawing();
       return;
     }
+    if (awaitingPartnerApproval) return; // already approved, waiting for the partner
     setDrawingDataUrl(imageProviderRef.current!.getImageDataURL());
     setShowConfirmDialog(true);
+  };
+
+  const handleConfirmDone = () => {
+    setShowConfirmDialog(false);
+    if (needsTeamApproval) {
+      // Not submitted yet: the partner has to approve too
+      setDrawingDataUrl(undefined);
+      onTeamReady!(true);
+      return;
+    }
+    submitDrawing();
   };
 
   const handleTimerExpire = React.useCallback(() => {
@@ -229,7 +261,8 @@ const Draw = ({
         referenceImageSrc={referenceImageSrc}
         show={showConfirmDialog}
         drawingDataUrl={drawingDataUrl}
-        handleDone={() => { submitDrawing(); setShowConfirmDialog(false); }}
+        teamPartnerName={needsTeamApproval ? teamPartner!.name : undefined}
+        handleDone={handleConfirmDone}
         handleContinue={() => { setShowConfirmDialog(false); setDrawingDataUrl(undefined); }}
       />
       <DrawHelpDialog
@@ -256,9 +289,17 @@ const Draw = ({
         onSelectBrush={(i) => { setSelectedBrushIndex(i); setActiveTool("pen"); }}
         onChangeColor={(c) => setColor(c)}
         onSetTool={setActiveTool}
-        onUndo={() => { imageProviderRef.current?.undo(); onTeamSync?.(); }}
-        onRedo={() => { imageProviderRef.current?.redo(); onTeamSync?.(); }}
+        onUndo={() => { if (awaitingPartnerApproval) return; imageProviderRef.current?.undo(); onTeamSync?.(); }}
+        onRedo={() => { if (awaitingPartnerApproval) return; imageProviderRef.current?.redo(); onTeamSync?.(); }}
         onDone={handleClickDone}
+        doneWaiting={awaitingPartnerApproval}
+        doneHighlighted={needsTeamApproval && !awaitingPartnerApproval && !!teamPartnerReady}
+        doneTooltip={
+          !needsTeamApproval ? undefined
+            : awaitingPartnerApproval ? `Waiting for ${teamPartner!.name}`
+            : teamPartnerReady ? `${teamPartner!.name} is ready — submit the drawing`
+            : "Done — your partner still has to approve"
+        }
       />
       {roundTimerSeconds > 0 && (
         <RoundTimer seconds={roundTimerSeconds} onExpire={handleTimerExpire} onUrgentStart={onUrgentStart} onTick={onTick} />
@@ -278,7 +319,24 @@ const Draw = ({
         onStrokeSegment={onStrokeSegment}
         initialImageUrl={resolvedInitialImageUrl}
         partnerCursor={partnerCursor}
+        locked={awaitingPartnerApproval}
       />
+      {needsTeamApproval && (awaitingPartnerApproval || teamPartnerReady) && (
+        <TeamApprovalBar>
+          {awaitingPartnerApproval ? (
+            <>
+              <WaitingDots>Waiting for {teamPartner!.name} to approve</WaitingDots>
+              <TeamApprovalButton onClick={() => onTeamReady!(false)}>
+                Keep drawing
+              </TeamApprovalButton>
+            </>
+          ) : (
+            <span>
+              ✓ {teamPartner!.name} is ready — press ✓ when you are too
+            </span>
+          )}
+        </TeamApprovalBar>
+      )}
       {referenceImageSrc && (
         <ReferencePanel>
           <ReferenceCaption>Photo by {textWriter.name}</ReferenceCaption>
@@ -382,6 +440,52 @@ const SpectatorBadge = styled.div`
   pointer-events: none;
   letter-spacing: 0.06em;
   backdrop-filter: blur(4px);
+`;
+
+const teamBarPulse = keyframes`
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+`;
+
+const TeamApprovalBar = styled.div`
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1.5vmin;
+  max-width: 90vw;
+  background: rgba(var(--cyber-bg-deep-rgb), 0.9);
+  border: 1px solid rgba(var(--cyber-magenta-rgb), 0.5);
+  border-radius: 20px;
+  color: var(--cyber-magenta);
+  font-size: 1.8vmin;
+  letter-spacing: 0.06em;
+  padding: 0.6vmin 1.6vmin;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 16px rgba(var(--cyber-magenta-rgb), 0.2);
+`;
+
+const WaitingDots = styled.span`
+  animation: ${teamBarPulse} 1.6s ease-in-out infinite;
+`;
+
+const TeamApprovalButton = styled.button`
+  background: rgba(var(--cyber-magenta-rgb), 0.12);
+  border: 1px solid rgba(var(--cyber-magenta-rgb), 0.6);
+  border-radius: 14px;
+  color: var(--cyber-magenta);
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  padding: 0.3vmin 1.2vmin;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(var(--cyber-magenta-rgb), 0.25);
+  }
 `;
 
 const notifIn = keyframes`
