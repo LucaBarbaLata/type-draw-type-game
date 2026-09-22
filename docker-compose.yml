@@ -1,0 +1,37 @@
+# Run the production instance:
+#
+#   docker compose up -d --build        # build and (re)start, picking up code changes
+#   docker compose restart              # after editing config.yml
+#   docker compose logs -f              # follow the log
+#
+# The config.yml next to this file is mounted straight into the container and is the single source of truth:
+# edit it in place, restart, done. Nothing is copied, and there are no flags to remember.
+services:
+  tdt:
+    build:
+      context: .
+      dockerfile: Dockerfile_prod
+    image: tdt-game-prod
+    container_name: tdt
+    restart: unless-stopped
+    ports:
+      # host:container. The container side must match `server.port` in config.yml (default 8080).
+      # Change the host side with a .env file next to this one, e.g. TDT_PORT=8087
+      - "${TDT_PORT:-8080}:8080"
+    volumes:
+      # persisted games: state, drawings, uploaded photos, replays
+      - tdt-data:/tdt-data
+      # this folder's config.yml, read-only, at one of the locations the server searches.
+      # create_host_path: false makes a missing config.yml fail loudly instead of letting Docker silently
+      # create a *directory* with that name, which the server would then skip without a word.
+      - type: bind
+        source: ./config.yml
+        target: /config/config.yml
+        read_only: true
+        bind:
+          create_host_path: false
+
+volumes:
+  tdt-data:
+    # the plain name, so an instance that already has a `tdt-data` volume keeps its games
+    name: tdt-data

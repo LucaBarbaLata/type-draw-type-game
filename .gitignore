@@ -5,3 +5,4 @@ CLAUDE.md
 # instance configuration (copy of config.example.yml with real values)
 /config.yml
 /tdt-server/config.yml
+/.env

@@ -5,6 +5,7 @@ WORKDIR /opt/tdt/
 COPY build/server.jar server.jar
 EXPOSE 8080
 VOLUME /tdt-data
-# optional instance configuration, see config.example.yml in the repository root
-ENV TDT_CONFIG_FILE=/tdt-data/config.yml
+# Instance configuration is read at runtime from several searched locations (see config.example.yml and
+# application.yml) - /config/config.yml, which docker-compose.yml mounts, and /tdt-data/config.yml among them.
+# Set TDT_CONFIG_FILE to point somewhere else; it overrides all of them.
 ENTRYPOINT ["java","-jar","server.jar","--tdt.storage-dir=/tdt-data/"]

@@ -96,7 +96,24 @@ git clone https://github.com/LucaBarbaLata/type-draw-type-game.git
 cd type-draw-type-game
 ```
 
-**2. Build the app:**
+**2. Create your config:**
+
+```bash
+cp config.example.yml config.yml
+```
+
+Out of the box the server only accepts WebSocket connections from `http://localhost:8080`, so as soon as players
+reach the game through a hostname or a reverse proxy, `tdt.websocket.allowed-origins` has to say so — otherwise
+the page loads but nobody can join. Edit at least that one key (see [Configuration](#configuration)):
+
+```yaml
+tdt:
+  websocket:
+    allowed-origins:
+      - https://tdt.example.com   # the exact origin players see in their address bar
+```
+
+**3. Build the frontend and server:**
 
 ```bash
 ./build.sh
@@ -104,39 +121,31 @@ cd type-draw-type-game
 
 Builds the React frontend and Spring Boot server inside Docker, then extracts the production JAR to `./build/server.jar`.
 
-**3. Build the runtime image:**
-
-```bash
-docker build -f Dockerfile_prod -t tdt-game-prod .
-```
-
 **4. Run:**
 
 ```bash
-docker run --rm -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod
+docker compose up -d --build
 ```
 
-The game is now at `http://<your-server-ip>:8080/`
+The game is now at `http://<your-server-ip>:8080/`. To serve it on a different host port, put `TDT_PORT=8087`
+in a `.env` file next to `docker-compose.yml` (git-ignored) — the port *inside* the container stays 8080 unless
+you also change `server.port`.
 
-`tdt-data` is a named Docker volume that holds everything the instance owns: persisted games (state, drawings,
-uploaded photos, replays) **and** the optional `config.yml` the server reads at startup.
+[`docker-compose.yml`](docker-compose.yml) mounts **this folder's `config.yml`** straight into the container, so
+the file you edited in step 2 is the live config — nothing is copied anywhere, and there are no `-v` flags to
+remember. Games persist in a named Docker volume called `tdt-data`.
 
-**5. Configure (optional):**
-
-Out of the box the server only accepts WebSocket connections from `http://localhost:8080`, so as soon as players
-reach the game through a different hostname or a reverse proxy you need a `config.yml` — see
-[Configuration](#configuration). Put it into the data volume with either of these:
+Day to day:
 
 ```bash
-# a) copy it into the named volume
-docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
-
-# b) or mount a host directory instead of a named volume and keep config.yml in it
-mkdir -p ./tdt-data && cp config.example.yml ./tdt-data/config.yml   # then edit it
-docker run --rm -p 8080:8080 -v "$PWD/tdt-data":/tdt-data tdt-game-prod
+docker compose restart          # after editing config.yml
+docker compose up -d --build    # after changing code
+docker compose logs -f          # follow the log
 ```
 
-Restart the container after changing the file.
+> Running with plain `docker run` instead? Then you have to mount the config yourself — the container cannot
+> see a file on the host otherwise:
+> `docker run -d -p 8080:8080 -v tdt-data:/tdt-data -v "$PWD/config.yml":/config/config.yml:ro tdt-game-prod`
 
 ---
 
@@ -154,20 +163,14 @@ applied, and later entries win over earlier ones:
 |---|---|---|
 | 1 | `./config.yml` | next to the working directory — the jar, or `tdt-server/` under `./gradlew bootRun` |
 | 2 | `./config/config.yml` | a `config/` folder next to the working directory |
-| 3 | `/config/config.yml` | common container convention |
-| 4 | `/tdt-data/config.yml` | **the Docker data volume — the usual place in Docker** |
+| 3 | `/tdt-data/config.yml` | the Docker data volume (older instances keep their file here) |
+| 4 | `/config/config.yml` | **dedicated config mount — this is what `docker-compose.yml` uses** |
 | 5 | `$TDT_CONFIG_FILE` | explicit override; wins over all of the above |
 
-In Docker the path has to be reachable **inside the container**. A `config.yml` sitting next to the repo on the
-host does nothing on its own — put it in the volume, or bind-mount it:
+With `docker compose` you don't have to think about any of this: the repo's own `config.yml` is mounted at #4.
 
-```bash
-# copy it into the named volume once (it then survives every rebuild and recreate)
-docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
-
-# ...or bind-mount it on every run
-docker run ... -v "$PWD/config.yml":/tdt-data/config.yml:ro tdt-game-prod
-```
+The one rule Docker imposes is that the path must be reachable **inside the container** — a `config.yml` on the
+host is invisible to the container unless something mounts it, which is exactly what `docker-compose.yml` does.
 
 The file is optional; anything you leave out keeps its default. **On startup the server says what it used:**
 

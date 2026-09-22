@@ -3,16 +3,18 @@
 # Copy this file to `config.yml` and edit it. Every key is optional: anything you leave out keeps the
 # default shown here. Only the keys you want to change need to be present.
 #
-# Where the server looks for it — EVERY location below is searched, later ones win over earlier ones:
+# With Docker, just keep this file next to docker-compose.yml: it is mounted into the container for you, and
+# `docker compose restart` applies a change. Nothing is ever copied.
+#
+# Every location below is searched, and later ones win over earlier ones:
 #   1. ./config.yml            next to the working directory (the jar; tdt-server/ under `./gradlew bootRun`)
 #   2. ./config/config.yml     a config/ folder next to the working directory
-#   3. /config/config.yml      common container convention
-#   4. /tdt-data/config.yml    the Docker data volume — the usual place in Docker
+#   3. /tdt-data/config.yml    the Docker data volume (older instances keep their file here)
+#   4. /config/config.yml      dedicated config mount - this is the one docker-compose.yml uses
 #   5. $TDT_CONFIG_FILE        explicit override, wins over all of the above
 #
-# In Docker the path must be reachable INSIDE the container. A config.yml next to the repo on the host does
-# nothing by itself — copy it into the volume, or bind-mount it:
-#   docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
+# Running plain `docker run` instead of compose? Then mount it yourself - a file on the host is invisible to
+# the container otherwise:  -v "$PWD/config.yml":/config/config.yml:ro
 #
 # Every key can also be given as an environment variable or command-line flag instead, e.g.
 #   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...

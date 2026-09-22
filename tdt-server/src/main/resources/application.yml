@@ -8,9 +8,9 @@ spring:
     import:
       - "optional:file:./config.yml"                        # next to the working directory (jar, bootRun)
       - "optional:file:./config/config.yml"                 # a config/ folder next to the working directory
-      - "optional:file:/config/config.yml"                  # common container convention
-      - "optional:file:/tdt-data/config.yml"                # the Docker data volume
-      - "optional:file:${TDT_CONFIG_FILE:/tdt-data/config.yml}"  # explicit override, highest precedence
+      - "optional:file:/tdt-data/config.yml"                # the Docker data volume (legacy location)
+      - "optional:file:/config/config.yml"                  # dedicated config mount - what docker-compose.yml uses
+      - "optional:file:${TDT_CONFIG_FILE:/config/config.yml}"    # explicit override, highest precedence
 
 server:
   port: 8080
