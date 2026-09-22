@@ -147,17 +147,37 @@ Everything an instance host can tune lives in **one file: `config.yml`**. Start 
 The built-in defaults live in `tdt-server/src/main/resources/application.yml`; don't edit that file to configure an
 instance. `config.yml` (in the repo root and in `tdt-server/`) is git-ignored, so your real values never end up in a commit.
 
-Where the server looks for it:
+**Every location below is searched**, so you don't have to get one exact path right. Each file that exists is
+applied, and later entries win over earlier ones:
 
-| How you run it | Location |
-|---|---|
-| Docker (`Dockerfile_prod`) | `/tdt-data/config.yml` — inside the data volume (the image sets `TDT_CONFIG_FILE` to this path). Override with `-e TDT_CONFIG_FILE=/path/to/file.yml` |
-| `java -jar server.jar` | `./config.yml` in the working directory (or set `TDT_CONFIG_FILE`) |
-| `./gradlew bootRun` | `tdt-server/config.yml` |
+| # | Location | Typical use |
+|---|---|---|
+| 1 | `./config.yml` | next to the working directory — the jar, or `tdt-server/` under `./gradlew bootRun` |
+| 2 | `./config/config.yml` | a `config/` folder next to the working directory |
+| 3 | `/config/config.yml` | common container convention |
+| 4 | `/tdt-data/config.yml` | **the Docker data volume — the usual place in Docker** |
+| 5 | `$TDT_CONFIG_FILE` | explicit override; wins over all of the above |
 
-The file is optional; anything you leave out keeps its default. On startup the server logs which file it used —
-look for `Instance config: loaded /tdt-data/config.yml` (or `Instance config: no file at … - using built-in defaults`)
-near the top of the log if a setting seems to be ignored; it's the first thing to check after the file's location.
+In Docker the path has to be reachable **inside the container**. A `config.yml` sitting next to the repo on the
+host does nothing on its own — put it in the volume, or bind-mount it:
+
+```bash
+# copy it into the named volume once (it then survives every rebuild and recreate)
+docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
+
+# ...or bind-mount it on every run
+docker run ... -v "$PWD/config.yml":/tdt-data/config.yml:ro tdt-game-prod
+```
+
+The file is optional; anything you leave out keeps its default. **On startup the server says what it used:**
+
+```
+Instance config: loaded /tdt-data/config.yml
+Websocket allowed origins: [https://tdt.example.com]
+```
+
+If no file was found anywhere, it warns and lists every path it checked. That line is the first thing to look at
+when a setting seems to be ignored.
 
 A typical public deployment behind a reverse proxy only needs:
 
@@ -189,6 +209,14 @@ Any other standard Spring Boot property (e.g. `logging.level.*`) works in the sa
 
 Invalid values (e.g. a negative limit or an empty origins list) stop the server at startup with a message naming the
 key and the line in `config.yml`.
+
+If a browser is refused the WebSocket (the page loads, but nothing joins), the server logs the reason with both the
+origin it saw and the list it was checked against:
+
+```
+Websocket handshake from origin https://tdt.example.com will be rejected:
+tdt.websocket.allowed-origins is [http://localhost:8080]. Set it to the exact scheme + host (+ port) ...
+```
 
 Every key can also be passed as an environment variable or command-line flag, which take precedence over the file —
 for example `-e TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com` or `--tdt.limits.max-players=8`. The

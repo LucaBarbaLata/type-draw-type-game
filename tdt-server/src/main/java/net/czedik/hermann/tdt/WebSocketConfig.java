@@ -1,5 +1,9 @@
 package net.czedik.hermann.tdt;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +15,7 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+    private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
 
     @Autowired
     private GameManager gameManager;
@@ -20,8 +25,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        List<String> allowedOrigins = properties.getWebsocket().getAllowedOrigins();
+        log.info("Websocket allowed origins: {}", allowedOrigins);
         registry.addHandler(myHandler(), "/api/websocket")
-                .setAllowedOrigins(properties.getWebsocket().getAllowedOrigins().toArray(String[]::new));
+                .addInterceptors(new WebSocketOriginLogger(allowedOrigins))
+                .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
     }
 
     @Bean

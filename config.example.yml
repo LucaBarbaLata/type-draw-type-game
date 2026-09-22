@@ -3,11 +3,16 @@
 # Copy this file to `config.yml` and edit it. Every key is optional: anything you leave out keeps the
 # default shown here. Only the keys you want to change need to be present.
 #
-# Where the server looks for it:
-#   - Docker (Dockerfile_prod):  /tdt-data/config.yml  — i.e. inside the data volume mounted at /tdt-data.
-#                                Override with -e TDT_CONFIG_FILE=/some/other/path.yml
-#   - Running the jar directly:  ./config.yml in the working directory (or set TDT_CONFIG_FILE).
-#   - `./gradlew bootRun`:       tdt-server/config.yml
+# Where the server looks for it — EVERY location below is searched, later ones win over earlier ones:
+#   1. ./config.yml            next to the working directory (the jar; tdt-server/ under `./gradlew bootRun`)
+#   2. ./config/config.yml     a config/ folder next to the working directory
+#   3. /config/config.yml      common container convention
+#   4. /tdt-data/config.yml    the Docker data volume — the usual place in Docker
+#   5. $TDT_CONFIG_FILE        explicit override, wins over all of the above
+#
+# In Docker the path must be reachable INSIDE the container. A config.yml next to the repo on the host does
+# nothing by itself — copy it into the volume, or bind-mount it:
+#   docker run --rm -v tdt-data:/tdt-data -v "$PWD":/src alpine cp /src/config.yml /tdt-data/config.yml
 #
 # Every key can also be given as an environment variable or command-line flag instead, e.g.
 #   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...
@@ -15,7 +20,7 @@
 #
 # Restart the server after changing the file. The startup log says which file was used:
 #   Instance config: loaded /tdt-data/config.yml
-#   Instance config: no file at ... - using built-in defaults      <- wrong location or filename
+#   Instance config: no config.yml found - using built-in defaults. Searched: ...   <- nothing was picked up
 
 server:
   # HTTP port the server listens on (Docker maps this with -p <host>:8080).
