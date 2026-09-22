@@ -1,5 +1,8 @@
 import React from "react";
 
+import { animateThemeChange } from "./themeTransition";
+import type { ThemeChangeOrigin } from "./themeTransition";
+
 /**
  * Theme registry. The actual colors live in themes.css as CSS custom properties,
  * selected through `data-theme` on <html>. This module only knows the theme ids,
@@ -134,7 +137,7 @@ export function getTheme(): ThemeId {
   return currentTheme;
 }
 
-export function setTheme(id: ThemeId) {
+export function setTheme(id: ThemeId, origin?: ThemeChangeOrigin) {
   if (id === currentTheme) return;
   currentTheme = id;
   try {
@@ -142,8 +145,13 @@ export function setTheme(id: ThemeId) {
   } catch {
     /* private mode etc. — the theme still applies for this page load */
   }
-  applyTheme(id);
-  listeners.forEach((l) => l());
+  // The swap itself happens inside the transition (see themeTransition.ts), which
+  // cross-fades the colors and sweeps a ring out from `origin` — the point the user
+  // clicked, when there is one.
+  animateThemeChange(origin, () => {
+    applyTheme(id);
+    listeners.forEach((l) => l());
+  });
 }
 
 function subscribe(listener: () => void) {
@@ -151,8 +159,15 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/** React hook: current theme id and a setter that persists and applies it */
-export function useTheme(): [ThemeId, (id: ThemeId) => void] {
+/**
+ * React hook: current theme id and a setter that persists, applies and animates
+ * the change. Pass the position of the click that caused it as `origin` so the
+ * sweep starts there.
+ */
+export function useTheme(): [
+  ThemeId,
+  (id: ThemeId, origin?: ThemeChangeOrigin) => void
+] {
   const theme = React.useSyncExternalStore(subscribe, getTheme);
   return [theme, setTheme];
 }

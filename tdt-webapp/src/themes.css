@@ -17,7 +17,8 @@
  * The active theme is selected with `data-theme` on <html> (see theme.ts). The
  * `:root` block is the default Cyberpunk theme; every other theme overrides the
  * same set of tokens. Glow tokens are neon box/text shadows on dark themes and
- * soft drop shadows on light ones.
+ * soft drop shadows on light ones. Switching between two themes is animated —
+ * see "Theme change animation" at the bottom of this file.
  */
 
 :root {
@@ -332,4 +333,44 @@
   --cyber-text-disabled: #cfc5b8;
 
   --cyber-logo: #422701;
+}
+
+/* ── Theme change animation ──────────────────────────────────────────────────
+ * `data-theme-transition` sits on <html> only while a theme switch is playing
+ * (see themeTransition.ts, which also publishes the duration as `--theme-fade`).
+ * While it is there every element cross-fades its colors instead of snapping to
+ * the new palette. `!important` is what lets this outrank the transitions that
+ * individual components declare for their own hover states; the attribute is
+ * removed again a few hundred milliseconds later, so nothing keeps it.
+ * Only color-ish properties are listed — transform and opacity stay untouched so
+ * that anything being dragged or faded in meanwhile does not start to lag.
+ */
+html[data-theme-transition],
+html[data-theme-transition] *,
+html[data-theme-transition] *::before,
+html[data-theme-transition] *::after {
+  transition:
+    background-color var(--theme-fade, 400ms) ease,
+    border-color var(--theme-fade, 400ms) ease,
+    color var(--theme-fade, 400ms) ease,
+    fill var(--theme-fade, 400ms) ease,
+    stroke var(--theme-fade, 400ms) ease,
+    box-shadow var(--theme-fade, 400ms) ease,
+    text-shadow var(--theme-fade, 400ms) ease,
+    outline-color var(--theme-fade, 400ms) ease,
+    filter var(--theme-fade, 400ms) ease !important;
+}
+
+/* The ring sweeping out from the click. Position and size come from
+ * themeTransition.ts, the colors from whichever theme was just selected. */
+.theme-ripple {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 50%;
+  border: 0.4vmin solid var(--cyber-cyan);
+  background: radial-gradient(circle, rgba(var(--cyber-cyan-rgb), 0.12), transparent 70%);
+  box-shadow: 0 0 6vmin rgba(var(--cyber-cyan-rgb), 0.45),
+    inset 0 0 8vmin rgba(var(--cyber-cyan-rgb), 0.2);
+  will-change: transform, opacity;
 }

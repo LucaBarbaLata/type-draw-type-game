@@ -2,6 +2,7 @@ import React from "react";
 import styled, { keyframes } from "styled-components";
 
 import { THEMES, getThemeInfo, useTheme } from "./theme";
+import { originFromEvent } from "./themeTransition";
 
 /**
  * Floating theme picker, shown on every page (bottom-right corner, next to the
@@ -42,8 +43,8 @@ const ThemeSwitcher = () => {
               role="option"
               aria-selected={t.id === theme}
               $active={t.id === theme}
-              onClick={() => {
-                setTheme(t.id);
+              onClick={(e) => {
+                setTheme(t.id, originFromEvent(e));
                 setOpen(false);
               }}
             >
@@ -71,7 +72,10 @@ const ThemeSwitcher = () => {
         title={`Theme: ${current.name}`}
         aria-label={`Change theme (current: ${current.name})`}
       >
-        <span aria-hidden="true">{current.icon}</span>
+        {/* Remounted on each change so the pop animation replays */}
+        <ToggleIcon key={theme} aria-hidden="true">
+          {current.icon}
+        </ToggleIcon>
       </ToggleButton>
     </Wrapper>
   );
@@ -82,6 +86,12 @@ export default ThemeSwitcher;
 const buttonIn = keyframes`
   from { opacity: 0; transform: scale(0.6); }
   to   { opacity: 1; transform: scale(1); }
+`;
+
+const iconPop = keyframes`
+  0%   { opacity: 0; transform: scale(0.4) rotate(-110deg); }
+  60%  { opacity: 1; transform: scale(1.15) rotate(10deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
 `;
 
 const panelIn = keyframes`
@@ -124,6 +134,11 @@ const ToggleButton = styled.button`
   &:active {
     transform: scale(0.9);
   }
+`;
+
+const ToggleIcon = styled.span`
+  display: block;
+  animation: ${iconPop} 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 `;
 
 const Panel = styled.div`
