@@ -1,5 +1,5 @@
 import React from "react";
-import styled, { css, keyframes } from "styled-components";
+import styled, { keyframes } from "styled-components";
 
 import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
 import { GameMode, PlayerInfo, Brush, StrokeSegment } from "./model";
@@ -10,6 +10,7 @@ import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
 import ThemedIcon from "./ThemedIcon";
+import { clearToasts, pushToast } from "./toastStore";
 import WaitingMessage from "./WaitingMessage";
 
 import "./Draw.css";
@@ -25,16 +26,14 @@ function getBrushes(_scale: number): Brush[] {
   return brushes;
 }
 
+/** Kind tag of the toasts this screen puts up, so it can drop its own again when the round changes. */
+const FINISHED_TOAST_KIND = "finishedDrawing";
+
 const REPLAY_MAX_FRAMES = 80;
 const REPLAY_THROTTLE_MS = 150;
 const REPLAY_THUMB_WIDTH = 540;
 const REPLAY_THUMB_HEIGHT = 405;
 const REPLAY_JPEG_QUALITY = 0.6;
-
-interface DrawNotif {
-  id: number;
-  player: PlayerInfo;
-}
 
 const Draw = ({
   text,
@@ -132,29 +131,28 @@ const Draw = ({
   const lastSpectatorSnapshotTimeRef = React.useRef<number>(0);
   const SPECTATOR_SNAPSHOT_THROTTLE_MS = 500;
 
-  const [notifications, setNotifications] = React.useState<DrawNotif[]>([]);
-  const notifIdRef = React.useRef(0);
   const seenFinishedRef = React.useRef(new Set<string>());
 
   React.useEffect(() => {
     seenFinishedRef.current = new Set();
-    setNotifications([]);
+    clearToasts(FINISHED_TOAST_KIND);
   }, [round]);
 
   React.useEffect(() => {
     if (!finishedPlayers || submitted) return;
-    const newOnes = finishedPlayers.filter(p => !seenFinishedRef.current.has(p.name + p.face));
-    if (newOnes.length === 0) return;
-    newOnes.forEach(p => seenFinishedRef.current.add(p.name + p.face));
-    setNotifications(prev => [
-      ...prev,
-      ...newOnes.map(player => ({ id: ++notifIdRef.current, player })),
-    ]);
+    finishedPlayers
+      .filter(p => !seenFinishedRef.current.has(p.name + p.face))
+      .forEach(p => {
+        seenFinishedRef.current.add(p.name + p.face);
+        pushToast({
+          kind: FINISHED_TOAST_KIND,
+          face: p.face,
+          title: p.name,
+          message: "finished drawing",
+          tone: "cyan",
+        });
+      });
   }, [finishedPlayers, submitted]);
-
-  const removeNotif = React.useCallback((id: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
 
   const captureFrame = React.useCallback(() => {
     const imageProvider = imageProviderRef.current;
@@ -363,15 +361,6 @@ const Draw = ({
           </ReferenceLarge>
         </Dialog>
       )}
-      <NotifStack>
-        {notifications.map(n => (
-          <FinishedNotification
-            key={n.id}
-            player={n.player}
-            onDone={() => removeNotif(n.id)}
-          />
-        ))}
-      </NotifStack>
     </div>
   );
 };
@@ -493,151 +482,4 @@ const TeamApprovalButton = styled.button`
     background: rgba(var(--cyber-magenta-rgb), 0.25);
   }
 `;
-
-const notifIn = keyframes`
-  from { transform: translateX(calc(100% + 24px)) scaleY(0.88); opacity: 0; }
-  to   { transform: translateX(0)                  scaleY(1);    opacity: 1; }
-`;
-
-const notifOut = keyframes`
-  from { transform: translateX(0)                  scaleY(1);    opacity: 1; }
-  to   { transform: translateX(calc(100% + 24px)) scaleY(0.88); opacity: 0; }
-`;
-
-const drainBar = keyframes`
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
-`;
-
-const NotifStack = styled.div`
-  position: fixed;
-  top: 28px;
-  right: 12px;
-  z-index: 500;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-  > * { pointer-events: auto; }
-`;
-
-const NotifCard = styled.div<{ $exiting: boolean }>`
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 10px 18px 14px 12px;
-  width: 370px;
-  font-size: 15px;
-  overflow: hidden;
-  background: linear-gradient(150deg, rgba(var(--cyber-bg-deep-rgb), 0.98) 0%, rgba(var(--cyber-bg-rgb), 0.98) 100%);
-  border: 1px solid rgba(var(--cyber-cyan-rgb), 0.28);
-  border-radius: 18px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.72),
-    0 0 0 0.5px rgba(var(--cyber-cyan-rgb), 0.08),
-    inset 0 1px 0 rgba(var(--cyber-text-rgb), 0.05),
-    0 0 20px rgba(var(--cyber-cyan-rgb), 0.05);
-  backdrop-filter: blur(24px);
-  cursor: pointer;
-  user-select: none;
-  animation: ${({ $exiting }) =>
-    $exiting
-      ? css`${notifOut} 0.28s cubic-bezier(0.4, 0, 1, 1) forwards`
-      : css`${notifIn} 0.36s cubic-bezier(0.22, 1.4, 0.36, 1) forwards`};
-
-  &:hover {
-    border-color: rgba(var(--cyber-cyan-rgb), 0.45);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.72),
-      0 0 0 0.5px rgba(var(--cyber-cyan-rgb), 0.15),
-      inset 0 1px 0 rgba(var(--cyber-text-rgb), 0.05),
-      0 0 28px rgba(var(--cyber-cyan-rgb), 0.1);
-  }
-`;
-
-const NotifFace = styled.div`
-  font-family: "TheFreakyFace";
-  font-size: 50px;
-  border: 1.5px solid var(--cyber-magenta);
-  border-radius: 50%;
-  background-color: rgba(var(--cyber-magenta-rgb), 0.07);
-  width: 40px;
-  height: 40px;
-  line-height: 35px;
-  text-align: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 0 10px rgba(var(--cyber-magenta-rgb), 0.35), inset 0 0 8px rgba(var(--cyber-magenta-rgb), 0.07);
-  color: var(--cyber-magenta);
-`;
-
-const NotifBody = styled.div`
-  flex: 1;
-  min-width: 0;
-`;
-
-const NotifName = styled.div`
-  color: var(--cyber-text-bright);
-  font-weight: 700;
-  font-size: 1em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: 0.01em;
-  line-height: 1.25;
-`;
-
-const NotifSub = styled.div`
-  color: rgba(var(--cyber-cyan-rgb), 0.65);
-  font-size: 0.85em;
-  margin-top: 3px;
-  letter-spacing: 0.03em;
-  line-height: 1.25;
-`;
-
-const NotifBar = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2.5px;
-  background: linear-gradient(90deg, var(--cyber-cyan), rgba(var(--cyber-cyan-rgb), 0.4));
-  border-radius: 0 0 18px 18px;
-  transform-origin: left center;
-  animation: ${drainBar} 3s linear forwards;
-  box-shadow: 0 0 8px rgba(var(--cyber-cyan-rgb), 0.6);
-`;
-
-const FinishedNotification = ({
-  player,
-  onDone,
-}: {
-  player: PlayerInfo;
-  onDone: () => void;
-}) => {
-  const [exiting, setExiting] = React.useState(false);
-
-  React.useEffect(() => {
-    const t = setTimeout(() => setExiting(true), 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  React.useEffect(() => {
-    if (!exiting) return;
-    const t = setTimeout(onDone, 290);
-    return () => clearTimeout(t);
-  }, [exiting, onDone]);
-
-  return (
-    <NotifCard $exiting={exiting} onClick={() => !exiting && setExiting(true)}>
-      <NotifFace>{player.face}</NotifFace>
-      <NotifBody>
-        <NotifName>{player.name}</NotifName>
-        <NotifSub>finished drawing</NotifSub>
-      </NotifBody>
-      {!exiting && <NotifBar />}
-    </NotifCard>
-  );
-};
 

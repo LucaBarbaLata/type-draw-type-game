@@ -32,6 +32,8 @@ import chevronRightImg from "./img/icons/chevron-right.svg";
 import chevronDownImg from "./img/icons/chevron-down.svg";
 import arrowLeftImg from "./img/icons/arrow-left.svg";
 import arrowRightImg from "./img/icons/arrow-right.svg";
+import phoneImg from "./img/icons/phone.svg";
+import desktopImg from "./img/icons/desktop.svg";
 
 import "./ThemedIcon.css";
 
@@ -46,8 +48,9 @@ import "./ThemedIcon.css";
 /**
  * The coolicons pack (img/icons/): every icon is a square 24×24 line drawing
  * stroked at 2px with round caps, so they all share one aspect ratio and one
- * visual weight. `eraser`, `fill` and `line` have no counterpart in the pack and
- * are drawn to match it — keep that style if you add more.
+ * visual weight. `eraser`, `fill`, `line`, `phone` and `desktop` have no
+ * counterpart in the pack and are drawn to match it — keep that style if you
+ * add more.
  */
 const PACK = {
   undo: undoImg,
@@ -79,6 +82,8 @@ const PACK = {
   chevronDown: chevronDownImg,
   arrowLeft: arrowLeftImg,
   arrowRight: arrowRightImg,
+  phone: phoneImg,
+  desktop: desktopImg,
 } as const;
 
 /**

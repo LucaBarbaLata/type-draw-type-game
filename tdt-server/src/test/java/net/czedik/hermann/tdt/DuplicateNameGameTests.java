@@ -57,7 +57,7 @@ class DuplicateNameGameTests {
 
     /** Lobby created by "Alice", who is already connected. */
     private Game newGame(TestClient creator) {
-        Game game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true),
+        Game game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true, null),
                 new TdtProperties.Limits(), true);
         game.access(creator.client, new AccessAction(GAME_ID, creator.playerId));
         return game;
@@ -73,7 +73,7 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient impostor = new TestClient("impostor");
-        assertFalse(game.join(impostor.client, new JoinAction(GAME_ID, impostor.playerId, "Alice", "B")));
+        assertFalse(game.join(impostor.client, new JoinAction(GAME_ID, impostor.playerId, "Alice", "B", null)));
 
         assertEquals("nameTaken", impostor.state());
         assertEquals("Alice", impostor.lastState.get("name").asText());
@@ -86,10 +86,10 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient bob = new TestClient("bob");
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
 
         TestClient otherBob = new TestClient("otherBob");
-        assertFalse(game.join(otherBob.client, new JoinAction(GAME_ID, otherBob.playerId, "Bob", "C")));
+        assertFalse(game.join(otherBob.client, new JoinAction(GAME_ID, otherBob.playerId, "Bob", "C", null)));
 
         assertEquals("nameTaken", otherBob.state());
         assertEquals(2, playerCount(creator));
@@ -101,11 +101,11 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient upper = new TestClient("upper");
-        assertFalse(game.join(upper.client, new JoinAction(GAME_ID, upper.playerId, "ALICE", "B")));
+        assertFalse(game.join(upper.client, new JoinAction(GAME_ID, upper.playerId, "ALICE", "B", null)));
         assertEquals("nameTaken", upper.state());
 
         TestClient padded = new TestClient("padded");
-        assertFalse(game.join(padded.client, new JoinAction(GAME_ID, padded.playerId, "  alice  ", "C")));
+        assertFalse(game.join(padded.client, new JoinAction(GAME_ID, padded.playerId, "  alice  ", "C", null)));
         assertEquals("nameTaken", padded.state());
 
         assertEquals(1, playerCount(creator));
@@ -117,10 +117,10 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient bob = new TestClient("bob");
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
 
         TestClient alicia = new TestClient("alicia");
-        assertTrue(game.join(alicia.client, new JoinAction(GAME_ID, alicia.playerId, "Alicia", "C")));
+        assertTrue(game.join(alicia.client, new JoinAction(GAME_ID, alicia.playerId, "Alicia", "C", null)));
 
         assertEquals(3, playerCount(creator));
     }
@@ -131,10 +131,10 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient bob = new TestClient("bob");
-        assertFalse(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Alice", "B")));
+        assertFalse(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Alice", "B", null)));
         assertEquals("nameTaken", bob.state());
 
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
         assertEquals("waitForGameStart", bob.state());
         assertEquals(2, playerCount(creator));
     }
@@ -145,11 +145,11 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient bob = new TestClient("bob");
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
 
         // same player ID on a second device / after a reload
         TestClient bobSecondClient = new TestClient("bob");
-        assertTrue(game.join(bobSecondClient.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bobSecondClient.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
 
         assertEquals("waitForGameStart", bobSecondClient.state());
         assertEquals(2, playerCount(creator));
@@ -161,12 +161,12 @@ class DuplicateNameGameTests {
         Game game = newGame(creator);
 
         TestClient bob = new TestClient("bob");
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
         game.clientDisconnected(bob.client);
         assertEquals(1, playerCount(creator));
 
         TestClient newBob = new TestClient("newBob");
-        assertTrue(game.join(newBob.client, new JoinAction(GAME_ID, newBob.playerId, "Bob", "C")));
+        assertTrue(game.join(newBob.client, new JoinAction(GAME_ID, newBob.playerId, "Bob", "C", null)));
         assertEquals(2, playerCount(creator));
     }
 }

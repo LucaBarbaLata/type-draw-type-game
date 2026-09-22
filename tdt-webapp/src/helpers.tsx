@@ -2,10 +2,40 @@ import React from "react";
 import { v4 as uuidv4 } from "uuid";
 import o9n from "o9n";
 
+import { DeviceType } from "./model";
+
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
   );
+}
+
+/**
+ * Which kind of device this player is on, sent to the server on create/join so
+ * the lobby can show everyone who is on a phone (small screen, finger drawing)
+ * and who is on a computer. Only ever a guess, so it is used for decoration and
+ * nothing that affects gameplay.
+ */
+export function getDeviceType(): DeviceType {
+  // Chromium's client hint is the one source that is actually told to us rather
+  // than sniffed out of a user agent string, so it wins where it exists.
+  const uaData = (
+    navigator as Navigator & { userAgentData?: { mobile?: boolean } }
+  ).userAgentData;
+  if (typeof uaData?.mobile === "boolean") {
+    return uaData.mobile ? "MOBILE" : "DESKTOP";
+  }
+  if (isMobileDevice()) return "MOBILE";
+  // iPadOS 13+ sends a desktop user agent, so the regex above misses it. A
+  // touch screen as the *primary* pointer catches it; a laptop with a
+  // touchscreen still reports a fine pointer and stays DESKTOP.
+  if (
+    navigator.maxTouchPoints > 1 &&
+    window.matchMedia("(pointer: coarse)").matches
+  ) {
+    return "MOBILE";
+  }
+  return "DESKTOP";
 }
 
 export function toggleToFullscreenAndLandscapeOnMobile() {

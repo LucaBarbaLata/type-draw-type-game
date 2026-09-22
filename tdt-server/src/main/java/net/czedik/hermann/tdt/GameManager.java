@@ -80,7 +80,7 @@ public class GameManager {
         String gameId = generateAndReserveNewGameId();
         Path gameDir = getGameDir(gameId);
         Player player = new Player(createGameRequest.playerId(), createGameRequest.playerName(),
-                createGameRequest.playerFace(), true);
+                createGameRequest.playerFace(), true, createGameRequest.playerDevice());
         Game newGame = new Game(gameId, gameDir, player, limits, publicGamesEnabled);
 
         GameRef gameRef = getGameRef(gameId);
@@ -474,7 +474,8 @@ public class GameManager {
             return;
         }
         Path newGameDir = getGameDir(newGameId);
-        Player creator = new Player(rematchData.creatorId(), rematchData.creatorName(), rematchData.creatorFace(), true);
+        Player creator = new Player(rematchData.creatorId(), rematchData.creatorName(), rematchData.creatorFace(),
+                true, rematchData.creatorDevice());
         Game newGame = new Game(newGameId, newGameDir, creator, limits, publicGamesEnabled);
         newGame.applyRematchSettings(rematchData);
 

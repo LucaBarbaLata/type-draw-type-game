@@ -57,6 +57,7 @@ import net.czedik.hermann.tdt.playerstate.TeamCanvasRequestEvent;
 import net.czedik.hermann.tdt.playerstate.TeamCanvasSyncEvent;
 import net.czedik.hermann.tdt.playerstate.TeamSubmitEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
+import net.czedik.hermann.tdt.playerstate.PlayerLeftEvent;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
 import net.czedik.hermann.tdt.playerstate.RematchState;
 import net.czedik.hermann.tdt.playerstate.SpectatorCurrentDrawing;
@@ -284,7 +285,7 @@ public class Game {
         }
         PlayerInfo sender = player != null
                 ? mapPlayerToPlayerInfo(player)
-                : new PlayerInfo("Spectator", "A", false);
+                : new PlayerInfo("Spectator", "A", false, null);
         ChatMessage message = new ChatMessage(sender, text.strip());
         roundChatMessages.add(message);
         if (roundChatMessages.size() > limits.getMaxChatMessages()) {
@@ -321,6 +322,7 @@ public class Game {
                 targetClient.send(kickedState);
             }
         }
+        announcePlayerLeft(target, PlayerLeftEvent.REASON_KICKED);
         updateStateForAllPlayers();
     }
 
@@ -352,6 +354,7 @@ public class Game {
                 targetClient.send(bannedState);
             }
         }
+        announcePlayerLeft(target, PlayerLeftEvent.REASON_BANNED);
         updateStateForAllPlayers();
     }
 
@@ -386,7 +389,8 @@ public class Game {
             if (player != null) {
                 log.warn("Game {}: Player {} has already joined", gameId, joinAction.playerId());
             } else {
-                player = new Player(joinAction.playerId(), joinAction.name(), joinAction.face(), false);
+                player = new Player(joinAction.playerId(), joinAction.name(), joinAction.face(), false,
+                        joinAction.device());
                 gameState.players.add(player);
             }
             addClientForPlayer(client, player);
@@ -842,7 +846,7 @@ public class Game {
     }
 
     private static PlayerInfo mapPlayerToPlayerInfo(Player p) {
-        return new PlayerInfo(p.name(), p.face(), p.isCreator());
+        return new PlayerInfo(p.name(), p.face(), p.isCreator(), p.device());
     }
 
     public void clientDisconnected(Client client) {
@@ -872,31 +876,58 @@ public class Game {
             }
         }
 
-        if (gameState.state == GameState.State.WaitingForPlayers) {
-            if (clientsOfPlayer.isEmpty()) {
-                log.info("Game {}: Player {} has left the game", gameId, player.id());
-                gameState.players.remove(player);
-                playerToClients.remove(player);
+        if (!clientsOfPlayer.isEmpty()) {
+            // Another tab or device of the same player is still connected, so nobody has left
+            return;
+        }
 
-                if (player.isCreator()) {
-                    // Promote the first remaining connected player to creator
-                    Player next = gameState.players.stream()
-                            .filter(p -> !playerToClients.getOrDefault(p, Collections.emptySet()).isEmpty())
-                            .findFirst().orElse(null);
-                    if (next != null) {
-                        Player promoted = new Player(next.id(), next.name(), next.face(), true);
-                        gameState.players.set(gameState.players.indexOf(next), promoted);
-                        Set<Client> nextClients = playerToClients.remove(next);
-                        playerToClients.put(promoted, nextClients);
-                        for (Client c : nextClients) {
-                            clientToPlayer.put(c, promoted);
-                        }
-                        log.info("Game {}: Promoted player {} to creator", gameId, promoted.id());
-                    }
+        if (gameState.state != GameState.State.WaitingForPlayers) {
+            // Mid-game and after the game the player keeps their slot and may come back, so this is only a
+            // connection loss — but the others are waiting for them, which is worth a notification.
+            announcePlayerLeft(player, PlayerLeftEvent.REASON_DISCONNECTED);
+            return;
+        }
+
+        log.info("Game {}: Player {} has left the game", gameId, player.id());
+        gameState.players.remove(player);
+        playerToClients.remove(player);
+
+        if (player.isCreator()) {
+            // Promote the first remaining connected player to creator
+            Player next = gameState.players.stream()
+                    .filter(p -> !playerToClients.getOrDefault(p, Collections.emptySet()).isEmpty())
+                    .findFirst().orElse(null);
+            if (next != null) {
+                Player promoted = new Player(next.id(), next.name(), next.face(), true, next.device());
+                gameState.players.set(gameState.players.indexOf(next), promoted);
+                Set<Client> nextClients = playerToClients.remove(next);
+                playerToClients.put(promoted, nextClients);
+                for (Client c : nextClients) {
+                    clientToPlayer.put(c, promoted);
                 }
-
-                updateStateForAllPlayers();
+                log.info("Game {}: Promoted player {} to creator", gameId, promoted.id());
             }
+        }
+
+        announcePlayerLeft(player, PlayerLeftEvent.REASON_LEFT);
+        updateStateForAllPlayers();
+    }
+
+    /**
+     * Tells everyone still in the game (players and spectators) that a player dropped out, so their client can show
+     * a toast. The clients of the player themselves are not notified: by the time this is called they have either
+     * gone away or been sent their own kicked/banned state.
+     */
+    private void announcePlayerLeft(Player player, String reason) {
+        PlayerLeftEvent event = new PlayerLeftEvent(mapPlayerToPlayerInfo(player), reason);
+        for (Map.Entry<Player, Set<Client>> entry : playerToClients.entrySet()) {
+            if (entry.getKey().id().equals(player.id())) continue;
+            for (Client client : entry.getValue()) {
+                client.send(event);
+            }
+        }
+        for (Client client : spectatorClients) {
+            client.send(event);
         }
     }
 
@@ -906,7 +937,7 @@ public class Game {
      * Data needed by GameManager to create the rematch game.
      */
     public record RematchData(
-            String creatorId, String creatorName, String creatorFace,
+            String creatorId, String creatorName, String creatorFace, DeviceType creatorDevice,
             GameMode gameMode, int roundTimerSeconds, int maxPlayers,
             boolean chatEnabled, boolean isPublic,
             int hotPotatoIntervalSeconds, int hotPotatoTotalSeconds) {
@@ -950,7 +981,7 @@ public class Game {
         }
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         return new RematchData(
-                creator.id(), creator.name(), creator.face(),
+                creator.id(), creator.name(), creator.face(), creator.device(),
                 mode, gameState.roundTimerSeconds, gameState.maxPlayers,
                 gameState.chatEnabled, gameState.isPublic,
                 gameState.hotPotatoIntervalSeconds, gameState.hotPotatoTotalSeconds);

@@ -6,7 +6,9 @@ import jakarta.validation.constraints.Size;
 public record CreateGameRequest(
         @NotBlank @Size(max = MAX_PLAYERID_LENGTH) String playerId,
         @NotBlank @Size(max = MAX_NAME_LENGTH) String playerName,
-        @NotBlank @Size(max = MAX_FACE_LENGTH) String playerFace) {
+        @NotBlank @Size(max = MAX_FACE_LENGTH) String playerFace,
+        /* optional: null when the client does not report a device */
+        DeviceType playerDevice) {
     public static final int MAX_PLAYERID_LENGTH = 50;
     public static final int MAX_NAME_LENGTH = 50;
     public static final int MAX_FACE_LENGTH = 1;

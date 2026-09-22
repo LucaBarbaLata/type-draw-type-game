@@ -3,7 +3,7 @@ import styled from "styled-components";
 import QRCodeStyling from "qr-code-styling";
 import CustomQRCode from "./CustomQRCode";
 
-import { GameMode, PlayerInfo } from "./model";
+import { DeviceType, GameMode, PlayerInfo } from "./model";
 import Player from "./Player";
 import Logo from "./Logo";
 import Chat, { type ChatMessage } from "./Chat";
@@ -624,6 +624,7 @@ const BeforeGameStartScreen = ({
             <PlayerRow key={index}>
               <Player face={player.face}>
                 {player.isCreator ? <><CrownIcon>👑</CrownIcon> {player.name}</> : player.name}
+                <DeviceBadge device={player.device} />
               </Player>
               {!player.isCreator && (onKickPlayer || onBanPlayer) && (
                 <PlayerActions>
@@ -654,6 +655,28 @@ const BeforeGameStartScreen = ({
 const CrownIcon = styled.span`
   display: inline-block;
   line-height: 1;
+`;
+
+/**
+ * What a player is playing on, so the rest of the lobby knows who is drawing
+ * with a finger on a phone screen. Clients that did not report a device (an old
+ * one, or a game stored before this existed) simply get no badge.
+ */
+const DeviceBadge = ({ device }: { device?: DeviceType | null }) => {
+  if (device !== "MOBILE" && device !== "DESKTOP") return null;
+  const isPhone = device === "MOBILE";
+  return (
+    <DeviceIcon
+      name={isPhone ? "phone" : "desktop"}
+      label={isPhone ? "Playing on a phone" : "Playing on a computer"}
+    />
+  );
+};
+
+const DeviceIcon = styled(ThemedIcon)`
+  margin-left: 0.6em;
+  /* Dimmer than the name: this is an aside, not something to read first. */
+  color: rgba(var(--cyber-cyan-rgb), 0.7);
 `;
 
 const PlayerRow = styled.div`

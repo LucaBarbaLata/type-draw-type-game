@@ -2,7 +2,7 @@ package net.czedik.hermann.tdt;
 
 import java.util.Objects;
 
-public record PlayerInfo(String name, String face, boolean isCreator) {
+public record PlayerInfo(String name, String face, boolean isCreator, DeviceType device) {
     // on purpose this one does not include the userId, because it goes to the
     // frontend (for all players) and the userId should be secret
 

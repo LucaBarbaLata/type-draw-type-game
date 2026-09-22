@@ -24,7 +24,7 @@ const scanPulse = keyframes`
 `;
 
 import { GameMode, PlayerInfo, StoryContent, StrokeSegment, RemoteStroke } from "./model";
-import { getPlayerId } from "./helpers";
+import { getPlayerId, getDeviceType } from "./helpers";
 import Type from "./Type";
 import Upload from "./Upload";
 import Draw from "./Draw";
@@ -42,6 +42,8 @@ import { ConnectionLostErrorDialog } from "./ErrorDialogs";
 import { useAudio } from "./audio/useAudio";
 import { type ChatMessage } from "./Chat";
 import ThemedIcon from "./ThemedIcon";
+import ToastStack from "./Toasts";
+import { clearToasts, pushToast } from "./toastStore";
 
 interface PlayerState {
   state: string;
@@ -215,6 +217,21 @@ interface TeamStrokeMessage extends RemoteStroke {
   state: "teamStroke";
 }
 
+/** Sent by the server when somebody else drops out of the game; shown as a toast, not as a screen. */
+interface PlayerLeftMessage extends PlayerState {
+  state: "playerLeft";
+  player: PlayerInfo;
+  reason: string;
+}
+
+/** What each reason the server can send reads like in the toast. */
+const PLAYER_LEFT_MESSAGES: Record<string, string> = {
+  left: "left the game",
+  disconnected: "lost connection",
+  kicked: "was kicked from the lobby",
+  banned: "was banned from the lobby",
+};
+
 function isFinalState(newPlayerState: PlayerState) {
   return (
     newPlayerState.state === "unknownGame" ||
@@ -286,6 +303,8 @@ const Game = () => {
     return () => document.body.classList.remove("in-round");
   }, [playerState.state]);
 
+  React.useEffect(() => () => clearToasts(), []);
+
   const socketRef = React.useRef<WebSocket>();
 
   const send = (action: Action) => {
@@ -339,6 +358,17 @@ const Game = () => {
       if (msg.state === "teamSubmit") {
         const submitMsg = msg as unknown as { state: string; round: number };
         setTeamSubmitRound(submitMsg.round);
+        return;
+      }
+      if (msg.state === "playerLeft") {
+        const { player, reason } = msg as PlayerLeftMessage;
+        pushToast({
+          kind: "playerLeft",
+          face: player.face,
+          title: player.name,
+          message: PLAYER_LEFT_MESSAGES[reason] ?? PLAYER_LEFT_MESSAGES.left,
+          tone: "magenta",
+        });
         return;
       }
       if (msg.state === "teamCanvasSync") {
@@ -409,6 +439,7 @@ const Game = () => {
           playerId: getPlayerId(),
           name: savedName,
           face: savedFace,
+          device: getDeviceType(),
         },
       })
     );
@@ -498,6 +529,7 @@ const Game = () => {
             playerId: getPlayerId(),
             name,
             face,
+            device: getDeviceType(),
           },
         });
       };
@@ -722,6 +754,7 @@ const Game = () => {
         handleReconnect={handleReconnect}
       />
       {getComponentForState()}
+      <ToastStack />
       {showMuteButton && (
         <MuteButton
           className="FloatingBadge"

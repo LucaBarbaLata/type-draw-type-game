@@ -9,10 +9,18 @@ export type GameMode =
   | "TEAM"
   | "PICTURE_PERFECT";
 
+/** What a player is playing on, as reported by their own client when joining. */
+export type DeviceType = "DESKTOP" | "MOBILE";
+
 export interface PlayerInfo {
   name: string;
   face: string;
   isCreator: boolean;
+  /**
+   * Unknown for an older client, or a game stored before devices were reported.
+   * The server sends null in that case, so read it as "one of the two or not at all".
+   */
+  device?: DeviceType | null;
 }
 
 /** "photo" is an image uploaded by a player (Picture Perfect mode) rather than a drawing */

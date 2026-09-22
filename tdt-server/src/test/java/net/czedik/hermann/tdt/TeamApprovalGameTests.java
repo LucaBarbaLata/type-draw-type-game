@@ -102,14 +102,14 @@ class TeamApprovalGameTests {
     /** Creates a TEAM mode game with the given number of players and plays it up to its first draw round. */
     private void startGameAndReachDrawRound(int numPlayers) throws IOException {
         TestClient creator = new TestClient(NAMES.get(0).toLowerCase());
-        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, NAMES.get(0), "A", true),
+        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, NAMES.get(0), "A", true, null),
                 new TdtProperties.Limits(), true);
         game.access(creator.client, new AccessAction(GAME_ID, creator.playerId));
         players.add(creator);
 
         for (String name : NAMES.subList(1, numPlayers)) {
             TestClient player = new TestClient(name.toLowerCase());
-            game.join(player.client, new JoinAction(GAME_ID, player.playerId, name, "B"));
+            game.join(player.client, new JoinAction(GAME_ID, player.playerId, name, "B", null));
             players.add(player);
         }
 

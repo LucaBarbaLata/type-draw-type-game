@@ -7,6 +7,7 @@ import {
   getRandomCharacterFromString,
   isBlank,
   getPlayerId,
+  getDeviceType,
   useLocalStorageState,
 } from "./helpers";
 import Logo from "./Logo";
@@ -36,6 +37,7 @@ export const Create = () => {
           playerId: getPlayerId(),
           playerName: name,
           playerFace: face,
+          playerDevice: getDeviceType(),
         }),
       });
 

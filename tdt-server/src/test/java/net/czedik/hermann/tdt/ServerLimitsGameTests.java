@@ -59,7 +59,7 @@ class ServerLimitsGameTests {
     }
 
     private Game newGame(TestClient creator, TdtProperties.Limits limits, boolean publicGamesEnabled) {
-        Game game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true), limits,
+        Game game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true, null), limits,
                 publicGamesEnabled);
         game.access(creator.client, new AccessAction(GAME_ID, creator.playerId));
         return game;
@@ -81,10 +81,10 @@ class ServerLimitsGameTests {
         Game game = newGame(creator, limits, true);
 
         TestClient bob = new TestClient("bob");
-        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B")));
+        assertTrue(game.join(bob.client, new JoinAction(GAME_ID, bob.playerId, "Bob", "B", null)));
 
         TestClient carol = new TestClient("carol");
-        assertFalse(game.join(carol.client, new JoinAction(GAME_ID, carol.playerId, "Carol", "C")));
+        assertFalse(game.join(carol.client, new JoinAction(GAME_ID, carol.playerId, "Carol", "C", null)));
         assertEquals("alreadyStartedGame", carol.state());
     }
 

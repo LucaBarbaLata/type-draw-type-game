@@ -80,14 +80,14 @@ class PicturePerfectGameTests {
     @BeforeEach
     void setUpGame() throws IOException {
         TestClient creator = new TestClient("creator");
-        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true),
+        game = new Game(GAME_ID, gameDir, new Player(creator.playerId, "Alice", "A", true, null),
                 new TdtProperties.Limits(), true);
         game.access(creator.client, new AccessAction(GAME_ID, creator.playerId));
         players.add(creator);
 
         for (String name : List.of("Bob", "Carol")) {
             TestClient player = new TestClient(name.toLowerCase());
-            game.join(player.client, new JoinAction(GAME_ID, player.playerId, name, "B"));
+            game.join(player.client, new JoinAction(GAME_ID, player.playerId, name, "B", null));
             players.add(player);
         }
 
