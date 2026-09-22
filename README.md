@@ -136,9 +136,10 @@ docker compose up -d --build    # after changing code
 docker compose logs -f          # follow the log
 ```
 
-> Running with plain `docker run` instead? Then you have to mount the config yourself — the container cannot
-> see a file on the host otherwise:
-> `docker run -d -p 8080:8080 -v tdt-data:/tdt-data -v "$PWD/config.yml":/config/config.yml:ro tdt-game-prod`
+> Running with plain `docker run` instead? That works too — the image built in step 3 already contains the
+> `config.yml` from this folder:
+> `docker run -d -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod`
+> Changing the file then needs a rebuild, unless you mount it: `-v "$PWD/config.yml":/config/config.yml:ro`
 
 ---
 
@@ -155,15 +156,19 @@ applied, and later entries win over earlier ones:
 | # | Location | Typical use |
 |---|---|---|
 | 1 | `./config.yml` | next to the working directory — the jar, or `tdt-server/` under `./gradlew bootRun` |
-| 2 | `./config/config.yml` | a `config/` folder next to the working directory |
+| 2 | `./config/config.yml` | a `config/` folder next to the working directory — **in the Docker image this is where `docker build` bakes the `config.yml` it was built from** |
 | 3 | `/tdt-data/config.yml` | the Docker data volume (older instances keep their file here) |
 | 4 | `/config/config.yml` | **dedicated config mount — this is what `docker-compose.yml` uses** |
 | 5 | `$TDT_CONFIG_FILE` | explicit override; wins over all of the above |
 
-With `docker compose` you don't have to think about any of this: the repo's own `config.yml` is mounted at #4.
+With Docker you don't have to think about any of this. `config.yml` reaches the container two ways, and both
+are automatic:
 
-The one rule Docker imposes is that the path must be reachable **inside the container** — a `config.yml` on the
-host is invisible to the container unless something mounts it, which is exactly what `docker-compose.yml` does.
+- **Baked in at build time.** `docker build -f Dockerfile_prod` copies the `config.yml` next to the sources into
+  the image (at #2), so even a bare `docker run` with no mounts uses it. It is optional — the build works fine
+  without one. Because the settings end up inside the image, don't publish an image built with a real config.
+- **Mounted at run time.** `docker-compose.yml` mounts the same file at #4, which outranks the baked copy. That
+  is what makes `docker compose restart` pick up an edit without rebuilding.
 
 The file is optional; anything you leave out keeps its default. **On startup the server says what it used:**
 

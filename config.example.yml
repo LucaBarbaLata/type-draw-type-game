@@ -8,13 +8,15 @@
 #
 # Every location below is searched, and later ones win over earlier ones:
 #   1. ./config.yml            next to the working directory (the jar; tdt-server/ under `./gradlew bootRun`)
-#   2. ./config/config.yml     a config/ folder next to the working directory
+#   2. ./config/config.yml     a config/ folder next to the working directory; in the Docker image this is
+#                              where `docker build` bakes the config.yml it was built from
 #   3. /tdt-data/config.yml    the Docker data volume (older instances keep their file here)
 #   4. /config/config.yml      dedicated config mount - this is the one docker-compose.yml uses
 #   5. $TDT_CONFIG_FILE        explicit override, wins over all of the above
 #
-# Running plain `docker run` instead of compose? Then mount it yourself - a file on the host is invisible to
-# the container otherwise:  -v "$PWD/config.yml":/config/config.yml:ro
+# Running plain `docker run` instead of compose? That works too: `docker build -f Dockerfile_prod` bakes this
+# file into the image. Changing it then needs a rebuild, unless you mount it over the baked copy:
+#   -v "$PWD/config.yml":/config/config.yml:ro
 #
 # Every key can also be given as an environment variable or command-line flag instead, e.g.
 #   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...

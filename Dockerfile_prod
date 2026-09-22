@@ -3,6 +3,15 @@
 FROM docker.io/eclipse-temurin:21-jre-jammy
 WORKDIR /opt/tdt/
 COPY build/server.jar server.jar
+
+# Bake the instance config.yml from the build context into the image, when there is one, so that a plain
+# `docker run` with no mount still uses the config.yml that sat next to the sources it was built from.
+# It lands at /opt/tdt/config/config.yml, which is a LOW-precedence search location, so a file mounted at
+# /config/config.yml (what docker-compose.yml does) or one in the /tdt-data volume still overrides it.
+# config.example.yml is listed only so the glob always matches at least one file; it is never read.
+# NOTE: this means the image contains your instance settings - do not publish an image built this way.
+COPY config.example.yml config.yml* ./config/
+
 EXPOSE 8080
 VOLUME /tdt-data
 # Instance configuration is read at runtime from several searched locations (see config.example.yml and
