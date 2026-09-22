@@ -175,6 +175,18 @@ interface RematchState extends PlayerState {
   newGameId: string;
 }
 
+/** Join was rejected because another player in the lobby already uses that name */
+interface NameTakenState extends PlayerState {
+  state: "nameTaken";
+  name: string;
+}
+
+function isNameTakenState(
+  playerState: PlayerState
+): playerState is NameTakenState {
+  return playerState.state === "nameTaken";
+}
+
 interface SpectatorCurrentDrawing {
   player: PlayerInfo;
   prompt: string;
@@ -464,7 +476,7 @@ const Game = () => {
   const getComponentForState = () => {
     if (playerState.state === "loading") {
       return <LoadingGame />;
-    } else if (playerState.state === "join") {
+    } else if (playerState.state === "join" || isNameTakenState(playerState)) {
       const handleJoinDone = (face: string, name: string) => {
         send({
           action: "join",
@@ -477,7 +489,12 @@ const Game = () => {
         });
       };
 
-      return <Join handleDone={handleJoinDone} />;
+      return (
+        <Join
+          handleDone={handleJoinDone}
+          takenName={isNameTakenState(playerState) ? playerState.name : undefined}
+        />
+      );
     } else if (isWaitForPlayersState(playerState)) {
       const handleStartGame = (settings: GameSettings) => {
         send({
@@ -681,7 +698,9 @@ const Game = () => {
   };
 
   const showMuteButton =
-    playerState.state !== "loading" && playerState.state !== "join";
+    playerState.state !== "loading" &&
+    playerState.state !== "join" &&
+    playerState.state !== "nameTaken";
 
   return (
     <>

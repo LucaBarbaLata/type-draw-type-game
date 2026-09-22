@@ -47,6 +47,7 @@ import net.czedik.hermann.tdt.actions.VoteAction;
 import net.czedik.hermann.tdt.playerstate.AlreadyStartedGameState;
 import net.czedik.hermann.tdt.playerstate.BannedState;
 import net.czedik.hermann.tdt.playerstate.KickedState;
+import net.czedik.hermann.tdt.playerstate.NameTakenState;
 import net.czedik.hermann.tdt.playerstate.DrawState;
 import net.czedik.hermann.tdt.playerstate.FrontendStory;
 import net.czedik.hermann.tdt.playerstate.FrontendStoryElement;
@@ -162,6 +163,18 @@ public class Game {
 
     private Player getPlayerById(String playerId) {
         return gameState.players.stream().filter(p -> p.id().equals(playerId)).findAny().orElse(null);
+    }
+
+    /**
+     * Whether a player other than the given one already uses this name in the lobby. Compared without surrounding
+     * whitespace and ignoring case, so lookalike names cannot slip through: players are identified by name
+     * everywhere it matters (kick/ban targeting, chat, the team partner display and the story credits).
+     */
+    private boolean isNameTaken(String name, String playerId) {
+        String candidate = name.strip();
+        return gameState.players.stream()
+                .filter(p -> !p.id().equals(playerId))
+                .anyMatch(p -> p.name().strip().equalsIgnoreCase(candidate));
     }
 
     // Returns true if the client should remain associated (spectator or can join), false if not
@@ -361,9 +374,15 @@ public class Game {
                 client.send(new AlreadyStartedGameState());
                 return false;
             }
+            Player player = getPlayerById(joinAction.playerId());
+            if (player == null && isNameTaken(joinAction.name(), joinAction.playerId())) {
+                log.info("Game {}: Join rejected — name '{}' is already taken in this lobby", gameId,
+                        joinAction.name());
+                client.send(new NameTakenState(joinAction.name()));
+                return false;
+            }
             log.info("Game {}: Player {} joining with name '{}' via client {}", gameId, joinAction.playerId(),
                     joinAction.name(), client.getId());
-            Player player = getPlayerById(joinAction.playerId());
             if (player != null) {
                 log.warn("Game {}: Player {} has already joined", gameId, joinAction.playerId());
             } else {

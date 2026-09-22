@@ -62,18 +62,36 @@ export const Create = () => {
 
 export const Join = ({
   handleDone,
+  takenName,
 }: {
   handleDone: (face: string, name: string) => void;
+  /** Name the server rejected because another player in the lobby already uses it */
+  takenName?: string;
 }) => {
-  return <CreateOrJoin buttonLabel="Join game" handleDone={handleDone} />;
+  return (
+    <CreateOrJoin
+      buttonLabel="Join game"
+      handleDone={handleDone}
+      takenName={takenName}
+    />
+  );
 };
+
+const nameShake = keyframes`
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px); }
+  60%       { transform: translateX(4px); }
+  85%       { transform: translateX(-2px); }
+`;
 
 const CreateOrJoin = ({
   buttonLabel,
   handleDone,
+  takenName,
 }: {
   buttonLabel: string;
   handleDone: (face: string, name: string) => void;
+  takenName?: string;
 }) => {
   const faces = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -90,7 +108,13 @@ const CreateOrJoin = ({
       ? nameUnchecked.slice(0, nameMaxLength)
       : nameUnchecked;
 
-  const buttonDisabled = isBlank(name);
+  // The server compares names without surrounding whitespace and ignoring case, so mirror that here: the error
+  // disappears as soon as a different name is typed and comes back if the rejected one is typed again.
+  const nameIsTaken =
+    takenName !== undefined &&
+    name.trim().toLowerCase() === takenName.trim().toLowerCase();
+
+  const buttonDisabled = isBlank(name) || nameIsTaken;
 
   const handleChangeFace = (newFace: string) => setFace(newFace);
 
@@ -108,8 +132,16 @@ const CreateOrJoin = ({
         value={name}
         onChange={(event) => setName(event.target.value)}
         maxLength={nameMaxLength}
+        aria-invalid={nameIsTaken}
       />
-      <br />
+      {nameIsTaken ? (
+        <NameTakenMessage role="alert">
+          Someone in this lobby is already called <strong>{name.trim()}</strong>
+          . Pick another name.
+        </NameTakenMessage>
+      ) : (
+        <br />
+      )}
       <button
         className="button"
         disabled={buttonDisabled}
@@ -132,6 +164,20 @@ const LogoLeftScreen = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 };
+
+const NameTakenMessage = styled.div`
+  color: var(--cyber-magenta);
+  text-shadow: var(--cyber-text-glow-magenta);
+  font-size: 0.8em;
+  /* sits in the gap below the name input (its own margin-bottom), just above the button */
+  margin: 0 auto 2vmin;
+  max-width: 80%;
+  animation: ${nameShake} 0.45s ease-out;
+
+  strong {
+    word-break: break-word;
+  }
+`;
 
 const facePop = keyframes`
   0%   { transform: scale(0.7) rotate(-10deg); opacity: 0.5; }
