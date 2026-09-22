@@ -13,7 +13,9 @@
 #   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...
 # Environment variables and command-line flags take precedence over this file.
 #
-# Restart the server after changing the file.
+# Restart the server after changing the file. The startup log says which file was used:
+#   Instance config: loaded /tdt-data/config.yml
+#   Instance config: no file at ... - using built-in defaults      <- wrong location or filename
 
 server:
   # HTTP port the server listens on (Docker maps this with -p <host>:8080).

@@ -155,7 +155,11 @@ Where the server looks for it:
 | `java -jar server.jar` | `./config.yml` in the working directory (or set `TDT_CONFIG_FILE`) |
 | `./gradlew bootRun` | `tdt-server/config.yml` |
 
-The file is optional; anything you leave out keeps its default. A typical public deployment behind a reverse proxy only needs:
+The file is optional; anything you leave out keeps its default. On startup the server logs which file it used —
+look for `Instance config: loaded /tdt-data/config.yml` (or `Instance config: no file at … - using built-in defaults`)
+near the top of the log if a setting seems to be ignored; it's the first thing to check after the file's location.
+
+A typical public deployment behind a reverse proxy only needs:
 
 ```yaml
 tdt:

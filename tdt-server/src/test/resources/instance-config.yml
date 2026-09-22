@@ -1,0 +1,10 @@
+# Used by InstanceConfigFileTests: a partial config.yml that overrides a few keys and leaves the rest at defaults.
+tdt:
+  limits:
+    max-players: 4
+  public-games:
+    enabled: false
+  websocket:
+    allowed-origins:
+      - https://tdt.example.com
+      - http://192.168.1.10:8080
