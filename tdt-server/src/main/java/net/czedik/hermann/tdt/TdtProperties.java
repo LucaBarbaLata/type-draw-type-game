@@ -8,7 +8,6 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 
 /**
  * All instance-level settings of the server, bound from the {@code tdt.*} keys of the configuration.
@@ -55,9 +54,13 @@ public class TdtProperties {
     }
 
     public static class Websocket {
-        /** Origins allowed to open the game websocket. {@code *} allows any origin. */
-        @NotEmpty
-        private List<String> allowedOrigins = List.of("http://localhost:8080");
+        /**
+         * Origins allowed to open the game websocket, on top of the page's own origin.
+         * <p>
+         * Empty (the default) means same-origin only, which needs no configuration: the websocket is accepted
+         * from whatever hostname served the page. {@code *} allows any origin.
+         */
+        private List<String> allowedOrigins = List.of();
 
         /** Largest text frame accepted (JSON actions, base64 team-mode canvas syncs, replays). */
         @Min(1024)

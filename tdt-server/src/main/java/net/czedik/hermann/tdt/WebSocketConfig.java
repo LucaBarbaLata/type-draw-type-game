@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistration;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
 
@@ -26,10 +27,18 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         List<String> allowedOrigins = properties.getWebsocket().getAllowedOrigins();
-        log.info("Websocket allowed origins: {}", allowedOrigins);
-        registry.addHandler(myHandler(), "/api/websocket")
-                .addInterceptors(new WebSocketOriginLogger(allowedOrigins))
-                .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
+        WebSocketHandlerRegistration registration = registry.addHandler(myHandler(), "/api/websocket")
+                .addInterceptors(new WebSocketOriginLogger(allowedOrigins));
+        if (allowedOrigins.isEmpty()) {
+            // Leaving allowed origins unset keeps Spring's same-origin policy, which is already correct for
+            // every hostname the game is served from. Setting an empty array instead would reject everything.
+            log.info("Websocket allowed origins: same origin as the page (tdt.websocket.allowed-origins is unset)");
+        } else {
+            // Note: once an explicit list is set, Spring allows ONLY these origins - a same-origin request
+            // from a host that is not listed is rejected too.
+            log.info("Websocket allowed origins: {}", allowedOrigins);
+            registration.setAllowedOrigins(allowedOrigins.toArray(String[]::new));
+        }
     }
 
     @Bean

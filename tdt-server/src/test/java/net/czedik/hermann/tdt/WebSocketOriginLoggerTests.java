@@ -43,9 +43,19 @@ class WebSocketOriginLoggerTests {
     }
 
     private boolean handshake(List<String> allowedOrigins, String origin) {
+        return handshake(allowedOrigins, origin, null, -1);
+    }
+
+    /** @param serverName the host the server believes it is reachable at, as a proxy would make it appear */
+    private boolean handshake(List<String> allowedOrigins, String origin, String serverName, int port) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         if (origin != null) {
             request.addHeader("Origin", origin);
+        }
+        if (serverName != null) {
+            request.setScheme(origin != null && origin.startsWith("https") ? "https" : "http");
+            request.setServerName(serverName);
+            request.setServerPort(port);
         }
         return new WebSocketOriginLogger(allowedOrigins).beforeHandshake(
                 new ServletServerHttpRequest(request),
@@ -82,8 +92,29 @@ class WebSocketOriginLoggerTests {
     }
 
     @Test
-    void matchesOriginsCaseInsensitively() {
-        assertTrue(handshake(List.of("https://TDT.example.com"), "https://tdt.example.com"));
+    void sameOriginModeStaysQuietWhenTheProxyForwardsTheRealHost() {
+        // no allowed origins configured: a request the server sees as https://tdt.example.com is same-origin
+        assertTrue(handshake(List.of(), "https://tdt.example.com", "tdt.example.com", 443));
         assertEquals(List.of(), warnings());
+    }
+
+    @Test
+    void sameOriginModeExplainsAMissingForwardedHeader() {
+        // the browser says https://tdt.example.com but the server still thinks it is plain localhost:8080,
+        // which is exactly what a reverse proxy that drops X-Forwarded-* looks like
+        assertTrue(handshake(List.of(), "https://tdt.example.com", "localhost", 8080));
+
+        assertEquals(1, warnings().size());
+        String warning = warnings().get(0);
+        assertTrue(warning.contains("https://tdt.example.com"), warning);
+        assertTrue(warning.contains("X-Forwarded-Proto"), warning);
+    }
+
+    @Test
+    void flagsAConfiguredOriginThatDiffersOnlyInCase() {
+        // Spring compares the configured origins exactly, so a case mismatch really is rejected - the log
+        // has to say so rather than quietly treating it as a match
+        assertTrue(handshake(List.of("https://TDT.example.com"), "https://tdt.example.com"));
+        assertEquals(1, warnings().size());
     }
 }

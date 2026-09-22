@@ -16,12 +16,17 @@ server:
   port: 8080
   compression:
     enabled: true
+  # Trust X-Forwarded-* from a reverse proxy, so the server knows the scheme + host players actually use.
+  # Without this a TLS-terminating proxy makes every same-origin websocket look cross-origin.
+  forward-headers-strategy: framework
 
 tdt:
   # ${storage.dir} / ${websocket.allowed-origins} keep the pre-config-file flags (--storage.dir=...) working
   storage-dir: ${storage.dir:.}
   websocket:
-    allowed-origins: ${websocket.allowed-origins:http://localhost:8080}
+    # empty = same-origin only: whatever hostname players use to load the page also works for the
+    # websocket, with no configuration. Set it explicitly only to allow OTHER origins.
+    allowed-origins: ${websocket.allowed-origins:}
     max-text-message-bytes: 3145728    # 3 MiB
     max-binary-message-bytes: 5242880  # 5 MiB
     keep-alive-interval-seconds: 15

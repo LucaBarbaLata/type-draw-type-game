@@ -102,16 +102,9 @@ cd type-draw-type-game
 cp config.example.yml config.yml
 ```
 
-Out of the box the server only accepts WebSocket connections from `http://localhost:8080`, so as soon as players
-reach the game through a hostname or a reverse proxy, `tdt.websocket.allowed-origins` has to say so — otherwise
-the page loads but nobody can join. Edit at least that one key (see [Configuration](#configuration)):
-
-```yaml
-tdt:
-  websocket:
-    allowed-origins:
-      - https://tdt.example.com   # the exact origin players see in their address bar
-```
+Every key is optional — the defaults are meant to work as they are, including behind a reverse proxy, so you
+only need to touch this file to *change* something (see [Configuration](#configuration)). Creating it is still
+part of the setup because `docker-compose.yml` mounts it.
 
 **3. Build the frontend and server:**
 
@@ -198,7 +191,7 @@ What you can configure:
 | `server.port` | `8080` | HTTP port |
 | `server.compression.enabled` | `true` | Gzip HTTP responses (static frontend assets and JSON API) |
 | `tdt.storage-dir` | `.` | Where games are persisted — a `games/` folder is created inside (fixed to `/tdt-data` in Docker) |
-| `tdt.websocket.allowed-origins` | `[http://localhost:8080]` | Origins allowed to open the game WebSocket — the exact scheme + host (+ port) players see in the address bar. `"*"` allows any |
+| `tdt.websocket.allowed-origins` | empty = same origin | Extra origins allowed to open the game WebSocket. Empty means the page's own origin, which is what you want unless the game is embedded on another site. Setting it replaces that policy: **only** the listed origins are accepted. `"*"` allows any |
 | `tdt.websocket.max-text-message-bytes` | 3 MiB | Largest text frame (JSON actions, Team-mode canvas syncs, replays). Raise it if large Team-mode canvases get disconnected |
 | `tdt.websocket.max-binary-message-bytes` | 5 MiB | Largest binary frame (drawings, uploaded photos). Must be larger than `max-upload-bytes` |
 | `tdt.websocket.keep-alive-interval-seconds` | `15` | Ping interval that keeps idle connections open through proxies — keep it well under your proxy's read timeout |
@@ -213,13 +206,26 @@ Any other standard Spring Boot property (e.g. `logging.level.*`) works in the sa
 Invalid values (e.g. a negative limit or an empty origins list) stop the server at startup with a message naming the
 key and the line in `config.yml`.
 
-If a browser is refused the WebSocket (the page loads, but nothing joins), the server logs the reason with both the
-origin it saw and the list it was checked against:
+### WebSocket origins
+
+By default the WebSocket is accepted from **the same origin that served the page**, so any hostname works with
+no configuration. Behind a reverse proxy this relies on the standard forwarded headers, which the server trusts
+(`server.forward-headers-strategy: framework`) — nginx needs `proxy_set_header X-Forwarded-Proto $scheme;` and
+`proxy_set_header Host $host;`, Caddy sends them by itself.
+
+If a browser is refused the WebSocket (the page loads, but nobody can join), the server says why, naming both
+the origin it saw and what it compared against:
 
 ```
-Websocket handshake from origin https://tdt.example.com will be rejected:
-tdt.websocket.allowed-origins is [http://localhost:8080]. Set it to the exact scheme + host (+ port) ...
+Websocket handshake from origin https://tdt.example.com will be rejected: the server sees this
+request as http://localhost:8080/api/websocket, and only same-origin websockets are allowed. If
+https://tdt.example.com is the address players use, your reverse proxy is not forwarding
+X-Forwarded-Proto / X-Forwarded-Host (or Host); alternatively list the origin in
+tdt.websocket.allowed-origins.
 ```
+
+Setting `tdt.websocket.allowed-origins` explicitly is the escape hatch — it accepts exactly the origins listed,
+whatever the proxy sends, and is what you need to embed the game on another site.
 
 Every key can also be passed as an environment variable or command-line flag, which take precedence over the file —
 for example `-e TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com` or `--tdt.limits.max-players=8`. The

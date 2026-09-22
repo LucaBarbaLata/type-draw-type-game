@@ -39,16 +39,21 @@ tdt:
   storage-dir: .
 
   websocket:
-    # Browser origins allowed to open the game websocket. Must contain the exact scheme + host (+ port) that
-    # players type into their address bar, otherwise the websocket handshake is rejected and nobody can join.
+    # EXTRA browser origins allowed to open the game websocket.
+    #
+    # Leave it unset (the default) and the websocket is accepted from the same origin that served the page --
+    # whatever hostname that is, including through a reverse proxy. You do not need to configure anything for
+    # a normal deployment.
+    #
+    # Set it only to allow OTHER origins, e.g. when embedding the game on another site. Careful: once set, it
+    # REPLACES the same-origin policy, and only the origins listed here are accepted:
     #
     #   allowed-origins:
     #     - https://tdt.example.com
     #     - http://192.168.1.10:8080
     #
     # Use "*" to allow every origin (fine for a LAN party, not recommended on the public internet).
-    allowed-origins:
-      - http://localhost:8080
+    allowed-origins: []
 
     # Largest text frame the server accepts, in bytes. Text frames carry JSON actions, Team-mode canvas syncs
     # (base64 PNG) and drawing replays. Raise this if large Team-mode canvases get disconnected.
