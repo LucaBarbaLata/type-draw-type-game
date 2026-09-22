@@ -6,8 +6,9 @@ import { originFromEvent } from "./themeTransition";
 
 /**
  * Floating theme picker, shown on every page (bottom-right corner, next to the
- * in-game mute button). The choice is stored in localStorage and applied to
- * <html data-theme> — see theme.ts / themes.css.
+ * in-game mute button) except during a round on a small screen, where it would
+ * cover the canvas — see .FloatingBadge in App.css. The choice is stored in
+ * localStorage and applied to <html data-theme> — see theme.ts / themes.css.
  */
 const ThemeSwitcher = () => {
   const [theme, setTheme] = useTheme();
@@ -33,7 +34,7 @@ const ThemeSwitcher = () => {
   const current = getThemeInfo(theme);
 
   return (
-    <Wrapper ref={wrapperRef}>
+    <Wrapper ref={wrapperRef} className="FloatingBadge">
       {open && (
         <Panel role="listbox" aria-label="Theme">
           <PanelTitle>Theme</PanelTitle>

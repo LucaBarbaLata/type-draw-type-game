@@ -338,7 +338,7 @@ const Draw = ({
         </TeamApprovalBar>
       )}
       {referenceImageSrc && (
-        <ReferencePanel>
+        <ReferencePanel className="Draw-reference">
           <ReferenceCaption>Photo by {textWriter.name}</ReferenceCaption>
           <ReferenceImage
             src={referenceImageSrc}

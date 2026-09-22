@@ -273,6 +273,18 @@ const Game = () => {
     prevStateRef.current = cur;
   }, [playerState.state, playRoundStart]);
 
+  /* The floating theme and mute badges sit in the bottom-right corner, which
+     on a phone lands on top of the canvas and the tool panel. Flag the rounds
+     they have to stay out of; App.css hides them there on small viewports
+     only, so the lobby and the story screens keep them everywhere. */
+  React.useEffect(() => {
+    const cur = playerState.state;
+    const inRound =
+      cur === "type" || cur === "upload" || cur === "draw" || cur === "hotPotatoDraw";
+    document.body.classList.toggle("in-round", inRound);
+    return () => document.body.classList.remove("in-round");
+  }, [playerState.state]);
+
   const socketRef = React.useRef<WebSocket>();
 
   const send = (action: Action) => {
@@ -711,6 +723,7 @@ const Game = () => {
       {getComponentForState()}
       {showMuteButton && (
         <MuteButton
+          className="FloatingBadge"
           onClick={toggleMute}
           title={muted ? "Unmute sounds" : "Mute sounds"}
         >
