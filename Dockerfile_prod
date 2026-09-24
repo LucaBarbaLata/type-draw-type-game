@@ -12,6 +12,8 @@ COPY build/server.jar server.jar
 # NOTE: this means the image contains your instance settings - do not publish an image built this way.
 COPY config.example.yml config.yml* ./config/
 
+# Documentation only, and only relevant with bridge networking: the actual port comes from `server.port` in
+# config.yml. docker-compose.yml runs this with host networking, where the server binds that port on the host.
 EXPOSE 8080
 VOLUME /tdt-data
 # Instance configuration is read at runtime from several searched locations (see config.example.yml and

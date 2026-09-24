@@ -14,10 +14,11 @@ services:
     image: tdt-game-prod
     container_name: tdt
     restart: unless-stopped
-    ports:
-      # host:container. The container side must match `server.port` in config.yml (default 8080).
-      # Change the host side with a .env file next to this one, e.g. TDT_PORT=8087
-      - "${TDT_PORT:-8080}:8080"
+    # Host networking: the server binds its port directly on the host, so `server.port` in config.yml IS the
+    # port players connect to - there is no second, published port to keep in sync. Do not add a `ports:`
+    # block back: compose rejects one in host mode, and it is what made the port drift out of config.yml.
+    # Needs Linux, or Docker Desktop 4.34+ with host networking enabled.
+    network_mode: host
     volumes:
       # persisted games: state, drawings, uploaded photos, replays
       - tdt-data:/tdt-data

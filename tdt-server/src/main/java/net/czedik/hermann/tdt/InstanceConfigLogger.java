@@ -34,6 +34,23 @@ public class InstanceConfigLogger {
         } else {
             loaded.forEach(file -> log.info("Instance config: loaded {}", file));
         }
+        log.info("Instance config: {}", listenDescription(environment));
+    }
+
+    /**
+     * Where the game will be reachable, logged next to the config files so a wrong port is visible in the same
+     * place as a config.yml that was not picked up. With the host networking docker-compose.yml uses, the port
+     * the server binds is also the port on the host.
+     */
+    private static String listenDescription(ConfigurableEnvironment environment) {
+        String port = environment.getProperty("server.port", "8080");
+        String address = environment.getProperty("server.address");
+        String where = (address == null || address.isBlank()) ? "all interfaces" : address;
+        if ("0".equals(port)) {
+            // Spring picks a free port at startup, so there is no number to report here
+            return "listening on a port chosen at startup (server.port=0), on " + where;
+        }
+        return "listening on port " + port + ", on " + where;
     }
 
     private static List<String> loadedConfigFiles(ConfigurableEnvironment environment) {

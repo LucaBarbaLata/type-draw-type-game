@@ -85,7 +85,9 @@ Select a mode when creating a lobby. All players see the active mode before the 
 
 ### Prerequisites
 
-- [Docker](https://www.docker.com/) installed and running
+- [Docker](https://www.docker.com/) installed and running. `docker-compose.yml` uses host networking, so that
+  the port in `config.yml` is the port on the host — that is native on Linux; on Docker Desktop (macOS/Windows)
+  it needs 4.34+ with host networking enabled under Settings → Resources → Network.
 
 ### Steps
 
@@ -120,9 +122,11 @@ Builds the React frontend and Spring Boot server inside Docker, then extracts th
 docker compose up -d --build
 ```
 
-The game is now at `http://<your-server-ip>:8080/`. To serve it on a different host port, put `TDT_PORT=8087`
-in a `.env` file next to `docker-compose.yml` (git-ignored) — the port *inside* the container stays 8080 unless
-you also change `server.port`.
+The game is now at `http://<your-server-ip>:8080/`. To serve it on a different port, change `server.port` in
+`config.yml` and `docker compose restart` — that is the only place the port is set. The compose file uses
+host networking, so the port the server binds is the port on the host; there is no second number to keep in
+sync. If that port is already taken the server says so in `docker compose logs` (`Port 8087 was already in
+use`) instead of silently coming up unreachable.
 
 [`docker-compose.yml`](docker-compose.yml) mounts **this folder's `config.yml`** straight into the container, so
 the file you edited in step 2 is the live config — nothing is copied anywhere, and there are no `-v` flags to
@@ -138,8 +142,16 @@ docker compose logs -f          # follow the log
 
 > Running with plain `docker run` instead? That works too — the image built in step 3 already contains the
 > `config.yml` from this folder:
-> `docker run -d -p 8080:8080 -v tdt-data:/tdt-data tdt-game-prod`
+> `docker run -d --network host -v tdt-data:/tdt-data tdt-game-prod`
 > Changing the file then needs a rebuild, unless you mount it: `-v "$PWD/config.yml":/config/config.yml:ro`
+> With bridge networking instead (`-p 8080:8080`) the published container port has to match `server.port` by hand.
+
+> **Upgrading an instance that used `TDT_PORT`?** Earlier versions published a bridge port and took the host
+> side from `TDT_PORT` in a `.env` file. Move that number into `server.port` in `config.yml`, delete the `.env`,
+> and `docker compose up -d`. If a reverse proxy forwards to the game, point it at the host — `127.0.0.1:<port>`
+> for a proxy on this machine. A proxy running as a container on a shared Docker network can no longer reach
+> `tdt:8080`; give it the host address instead (`host.docker.internal:<port>` plus
+> `extra_hosts: ["host.docker.internal:host-gateway"]`).
 
 ---
 
@@ -173,7 +185,8 @@ are automatic:
 The file is optional; anything you leave out keeps its default. **On startup the server says what it used:**
 
 ```
-Instance config: loaded /tdt-data/config.yml
+Instance config: loaded /config/config.yml
+Instance config: listening on port 8087, on all interfaces
 Websocket allowed origins: [https://tdt.example.com]
 ```
 
@@ -193,7 +206,8 @@ What you can configure:
 
 | Key | Default | What it does |
 |---|---|---|
-| `server.port` | `8080` | HTTP port |
+| `server.port` | `8080` | Port the game is served on. With the shipped `docker-compose.yml` (host networking) this is the port on the host too — the only place the port is set |
+| `server.address` | all interfaces | Interface to bind to. Set it to `127.0.0.1` to accept connections only from this machine, e.g. when a reverse proxy on the same host is the only client |
 | `server.compression.enabled` | `true` | Gzip HTTP responses (static frontend assets and JSON API) |
 | `tdt.storage-dir` | `.` | Where games are persisted — a `games/` folder is created inside (fixed to `/tdt-data` in Docker) |
 | `tdt.websocket.allowed-origins` | empty = same origin | Extra origins allowed to open the game WebSocket. Empty means the page's own origin, which is what you want unless the game is embedded on another site. Setting it replaces that policy: **only** the listed origins are accepted. `"*"` allows any |

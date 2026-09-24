@@ -22,13 +22,22 @@
 #   TDT_WEBSOCKET_ALLOWEDORIGINS=https://tdt.example.com      or      --tdt.websocket.allowed-origins=...
 # Environment variables and command-line flags take precedence over this file.
 #
-# Restart the server after changing the file. The startup log says which file was used:
-#   Instance config: loaded /tdt-data/config.yml
+# Restart the server after changing the file. The startup log says which file was used, and where the game is
+# then reachable:
+#   Instance config: loaded /config/config.yml
+#   Instance config: listening on port 8087, on all interfaces
 #   Instance config: no config.yml found - using built-in defaults. Searched: ...   <- nothing was picked up
 
 server:
-  # HTTP port the server listens on (Docker maps this with -p <host>:8080).
+  # Port the game is served on. docker-compose.yml uses host networking, so this is the port on the HOST as
+  # well - it is the only place the port is set, and `docker compose restart` applies a change.
+  # If the port is already taken, the server refuses to start and says so ("Port 8080 was already in use").
   port: 8080
+
+  # Network interface to bind to. Unset (the default) means every interface, which is what you want when
+  # players connect to this machine directly. Set it to 127.0.0.1 to listen on localhost only - useful when a
+  # reverse proxy on this same host is the only thing that should reach the server.
+  # address: 127.0.0.1
 
   # Gzip HTTP responses (the static frontend assets and JSON API).
   compression:
