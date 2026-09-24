@@ -28,8 +28,9 @@ import net.czedik.hermann.tdt.actions.KickAction;
 import net.czedik.hermann.tdt.actions.StartAction;
 
 /**
- * Verifies the {@code playerLeft} event the clients turn into a toast (see issue #45): everyone still in the game
- * is told when somebody drops out of it, and told why, while the player who dropped out is not.
+ * Verifies the events the clients turn into a toast (see issue #45): with {@code playerLeft}, everyone still in the
+ * game is told when somebody drops out of it, and told why, while the player who dropped out is not; with
+ * {@code playerRejoined}, they are told when somebody who had lost connection mid-game is back.
  */
 class PlayerLeftNotificationTests {
 
@@ -97,6 +98,12 @@ class PlayerLeftNotificationTests {
         assertNotNull(event, "expected a playerLeft event");
         assertEquals(name, event.get("player").get("name").asText());
         assertEquals(reason, event.get("reason").asText());
+    }
+
+    private static void assertRejoinedEvent(TestClient client, String name) {
+        JsonNode event = client.lastMessage("playerRejoined");
+        assertNotNull(event, "expected a playerRejoined event");
+        assertEquals(name, event.get("player").get("name").asText());
     }
 
     @Test
@@ -191,5 +198,69 @@ class PlayerLeftNotificationTests {
         assertLeftEvent(carol, "Bob", "banned");
         assertFalse(bob.received("playerLeft"));
         assertEquals("banned", bob.state());
+    }
+
+    @Test
+    void aPlayerComingBackAfterADisconnectIsAnnouncedToTheOthers() throws IOException {
+        newLobby(3);
+        TestClient alice = players.get(0);
+        TestClient bob = players.get(1);
+        TestClient carol = players.get(2);
+        game.start(alice.client, new StartAction(0, 0));
+        game.clientDisconnected(bob.client);
+
+        // Bob opens the game again, which a real reconnect does over a new session
+        TestClient bobAgain = new TestClient(bob.playerId);
+        assertTrue(game.access(bobAgain.client, new AccessAction(GAME_ID, bobAgain.playerId)));
+
+        assertRejoinedEvent(alice, "Bob");
+        assertRejoinedEvent(carol, "Bob");
+        // Bob is told nothing about himself — he gets the screen he left off at
+        assertFalse(bobAgain.received("playerRejoined"));
+        assertEquals("type", bobAgain.state());
+    }
+
+    @Test
+    void spectatorsAreToldAboutAPlayerComingBackToo() throws IOException {
+        newLobby(3);
+        TestClient alice = players.get(0);
+        TestClient bob = players.get(1);
+        game.start(alice.client, new StartAction(0, 0));
+
+        TestClient spectator = new TestClient("spectator");
+        game.access(spectator.client, new AccessAction(GAME_ID, spectator.playerId));
+        game.clientDisconnected(bob.client);
+
+        TestClient bobAgain = new TestClient(bob.playerId);
+        game.access(bobAgain.client, new AccessAction(GAME_ID, bobAgain.playerId));
+
+        assertRejoinedEvent(spectator, "Bob");
+    }
+
+    @Test
+    void openingASecondTabIsNotComingBack() throws IOException {
+        newLobby(3);
+        TestClient alice = players.get(0);
+        TestClient bob = players.get(1);
+        game.start(alice.client, new StartAction(0, 0));
+
+        // Bob never went away, so his other tab is not an arrival the others should hear about
+        TestClient bobSecondTab = new TestClient(bob.playerId);
+        assertTrue(game.access(bobSecondTab.client, new AccessAction(GAME_ID, bob.playerId)));
+
+        assertFalse(alice.received("playerRejoined"));
+    }
+
+    @Test
+    void aSpectatorArrivingIsNotAnnouncedAsAPlayerComingBack() throws IOException {
+        newLobby(3);
+        TestClient alice = players.get(0);
+        game.start(alice.client, new StartAction(0, 0));
+
+        TestClient spectator = new TestClient("spectator");
+        game.access(spectator.client, new AccessAction(GAME_ID, spectator.playerId));
+
+        assertEquals("spectator", spectator.state());
+        assertFalse(alice.received("playerRejoined"));
     }
 }

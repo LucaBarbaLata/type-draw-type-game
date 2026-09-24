@@ -58,6 +58,7 @@ import net.czedik.hermann.tdt.playerstate.TeamCanvasSyncEvent;
 import net.czedik.hermann.tdt.playerstate.TeamSubmitEvent;
 import net.czedik.hermann.tdt.playerstate.JoinState;
 import net.czedik.hermann.tdt.playerstate.PlayerLeftEvent;
+import net.czedik.hermann.tdt.playerstate.PlayerRejoinedEvent;
 import net.czedik.hermann.tdt.playerstate.PlayerState;
 import net.czedik.hermann.tdt.playerstate.RematchState;
 import net.czedik.hermann.tdt.playerstate.SpectatorCurrentDrawing;
@@ -156,7 +157,14 @@ public class Game {
             return handleAccessByNewPlayer(client);
         } else {
             log.info("Game {}: New client {} connected for known player {}", gameId, client.getId(), player.id());
+            // A known player with no client left is one the others were told had lost connection, so this first
+            // client of theirs is them coming back. A second tab is not, which is why this is checked before adding.
+            boolean isBack = playerToClients.getOrDefault(player, Collections.emptySet()).isEmpty();
             addClientForPlayer(client, player);
+            if (isBack) {
+                log.info("Game {}: Player {} is back in the game", gameId, player.id());
+                announcePlayerRejoined(player);
+            }
             updateStateForPlayer(player);
             return true;
         }
@@ -935,7 +943,19 @@ public class Game {
      * gone away or been sent their own kicked/banned state.
      */
     private void announcePlayerLeft(Player player, String reason) {
-        PlayerLeftEvent event = new PlayerLeftEvent(mapPlayerToPlayerInfo(player), reason);
+        announceAboutPlayer(player, new PlayerLeftEvent(mapPlayerToPlayerInfo(player), reason));
+    }
+
+    /**
+     * Tells everyone still in the game (players and spectators) that a player who had lost connection mid-game is
+     * back, so their client can show a toast. The counterpart of the {@code disconnected} notification above.
+     */
+    private void announcePlayerRejoined(Player player) {
+        announceAboutPlayer(player, new PlayerRejoinedEvent(mapPlayerToPlayerInfo(player)));
+    }
+
+    /** Sends a one-off event about a player to every other player's clients and to the spectators. */
+    private void announceAboutPlayer(Player player, PlayerState event) {
         for (Map.Entry<Player, Set<Client>> entry : playerToClients.entrySet()) {
             if (entry.getKey().id().equals(player.id())) continue;
             for (Client client : entry.getValue()) {

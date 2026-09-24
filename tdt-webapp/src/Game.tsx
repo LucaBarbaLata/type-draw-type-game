@@ -232,6 +232,15 @@ const PLAYER_LEFT_MESSAGES: Record<string, string> = {
   banned: "was banned from the lobby",
 };
 
+/**
+ * Sent when somebody who had lost connection mid-game is back — the counterpart of the "disconnected" message
+ * above. Also shown as a toast rather than as a screen.
+ */
+interface PlayerRejoinedMessage extends PlayerState {
+  state: "playerRejoined";
+  player: PlayerInfo;
+}
+
 function isFinalState(newPlayerState: PlayerState) {
   return (
     newPlayerState.state === "unknownGame" ||
@@ -368,6 +377,17 @@ const Game = () => {
           title: player.name,
           message: PLAYER_LEFT_MESSAGES[reason] ?? PLAYER_LEFT_MESSAGES.left,
           tone: "magenta",
+        });
+        return;
+      }
+      if (msg.state === "playerRejoined") {
+        const { player } = msg as PlayerRejoinedMessage;
+        pushToast({
+          kind: "playerRejoined",
+          face: player.face,
+          title: player.name,
+          message: "is back in the game",
+          tone: "cyan",
         });
         return;
       }
