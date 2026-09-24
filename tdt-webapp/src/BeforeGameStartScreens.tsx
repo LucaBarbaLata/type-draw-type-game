@@ -567,7 +567,9 @@ export const WaitForGameStartScreen = ({
   hotPotatoIntervalSeconds?: number;
   hotPotatoTotalSeconds?: number;
 }) => {
-  const creator = players.find((p) => p.isCreator)!;
+  // The server keeps a lobby's creator slot filled, but never render as if that were guaranteed: a missing name
+  // here used to throw during render and take the whole app down to a black screen (issue #47).
+  const creator = players.find((p) => p.isCreator);
   const modeOption = GAME_MODE_OPTIONS.find((o) => o.value === gameMode) ?? GAME_MODE_OPTIONS[0];
   const isHotPotato = gameMode === "HOT_POTATO";
 
@@ -580,7 +582,9 @@ export const WaitForGameStartScreen = ({
     >
       <RightContent>
         <Logo />
-        <WaitText>Waiting for <strong>{creator.name}</strong> to start the game…</WaitText>
+        <WaitText>
+          Waiting for {creator ? <strong>{creator.name}</strong> : "the host"} to start the game…
+        </WaitText>
         <GameModeBadge>
           <GameModeBadgeLabel>Mode</GameModeBadgeLabel>
           <GameModeBadgeName>{modeOption.label}</GameModeBadgeName>

@@ -389,7 +389,15 @@ public class Game {
             if (player != null) {
                 log.warn("Game {}: Player {} has already joined", gameId, joinAction.playerId());
             } else {
-                player = new Player(joinAction.playerId(), joinAction.name(), joinAction.face(), false,
+                // A lobby without a creator has nobody who can start it (and no host name to show), so whoever walks
+                // into an ownerless lobby takes it over. This is what gives the creator their own lobby back after a
+                // page reload: reloading drops their last client, which removes them from the lobby (see issue #47).
+                boolean becomesCreator = !hasCreator();
+                if (becomesCreator) {
+                    log.info("Game {}: Lobby has no creator, player {} becomes the creator", gameId,
+                            joinAction.playerId());
+                }
+                player = new Player(joinAction.playerId(), joinAction.name(), joinAction.face(), becomesCreator,
                         joinAction.device());
                 gameState.players.add(player);
             }
@@ -845,6 +853,11 @@ public class Game {
         return players.stream().map(Game::mapPlayerToPlayerInfo).collect(Collectors.toList());
     }
 
+    /** Whether anybody in the lobby is its creator — the one player who can change settings and start the game. */
+    private boolean hasCreator() {
+        return gameState.players.stream().anyMatch(Player::isCreator);
+    }
+
     private static PlayerInfo mapPlayerToPlayerInfo(Player p) {
         return new PlayerInfo(p.name(), p.face(), p.isCreator(), p.device());
     }
@@ -893,17 +906,20 @@ public class Game {
         playerToClients.remove(player);
 
         if (player.isCreator()) {
-            // Promote the first remaining connected player to creator
+            // Promote the first remaining connected player to creator, falling back to any remaining player: a lobby
+            // left without a creator can never be started and has no host name to show (see issue #47).
             Player next = gameState.players.stream()
                     .filter(p -> !playerToClients.getOrDefault(p, Collections.emptySet()).isEmpty())
-                    .findFirst().orElse(null);
+                    .findFirst().orElse(gameState.players.isEmpty() ? null : gameState.players.get(0));
             if (next != null) {
                 Player promoted = new Player(next.id(), next.name(), next.face(), true, next.device());
                 gameState.players.set(gameState.players.indexOf(next), promoted);
                 Set<Client> nextClients = playerToClients.remove(next);
-                playerToClients.put(promoted, nextClients);
-                for (Client c : nextClients) {
-                    clientToPlayer.put(c, promoted);
+                if (nextClients != null) {
+                    playerToClients.put(promoted, nextClients);
+                    for (Client c : nextClients) {
+                        clientToPlayer.put(c, promoted);
+                    }
                 }
                 log.info("Game {}: Promoted player {} to creator", gameId, promoted.id());
             }
