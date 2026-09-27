@@ -10,6 +10,7 @@ import DrawCanvas, { ImageProvider, DrawTool } from "./DrawCanvas";
 import DrawTools from "./DrawTools";
 import RoundTimer from "./RoundTimer";
 import ThemedIcon from "./ThemedIcon";
+import { isImageDataUrl } from "./imageUtils";
 import { clearToasts, pushToast } from "./toastStore";
 import WaitingMessage from "./WaitingMessage";
 
@@ -99,9 +100,14 @@ const Draw = ({
   // In TEAM mode a drawing is only submitted once both partners have approved it
   const needsTeamApproval = onTeamReady != null && teamPartner != null;
   const awaitingPartnerApproval = needsTeamApproval && !!teamSelfReady;
-  const [cachedImageUrl] = React.useState<string | undefined>(() =>
-    cacheKey ? (sessionStorage.getItem(cacheKey) ?? undefined) : undefined
-  );
+  const [cachedImageUrl] = React.useState<string | undefined>(() => {
+    if (!cacheKey) return undefined;
+    const cached = sessionStorage.getItem(cacheKey);
+    // Storage is untrusted input: only ever restore an image data URL from it (issue #55)
+    if (isImageDataUrl(cached)) return cached;
+    if (cached != null) sessionStorage.removeItem(cacheKey);
+    return undefined;
+  });
   const resolvedInitialImageUrl = initialImageUrlProp ?? cachedImageUrl;
   const [showHelpDialog, setShowHelpDialog] = React.useState(!isHotPotato);
   const [firstTimeHelpDialog, setFirstTimeHelpDialog] = React.useState(true);

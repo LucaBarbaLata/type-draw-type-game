@@ -114,6 +114,17 @@ export function makePlaceholderImage(): Promise<Blob> {
   return canvasToBlob(canvas, JPEG_QUALITY);
 }
 
+const IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Whether the value is a base64 data URL of a raster image — the only thing the app ever caches in
+ * sessionStorage. Storage is not trusted input (anything on the origin can write to it), so a cached value must
+ * pass this check before it is used as a URL, which rules out `javascript:`, remote URLs, SVG etc.
+ */
+export function isImageDataUrl(value: string | null | undefined): value is string {
+  return value != null && IMAGE_DATA_URL.test(value);
+}
+
 export function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

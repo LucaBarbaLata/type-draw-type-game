@@ -4,7 +4,7 @@ import styled, { keyframes } from "styled-components";
 import Scrollable from "./Scrollable";
 import RoundTimer from "./RoundTimer";
 import ThemedIcon from "./ThemedIcon";
-import { blobToDataURL, makePlaceholderImage, prepareUploadImage, UploadImageError } from "./imageUtils";
+import { blobToDataURL, isImageDataUrl, makePlaceholderImage, prepareUploadImage, UploadImageError } from "./imageUtils";
 
 import "./Upload.css";
 
@@ -41,24 +41,42 @@ const Upload = ({
   const sendTimeoutRef = React.useRef<number | undefined>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // The preview is always an object URL of a blob we hold, never a string taken from storage (issue #55)
+  const previewUrlRef = React.useRef<string | null>(null);
+  const replacePreview = React.useCallback((blob: Blob | null) => {
+    blobRef.current = blob;
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = blob ? URL.createObjectURL(blob) : null;
+    setPreviewUrl(previewUrlRef.current);
+  }, []);
+
+  // Release the last preview's object URL on unmount
+  React.useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
+
   // Restore a photo chosen before a page refresh
   React.useEffect(() => {
     if (!cacheKey) return;
     const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return;
+    if (!isImageDataUrl(cached)) {
+      sessionStorage.removeItem(cacheKey);
+      return;
+    }
     let cancelled = false;
     window
       .fetch(cached)
       .then((res) => res.blob())
       .then((blob) => {
         if (cancelled) return;
-        blobRef.current = blob;
-        setPreviewUrl(cached);
+        if (!blob.type.startsWith("image/")) throw new Error("not an image");
+        replacePreview(blob);
         setStatus("ready");
       })
       .catch(() => sessionStorage.removeItem(cacheKey));
     return () => { cancelled = true; };
-  }, [cacheKey]);
+  }, [cacheKey, replacePreview]);
 
   React.useEffect(() => () => window.clearTimeout(sendTimeoutRef.current), []);
 
@@ -70,18 +88,15 @@ const Upload = ({
     setErrorMessage(null);
     try {
       const blob = await prepareUploadImage(file);
-      blobRef.current = blob;
-      const dataUrl = await blobToDataURL(blob);
-      setPreviewUrl(dataUrl);
+      replacePreview(blob);
       setStatus("ready");
       if (cacheKey) {
         try {
-          sessionStorage.setItem(cacheKey, dataUrl);
+          sessionStorage.setItem(cacheKey, await blobToDataURL(blob));
         } catch { /* quota exceeded */ }
       }
     } catch (e) {
-      blobRef.current = null;
-      setPreviewUrl(null);
+      replacePreview(null);
       setErrorMessage(e instanceof UploadImageError ? e.message : "Could not read that image. Please try another one.");
       setStatus("error");
     }
