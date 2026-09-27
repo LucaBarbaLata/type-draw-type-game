@@ -207,15 +207,40 @@ function elementVerb(e: StoryElement) {
   return e.type === "text" ? "typed:" : e.type === "photo" ? "shared a photo:" : "painted:";
 }
 
-async function exportStory(story: StoryContent, storyIndex: number) {
-  const W = 900;
-  const PAD = 40;
-  const contentW = W - PAD * 2;
-  const HEADER_H = 36;
-  const TEXT_LINE_H = 22;
-  const ELEMENT_GAP = 32;
+/**
+ * Largest canvas we render exports into. iOS Safari refuses canvases above ~16.7 million pixels (the
+ * export then comes out blank) and every browser caps a side at 16384px.
+ */
+const EXPORT_MAX_PIXELS = 16_000_000;
+const EXPORT_MAX_SIDE = 16384;
 
-  // Load all images up front
+/**
+ * Exports are laid out in CSS-like units and then rendered at this factor, so that drawings keep their
+ * native resolution (1440px wide) instead of being shrunk to the layout width, and the text stays sharp.
+ */
+function exportScale(layoutW: number, layoutH: number, imageSlotW: number, images: HTMLImageElement[]) {
+  const widest = Math.max(0, ...images.map((img) => img.naturalWidth));
+  const wanted = Math.max(2, widest / imageSlotW);
+  const fits = Math.min(
+    Math.sqrt(EXPORT_MAX_PIXELS / (layoutW * layoutH)),
+    EXPORT_MAX_SIDE / layoutW,
+    EXPORT_MAX_SIDE / layoutH
+  );
+  return Math.max(1, Math.min(wanted, fits));
+}
+
+function createExportCanvas(layoutW: number, layoutH: number, scale: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(layoutW * scale);
+  canvas.height = Math.round(layoutH * scale);
+  const ctx = canvas.getContext("2d")!;
+  ctx.scale(scale, scale);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  return { canvas, ctx };
+}
+
+async function loadStoryImages(story: StoryContent) {
   const imageMap = new Map<string, HTMLImageElement>();
   await Promise.all(
     story.elements
@@ -230,26 +255,67 @@ async function exportStory(story: StoryContent, storyIndex: number) {
           })
       )
   );
+  return imageMap;
+}
 
-  function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-    const result: string[] = [];
-    for (const paragraph of text.split("\n")) {
-      if (!paragraph) { result.push(""); continue; }
-      const words = paragraph.split(" ");
-      let line = "";
-      for (const word of words) {
-        const test = line ? line + " " + word : word;
-        if (ctx.measureText(test).width > maxW && line) {
-          result.push(line);
-          line = word;
-        } else {
-          line = test;
-        }
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const result: string[] = [];
+  for (const paragraph of text.split("\n")) {
+    if (!paragraph) { result.push(""); continue; }
+    const words = paragraph.split(" ");
+    let line = "";
+    for (const word of words) {
+      const test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        result.push(line);
+        line = word;
+      } else {
+        line = test;
       }
-      result.push(line);
     }
-    return result;
+    result.push(line);
   }
+  return result;
+}
+
+function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  // Revoking synchronously can cancel the download in Firefox and Safari
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Opens the system share sheet with the image where the browser supports sharing files, else downloads it */
+async function shareOrDownload(blob: Blob, filename: string) {
+  const file = new File([blob], filename, { type: "image/png" });
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: "Type Draw Type" });
+      return;
+    } catch (err) {
+      // The user closed the share sheet: don't download behind their back
+      if (err instanceof DOMException && err.name === "AbortError") return;
+    }
+  }
+  downloadBlob(blob, filename);
+}
+
+async function exportStory(story: StoryContent, storyIndex: number) {
+  const W = 900;
+  const PAD = 40;
+  const contentW = W - PAD * 2;
+  const HEADER_H = 36;
+  const TEXT_LINE_H = 22;
+  const ELEMENT_GAP = 32;
+
+  const imageMap = await loadStoryImages(story);
 
   // Calculate total canvas height with a temp canvas for text measurement
   const tmpCanvas = document.createElement("canvas");
@@ -269,10 +335,8 @@ async function exportStory(story: StoryContent, storyIndex: number) {
   }
   totalH += PAD - ELEMENT_GAP;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = totalH;
-  const ctx = canvas.getContext("2d")!;
+  const scale = exportScale(W, totalH, contentW, Array.from(imageMap.values()));
+  const { canvas, ctx } = createExportCanvas(W, totalH, scale);
 
   const accent = themeVar("--cyber-cyan");
   const accentRgb = themeVar("--cyber-cyan-rgb");
@@ -350,15 +414,8 @@ async function exportStory(story: StoryContent, storyIndex: number) {
     y += ELEMENT_GAP;
   }
 
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `story-${storyIndex + 1}.png`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, "image/png");
+  const blob = await canvasToPng(canvas);
+  if (blob) downloadBlob(blob, `story-${storyIndex + 1}.png`);
 }
 
 async function exportStoryStrip(story: StoryContent, storyIndex: number) {
@@ -368,29 +425,14 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
   const HEADER_H = 40;
   const GAP = 2;
 
-  const imageMap = new Map<string, HTMLImageElement>();
-  await Promise.all(
-    story.elements
-      .filter((e) => e.type !== "text")
-      .map(
-        (e) =>
-          new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => { imageMap.set(e.content, img); resolve(); };
-            img.onerror = () => resolve();
-            img.src = e.content;
-          })
-      )
-  );
+  const imageMap = await loadStoryImages(story);
 
   const n = story.elements.length;
   const W = n * PANEL_W + (n - 1) * GAP;
   const H = PANEL_H;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
+  const scale = exportScale(W, H, PANEL_W - PAD * 2, Array.from(imageMap.values()));
+  const { canvas, ctx } = createExportCanvas(W, H, scale);
 
   const accent = themeVar("--cyber-cyan");
   const accentRgb = themeVar("--cyber-cyan-rgb");
@@ -442,35 +484,15 @@ async function exportStoryStrip(story: StoryContent, storyIndex: number) {
       ctx.font = "15px 'Courier New', monospace";
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
-      const words = e.content.split(" ");
-      const maxW = PANEL_W - PAD * 2;
-      const lines: string[] = [];
-      let line = "";
-      for (const word of words) {
-        const test = line ? line + " " + word : word;
-        if (ctx.measureText(test).width > maxW && line) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = test;
-        }
-      }
-      lines.push(line);
+      const lines = wrapText(ctx, e.content, PANEL_W - PAD * 2);
       const totalTextH = lines.length * 22;
       const startY = HEADER_H + (H - HEADER_H - totalTextH) / 2;
       lines.forEach((l, li) => ctx.fillText(l, x + PANEL_W / 2, startY + li * 22 + 15));
     }
   }
 
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `story-${storyIndex + 1}-strip.png`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, "image/png");
+  const blob = await canvasToPng(canvas);
+  if (blob) await shareOrDownload(blob, `story-${storyIndex + 1}-strip.png`);
 }
 
 const fadeIn = keyframes`
