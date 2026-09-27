@@ -22,11 +22,18 @@ public class StoriesState implements PlayerState {
      */
     public final int totalPlayers;
 
-    public StoriesState(FrontendStory[] stories, int[] votesByStory, List<PlayerInfo> rematchVoters, int totalPlayers) {
+    /**
+     * The game the others started with "Play Again", or null while there is none. Voting then joins that game.
+     */
+    public final String rematchGameId;
+
+    public StoriesState(FrontendStory[] stories, int[] votesByStory, List<PlayerInfo> rematchVoters, int totalPlayers,
+            String rematchGameId) {
         this.stories = stories;
         this.votesByStory = votesByStory;
         this.rematchVoters = rematchVoters;
         this.totalPlayers = totalPlayers;
+        this.rematchGameId = rematchGameId;
     }
 
     @Override

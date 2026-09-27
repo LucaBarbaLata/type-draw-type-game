@@ -107,6 +107,9 @@ public class Game {
     // Runtime-only: tracks which player IDs have voted to play again (not persisted)
     private final Set<String> rematchVoterIds = new HashSet<>();
 
+    // Runtime-only: the vote is complete and GameManager is creating the rematch game (see prepareRematch)
+    private boolean rematchInProgress = false;
+
     // Runtime-only: latest canvas snapshot per player ID, used to show spectators live drawing progress
     private final Map<String, String> latestSpectatorSnapshots = new HashMap<>();
 
@@ -159,7 +162,10 @@ public class Game {
             log.info("Game {}: New client {} connected for known player {}", gameId, client.getId(), player.id());
             // A known player with no client left is one the others were told had lost connection, so this first
             // client of theirs is them coming back. A second tab is not, which is why this is checked before adding.
-            boolean isBack = playerToClients.getOrDefault(player, Collections.emptySet()).isEmpty();
+            // In a lobby the only such player is the creator of a rematch arriving for the first time: leaving a
+            // lobby removes the player, so nobody was told they had gone.
+            boolean isBack = playerToClients.getOrDefault(player, Collections.emptySet()).isEmpty()
+                    && gameState.state != GameState.State.WaitingForPlayers;
             addClientForPlayer(client, player);
             if (isBack) {
                 log.info("Game {}: Player {} is back in the game", gameId, player.id());
@@ -532,7 +538,8 @@ public class Game {
                 .filter(p -> rematchVoterIds.contains(p.id()))
                 .map(Game::mapPlayerToPlayerInfo)
                 .collect(Collectors.toList());
-        return new StoriesState(frontendStories, votesByStory, rematchVoters, gameState.players.size());
+        return new StoriesState(frontendStories, votesByStory, rematchVoters, gameState.players.size(),
+                gameState.rematchGameId);
     }
 
     private FrontendStory[] mapHotPotatoStoriesToFrontendStories() {
@@ -904,8 +911,11 @@ public class Game {
 
         if (gameState.state != GameState.State.WaitingForPlayers) {
             // Mid-game and after the game the player keeps their slot and may come back, so this is only a
-            // connection loss — but the others are waiting for them, which is worth a notification.
-            announcePlayerLeft(player, PlayerLeftEvent.REASON_DISCONNECTED);
+            // connection loss — but the others are waiting for them, which is worth a notification. Once a rematch
+            // exists, though, leaving the finished game just means following the others into it.
+            if (gameState.rematchGameId == null) {
+                announcePlayerLeft(player, PlayerLeftEvent.REASON_DISCONNECTED);
+            }
             return;
         }
 
@@ -982,6 +992,7 @@ public class Game {
     /**
      * Records a player's vote to play again. Broadcasts updated state to all clients.
      * Returns RematchData when ALL connected players have voted; otherwise returns null.
+     * The rematch is created only once: a vote after that sends the voter into the existing rematch game.
      */
     public RematchData prepareRematch(Client client) {
         if (gameState.state != GameState.State.Finished) {
@@ -991,6 +1002,18 @@ public class Game {
         Player requester = clientToPlayer.get(client);
         if (requester == null) {
             log.warn("Game {}: Unknown client {} tried to rematch", gameId, client.getId());
+            return null;
+        }
+        if (gameState.rematchGameId != null) {
+            // Somebody who was offline when the others voted (a phone gone to sleep, a trip to the gallery) follows
+            // them into their game. Creating another one would put this player in a lobby of their own (issue #53).
+            log.info("Game {}: Player {} follows the others into rematch {}", gameId, requester.id(),
+                    gameState.rematchGameId);
+            client.send(new RematchState(gameState.rematchGameId));
+            return null;
+        }
+        if (rematchInProgress) {
+            // The rematch is being created right now; this client is connected, so broadcastRematch reaches it
             return null;
         }
 
@@ -1015,6 +1038,7 @@ public class Game {
             log.info("Game {}: Original creator {} is not connected, promoting {} to creator for rematch", gameId, creator.id(), requester.id());
             creator = requester;
         }
+        rematchInProgress = true;
         GameMode mode = gameState.gameMode != null ? gameState.gameMode : GameMode.CLASSIC;
         return new RematchData(
                 creator.id(), creator.name(), creator.face(), creator.device(),
@@ -1027,6 +1051,9 @@ public class Game {
      * Sends a RematchState to all connected players and spectators so they redirect to the new game.
      */
     public void broadcastRematch(String newGameId) {
+        rematchInProgress = false;
+        gameState.rematchGameId = newGameId;
+        storeState();
         RematchState rematchState = new RematchState(newGameId);
         for (Player player : gameState.players) {
             for (Client client : playerToClients.getOrDefault(player, Collections.emptySet())) {
@@ -1036,6 +1063,11 @@ public class Game {
         for (Client client : spectatorClients) {
             client.send(rematchState);
         }
+    }
+
+    /** Called by GameManager when the rematch game could not be created, so that a later vote can try again. */
+    public void rematchFailed() {
+        rematchInProgress = false;
     }
 
     /**

@@ -167,6 +167,8 @@ interface StoriesState extends PlayerState {
   votesByStory: number[];
   rematchVoters?: PlayerInfo[];
   totalPlayers?: number;
+  /** Set once the others have started a new game with "Play Again"; voting then joins that game */
+  rematchGameId?: string | null;
 }
 
 function isStoriesState(playerState: PlayerState): playerState is StoriesState {
@@ -710,6 +712,7 @@ const Game = () => {
           onViewGallery={() => navigate(`/g/${gameIdNotNull}/gallery`)}
           rematchVoters={playerState.rematchVoters}
           totalPlayers={playerState.totalPlayers}
+          rematchStarted={!!playerState.rematchGameId}
         />
       );
     } else if (isSpectatorState(playerState)) {
@@ -837,6 +840,7 @@ const GameFinished = ({
   onViewGallery,
   rematchVoters,
   totalPlayers,
+  rematchStarted,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
@@ -848,6 +852,7 @@ const GameFinished = ({
   onViewGallery?: () => void;
   rematchVoters?: PlayerInfo[];
   totalPlayers?: number;
+  rematchStarted?: boolean;
 }) => {
   const [showStories, setShowStories] = React.useState(false);
 
@@ -870,6 +875,7 @@ const GameFinished = ({
         onViewGallery={onViewGallery}
         rematchVoters={rematchVoters}
         totalPlayers={totalPlayers}
+        rematchStarted={rematchStarted}
       />
     );
   }

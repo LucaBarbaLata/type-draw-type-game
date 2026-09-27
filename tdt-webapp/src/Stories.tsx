@@ -21,6 +21,7 @@ const Stories = ({
   onViewGallery,
   rematchVoters,
   totalPlayers,
+  rematchStarted,
 }: {
   stories: StoryContent[];
   onReveal?: () => void;
@@ -30,6 +31,8 @@ const Stories = ({
   onViewGallery?: () => void;
   rematchVoters?: PlayerInfo[];
   totalPlayers?: number;
+  /** The others already started a new game with "Play Again", which the button then joins */
+  rematchStarted?: boolean;
 }) => {
   const [hasVotedRematch, setHasVotedRematch] = React.useState(false);
   // Track the current player's chosen reaction per element: key = "storyIdx_elemIdx" -> emoji | null
@@ -174,7 +177,7 @@ const Stories = ({
             {hasVotedRematch ? "Waiting for others..." : (
               <>
                 <ThemedIcon name="play" label={null} className="ThemedIcon-leading" />
-                Play Again
+                {rematchStarted ? "Join the new game" : "Play Again"}
               </>
             )}
           </PlayAgainButton>
@@ -182,7 +185,9 @@ const Stories = ({
       </EndButtons>
       {onRematch && rematchVoters !== undefined && totalPlayers !== undefined && totalPlayers > 1 && (
         <RematchVoteStatus>
-          {rematchVoters.length === 0
+          {rematchStarted
+            ? "The others have started a new game"
+            : rematchVoters.length === 0
             ? `0 / ${totalPlayers} want to play again`
             : `${rematchVoters.map(p => p.name).join(", ")} want${rematchVoters.length === 1 ? "s" : ""} to play again (${rematchVoters.length}/${totalPlayers})`
           }

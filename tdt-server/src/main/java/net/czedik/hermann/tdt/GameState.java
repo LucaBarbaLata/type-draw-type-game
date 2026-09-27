@@ -82,6 +82,12 @@ public class GameState {
     /** Total seconds the hot potato game lasts; determines number of rotations. */
     public int hotPotatoTotalSeconds = 180;
 
+    /**
+     * The game "Play Again" created from this finished game, or null while there is none. Stored so that a player
+     * who comes back later is sent into that game rather than starting another, empty one (issue #53).
+     */
+    public String rematchGameId = null;
+
     // --- Hot Potato runtime state (populated at startGame, not stored between restarts) ---
 
     /** Total number of canvas rotations for this game. */

@@ -478,6 +478,7 @@ public class GameManager {
             newGameId = generateAndReserveNewGameId();
         } catch (IOException e) {
             log.error("Failed to generate new game ID for rematch", e);
+            gameRef.useGame(Game::rematchFailed);
             return;
         }
         Path newGameDir = getGameDir(newGameId);
