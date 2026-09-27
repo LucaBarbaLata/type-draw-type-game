@@ -1,4 +1,5 @@
 import React from "react";
+import ReactDOM from "react-dom";
 import styled, { keyframes } from "styled-components";
 
 const dialogIn = keyframes`
@@ -17,10 +18,14 @@ const Dialog = ({
 }) => {
   if (!show) return null;
 
-  return (
+  // Portalled to <body>: rendered in place, the z-index only competes inside the nearest
+  // stacking context of its caller — the color picker opens from the drawing toolbar, and
+  // the Picture Perfect reference photo painted over it (issue #48)
+  return ReactDOM.createPortal(
     <StyledDialog highPriority={highPriority}>
       <DialogContent>{children}</DialogContent>
-    </StyledDialog>
+    </StyledDialog>,
+    document.body
   );
 };
 
@@ -37,6 +42,8 @@ const StyledDialog = styled.div<{ highPriority: boolean }>`
   align-items: center;
   background-color: var(--cyber-overlay);
   backdrop-filter: blur(6px);
+  /* Outside .App now, so its centering is not inherited any more */
+  text-align: center;
   z-index: ${(props) => (props.highPriority ? 20 : 10)};
 `;
 
