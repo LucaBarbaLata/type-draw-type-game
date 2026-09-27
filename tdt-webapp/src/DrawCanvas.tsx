@@ -28,12 +28,21 @@ function getPositionInCanvas(
 }
 
 function hexToRgb(hex: string): [number, number, number] {
+  // Also accept rgb(r,g,b), which toGrayscale produces for TELEPHONE_NOIR
+  const rgb = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(hex);
+  if (rgb) return [parseInt(rgb[1], 10), parseInt(rgb[2], 10), parseInt(rgb[3], 10)];
   // Expand 3-digit shorthand #RGB → #RRGGBB
   const short = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
   if (short) hex = `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`;
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return r ? [parseInt(r[1], 16), parseInt(r[2], 16), parseInt(r[3], 16)] : [0, 0, 0];
 }
+
+// Max per-channel difference from the start pixel that still counts as "same
+// color". An exact match left stray unfilled pixels (issue #49): browsers with
+// canvas anti-fingerprinting (Brave, Firefox, Safari) add slight noise to
+// getImageData, and anti-aliased stroke edges are never exactly the background.
+const FILL_TOLERANCE = 48;
 
 function floodFill(
   ctx: CanvasRenderingContext2D,
@@ -53,26 +62,29 @@ function floodFill(
   const si = (y0 * W + x0) * 4;
   const tr = data[si], tg = data[si + 1], tb = data[si + 2], ta = data[si + 3];
 
-  if (tr === fr && tg === fg && tb === fb && ta === 255) return;
-
-  const matches = (x: number, y: number) => {
-    const i = (y * W + x) * 4;
-    return data[i] === tr && data[i + 1] === tg && data[i + 2] === tb && data[i + 3] === ta;
-  };
-  const setPixel = (x: number, y: number) => {
-    const i = (y * W + x) * 4;
-    data[i] = fr; data[i + 1] = fg; data[i + 2] = fb; data[i + 3] = 255;
+  const matches = (p: number) => {
+    const i = p * 4;
+    return Math.abs(data[i] - tr) <= FILL_TOLERANCE
+      && Math.abs(data[i + 1] - tg) <= FILL_TOLERANCE
+      && Math.abs(data[i + 2] - tb) <= FILL_TOLERANCE
+      && Math.abs(data[i + 3] - ta) <= FILL_TOLERANCE;
   };
 
-  const stack: [number, number][] = [[x0, y0]];
+  // With a tolerance, a filled pixel can still "match" (fill color close to the
+  // target), so track visited pixels instead of relying on the color changing.
+  const visited = new Uint8Array(W * H);
+  const stack: number[] = [y0 * W + x0];
   while (stack.length > 0) {
-    const [x, y] = stack.pop()!;
-    if (!matches(x, y)) continue;
-    setPixel(x, y);
-    if (x > 0) stack.push([x - 1, y]);
-    if (x < W - 1) stack.push([x + 1, y]);
-    if (y > 0) stack.push([x, y - 1]);
-    if (y < H - 1) stack.push([x, y + 1]);
+    const p = stack.pop()!;
+    if (visited[p] || !matches(p)) continue;
+    visited[p] = 1;
+    const i = p * 4;
+    data[i] = fr; data[i + 1] = fg; data[i + 2] = fb; data[i + 3] = 255;
+    const x = p % W;
+    if (x > 0) stack.push(p - 1);
+    if (x < W - 1) stack.push(p + 1);
+    if (p >= W) stack.push(p - W);
+    if (p < W * (H - 1)) stack.push(p + W);
   }
 
   ctx.putImageData(imageData, 0, 0);
