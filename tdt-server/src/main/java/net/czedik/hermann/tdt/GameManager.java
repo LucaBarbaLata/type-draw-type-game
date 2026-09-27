@@ -198,7 +198,14 @@ public class GameManager {
         validateGameId(gameId);
         // split gameId into two parts. this makes sure we do not create too many
         // folders on one level
-        return gamesPath.resolve(gameId.substring(0, 2)).resolve(gameId.substring(2, GAME_ID_LENGTH));
+        Path gameDir = gamesPath.resolve(gameId.substring(0, 2)).resolve(gameId.substring(2, GAME_ID_LENGTH))
+                .normalize();
+        // defense in depth against path traversal (issue #56): the id pattern already excludes
+        // separators and dots, but every file access of a game is resolved against this directory
+        if (!gameDir.startsWith(gamesPath) || gameDir.equals(gamesPath)) {
+            throw new IllegalArgumentException("Invalid gameId: " + gameId);
+        }
+        return gameDir;
     }
 
     public static void validateGameId(String gameId) {

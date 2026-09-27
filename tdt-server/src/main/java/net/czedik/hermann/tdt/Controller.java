@@ -38,6 +38,13 @@ public class Controller {
         return response;
     }
 
+    // an invalid gameId in a path (rejected by GameManager.getGameDir) is a bad request, not a server error
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Void> handleIllegalArgument(IllegalArgumentException e) {
+        log.info("Rejected request: {}", e.getMessage());
+        return ResponseEntity.badRequest().build();
+    }
+
     @GetMapping(path = "/games", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<PublicGameInfo> getPublicGames() {
         return gameManager.getPublicGames();
