@@ -134,6 +134,9 @@ const Draw = ({
 
   const replayFramesRef = React.useRef<string[]>([]);
   const lastSnapshotTimeRef = React.useRef<number>(0);
+  // Every how many (throttled) stroke ends a replay frame is kept; doubles each time the buffer fills
+  const replayStrideRef = React.useRef(1);
+  const replayStrokeCountRef = React.useRef(0);
   const lastSpectatorSnapshotTimeRef = React.useRef<number>(0);
   const SPECTATOR_SNAPSHOT_THROTTLE_MS = 500;
 
@@ -173,9 +176,17 @@ const Draw = ({
   const handleStrokeEnd = React.useCallback(() => {
     const now = Date.now();
     // Replay frame capture (throttled separately)
-    if (now - lastSnapshotTimeRef.current >= REPLAY_THROTTLE_MS && replayFramesRef.current.length < REPLAY_MAX_FRAMES) {
-      captureFrame();
+    if (now - lastSnapshotTimeRef.current >= REPLAY_THROTTLE_MS) {
       lastSnapshotTimeRef.current = now;
+      if (replayStrokeCountRef.current++ % replayStrideRef.current === 0) {
+        captureFrame();
+        // Full: drop every other frame and capture half as often, so the replay keeps
+        // covering the whole drawing instead of stopping early and jumping to the end
+        if (replayFramesRef.current.length >= REPLAY_MAX_FRAMES) {
+          replayFramesRef.current = replayFramesRef.current.filter((_, i) => i % 2 === 0);
+          replayStrideRef.current *= 2;
+        }
+      }
     }
     // Spectator snapshot (separate throttle)
     if (onSpectatorSnapshot && now - lastSpectatorSnapshotTimeRef.current >= SPECTATOR_SNAPSHOT_THROTTLE_MS) {
