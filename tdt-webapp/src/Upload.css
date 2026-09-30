@@ -19,9 +19,28 @@
   text-shadow: var(--cyber-glow);
 }
 
-/* The native file input is triggered from the styled buttons */
+/* The native file input is opened by the styled <label>s. Visually hidden rather than display:none, which some
+   mobile browsers treat as not interactive at all. */
 .Upload-input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.Upload .button[aria-disabled="true"] {
+  background: rgba(var(--cyber-text-rgb), 0.02);
+  border-color: var(--cyber-text-disabled);
+  color: var(--cyber-text-disabled);
+  box-shadow: none;
+  text-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
 }
 
 .Upload-preview img {

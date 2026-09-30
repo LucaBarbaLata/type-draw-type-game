@@ -11,6 +11,8 @@ import "./Upload.css";
 /** If the server has not moved us on after this long, assume the upload was rejected and let the player retry. */
 const SEND_TIMEOUT_MS = 8000;
 
+const FILE_INPUT_ID = "upload-photo-input";
+
 type Status = "idle" | "preparing" | "ready" | "sending" | "error";
 
 const Upload = ({
@@ -39,7 +41,6 @@ const Upload = ({
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const blobRef = React.useRef<Blob | null>(null);
   const sendTimeoutRef = React.useRef<number | undefined>();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // The preview is always an object URL of a blob we hold, never a string taken from storage (issue #55)
   const previewUrlRef = React.useRef<string | null>(null);
@@ -148,10 +149,13 @@ const Upload = ({
           <div>... a photo. Another player will have to redraw it by hand!</div>
         </div>
 
+        {/* Opened through <label htmlFor>, not input.click(): mobile browsers (iOS Safari, in-app browsers) ignore
+            a programmatic click on a hidden file input, so on phones the picker never opened */}
         <input
-          ref={fileInputRef}
+          id={FILE_INPUT_ID}
           type="file"
           accept="image/*"
+          disabled={busy}
           onChange={handleFileChosen}
           className="Upload-input"
         />
@@ -161,13 +165,9 @@ const Upload = ({
             <img src={previewUrl} className="Drawing" alt="Your photo" />
           </div>
         ) : (
-          <button
-            className="button"
-            disabled={busy}
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <label htmlFor={FILE_INPUT_ID} className="button" aria-disabled={busy}>
             Choose photo
-          </button>
+          </label>
         )}
 
         {status === "preparing" && <StatusText>Preparing photo…</StatusText>}
@@ -176,13 +176,9 @@ const Upload = ({
 
         <div className="Upload-buttons">
           {previewUrl && (
-            <button
-              className="button button-red"
-              disabled={busy}
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <label htmlFor={FILE_INPUT_ID} className="button button-red" aria-disabled={busy}>
               Pick another
-            </button>
+            </label>
           )}
           <button
             className="button"
