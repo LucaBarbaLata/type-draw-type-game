@@ -2,6 +2,8 @@ package net.czedik.hermann.tdt;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class GameRoundsGenerator {
@@ -20,12 +22,7 @@ public class GameRoundsGenerator {
             throw new IllegalArgumentException("Can only generate game for 2 or more players");
 
         int[][] rounds = initMatrix(numberOfPlayers);
-
-        // Randomize the initial story assignment (round 0) so the same player doesn't
-        // always receive the same prompt across multiple games.
-        Integer[] initialStories = IntStream.range(0, numberOfPlayers).boxed().toArray(Integer[]::new);
-        Collections.shuffle(Arrays.asList(initialStories));
-        rounds[0] = Arrays.stream(initialStories).mapToInt(Integer::intValue).toArray();
+        rounds[0] = IntStream.range(0, numberOfPlayers).toArray();
 
         if (numberOfPlayers % 2 == 0) {
             generateForEven(numberOfPlayers, rounds);
@@ -33,7 +30,26 @@ public class GameRoundsGenerator {
             generateForOdd(numberOfPlayers, rounds);
         }
 
-        return rounds;
+        return shuffleSeats(rounds);
+    }
+
+    /**
+     * The hand-over pattern above depends only on a player's position ("seat"), and seats follow the join order, so
+     * without this the same player would always receive the stories of the same neighbour in every game. Randomly
+     * reseating the players (permuting the columns) keeps every property of the game, but makes the order random.
+     */
+    private static int[][] shuffleSeats(int[][] rounds) {
+        int numberOfPlayers = rounds[0].length;
+        List<Integer> seats = IntStream.range(0, numberOfPlayers).boxed().collect(Collectors.toList());
+        Collections.shuffle(seats);
+
+        int[][] shuffled = initMatrix(numberOfPlayers);
+        for (int r = 0; r < rounds.length; r++) {
+            for (int p = 0; p < numberOfPlayers; p++) {
+                shuffled[r][seats.get(p)] = rounds[r][p];
+            }
+        }
+        return shuffled;
     }
 
     /**
@@ -54,7 +70,7 @@ public class GameRoundsGenerator {
     }
 
     private static void generateForEven(int numberOfPlayers, int[][] rounds) {
-        // rounds[0] is already initialized with a random permutation.
+        // rounds[0] is already initialized (players are randomly reseated afterwards).
 
         /* This is an algorithm to generate a "perfect" game for an even number of players:
          (A perfect game means, that you get a story from every other player exactly once.)
@@ -84,7 +100,7 @@ public class GameRoundsGenerator {
         // Therefore instead, for now generate a valid game by first always just handing over to the next player,
         // and then shuffle the rounds, to at least make a bit better.
 
-        // rounds[0] is already initialized with a random permutation.
+        // rounds[0] is already initialized (players are randomly reseated afterwards).
         for (int r = 0; r < rounds.length - 1; r++) {
             int[] currentRound = rounds[r];
             int[] nextRound = rounds[r + 1];

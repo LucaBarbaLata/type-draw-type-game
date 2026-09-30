@@ -147,6 +147,17 @@ class GameRoundsGeneratorTests {
     }
 
     @Test
+    void handOverOrderIsNotTiedToJoinOrder() {
+        // Hand-overs used to depend only on the player index (= join order), so with the same lobby player 0 always
+        // passed their first story to player 1.
+        Set<Integer> firstRecipientsOfPlayer0 = new HashSet<>();
+        for (int i = 0; i < 200; i++) {
+            firstRecipientsOfPlayer0.add(calculateTransitions(GameRoundsGenerator.generate(4))[0][0]);
+        }
+        Assertions.assertEquals(Set.of(1, 2, 3), firstRecipientsOfPlayer0);
+    }
+
+    @Test
     void generateTruncatedThrowsOnIllegalArgument() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(1, 1));
         Assertions.assertThrows(IllegalArgumentException.class, () -> GameRoundsGenerator.generate(4, 0));
