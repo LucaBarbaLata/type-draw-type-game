@@ -165,7 +165,7 @@ const Upload = ({
             <img src={previewUrl} className="Drawing" alt="Your photo" />
           </div>
         ) : (
-          <label htmlFor={FILE_INPUT_ID} className="button" aria-disabled={busy}>
+          <label htmlFor={FILE_INPUT_ID} className="button" aria-disabled={busy} data-keep-activation>
             Choose photo
           </label>
         )}
@@ -176,7 +176,7 @@ const Upload = ({
 
         <div className="Upload-buttons">
           {previewUrl && (
-            <label htmlFor={FILE_INPUT_ID} className="button button-red" aria-disabled={busy}>
+            <label htmlFor={FILE_INPUT_ID} className="button button-red" aria-disabled={busy} data-keep-activation>
               Pick another
             </label>
           )}

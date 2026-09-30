@@ -39,7 +39,9 @@ export function getDeviceType(): DeviceType {
 }
 
 export function toggleToFullscreenAndLandscapeOnMobile() {
-  if (isMobileDevice()) {
+  // Every requestFullscreen() call uses up the tap's user activation, so repeating it while already fullscreen
+  // would block whatever else that tap needs it for (e.g. opening the photo picker)
+  if (isMobileDevice() && !document.fullscreenElement) {
     if (document.documentElement.requestFullscreen) {
       document.documentElement
         .requestFullscreen()
@@ -51,6 +53,19 @@ export function toggleToFullscreenAndLandscapeOnMobile() {
         .catch(() => console.log("Cannot switch to fullscreen"));
     }
   }
+}
+
+/**
+ * Taps on elements inside this selector never trigger the fullscreen switch: opening the native file picker needs
+ * the tap's user activation, which requestFullscreen() would consume first — the picker then silently never opens
+ * on Android Chrome.
+ */
+const KEEP_ACTIVATION_SELECTOR = 'input[type="file"], [data-keep-activation]';
+
+/** Body click listener: goes fullscreen on mobile, except for taps that need their user activation themselves */
+export function handleBodyClickForFullscreen(event: MouseEvent) {
+  if (event.target instanceof Element && event.target.closest(KEEP_ACTIVATION_SELECTOR)) return;
+  toggleToFullscreenAndLandscapeOnMobile();
 }
 
 export function useWindowSize() {

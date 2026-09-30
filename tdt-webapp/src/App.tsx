@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-import { toggleToFullscreenAndLandscapeOnMobile } from "./helpers";
+import { handleBodyClickForFullscreen } from "./helpers";
 import Home from "./Home";
 import Game from "./Game";
 import Gallery from "./Gallery";
@@ -16,13 +16,13 @@ const App = () => {
   React.useEffect(() => {
     window.document.body.addEventListener(
       "click",
-      toggleToFullscreenAndLandscapeOnMobile
+      handleBodyClickForFullscreen
     );
 
     return () => {
       window.document.body.removeEventListener(
         "click",
-        toggleToFullscreenAndLandscapeOnMobile
+        handleBodyClickForFullscreen
       );
     };
   }, []);
